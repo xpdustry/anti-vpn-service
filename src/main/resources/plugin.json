@@ -2,7 +2,7 @@
   "name": "anti-vpn-service",
   "displayName": "Anti VPN Service (AVS)",
   "author": "ZetaMap",
-  "main": "Main",
+  "main": "avs.Main",
   "description": "The most optimised anti VPN service for mindustry",
   "version": "1.0"
 }
