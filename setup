@@ -1,0 +1,3 @@
+./gradlew :build
+mv -f build/libs/anti-vpn-service.jar .
+rm -rf build
