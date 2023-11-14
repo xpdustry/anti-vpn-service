@@ -12,13 +12,11 @@ public class Main extends mindustry.mod.Plugin {
     PVars.cacheFolder = Vars.modDirectory.child(Vars.mods.getMod(getClass()).name).child("cache");
     PVars.loadSettings();
     AntiVpnService.loadSettins();
-    ServiceManager.registerServerListener();
-    // And load providers
     AntiVpnService.loadProviders();
   }
 
   public void init() {
-
+    ServiceManager.registerServerListener();
   }
 
   @Override

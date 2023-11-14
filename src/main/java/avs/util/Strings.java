@@ -62,22 +62,23 @@ public class Strings extends arc.util.Strings {
     return stripGlyphs(stripColors(str));
   }
 
-  public static int binary2integer(boolean... list) {
+  public static long binary2integer(boolean... list) {
     int out = 0;
 
     for (int i=0; i<list.length; i++) {
       out |= list[i] ? 1 : 0;
       out <<= 1;
     }
-
+    
     return out >> 1;
   }
 
-  public static boolean[] integer2binary(int number) {
+  public static boolean[] integer2binary(long number) { return integer2binary(number, 0); }
+  public static boolean[] integer2binary(long number, int bits) {
     // Check value because 0 have a negative size  
-    if (number == 0) return new boolean[]{false};
+    if (number == 0) return new boolean[bits == 0 ? 1 : bits];
       
-    int size = (int) (Math.log(number)/Math.log(2)+1);
+    int size = bits == 0 ? (int) (Math.log(number)/Math.log(2)+1) : bits;
     boolean[] out = new boolean[size];
     
     while (size-- > 0) {

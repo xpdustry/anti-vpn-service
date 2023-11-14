@@ -11,7 +11,7 @@ import mindustry.Vars;
 import mindustry.net.NetConnection;
 import mindustry.net.Packets.ConnectPacket;
 
-import avs.service.providers.IPValidity;
+import avs.service.providers.AddressValidity;
 import avs.util.Logger;
 import avs.util.PVars;
 
@@ -54,7 +54,7 @@ public class ServiceManager {
         try {
           threadPool.submit(() -> {
             // Check the IP
-            IPValidity reply = AntiVpnService.checkIP(con.address);
+            AddressValidity reply = AntiVpnService.checkIP(con.address);
       
             if (reply.isVPN) {
               con.kick(message + (PVars.printIP ? "[lightgray](IP: {0})[]" : ""), 0);

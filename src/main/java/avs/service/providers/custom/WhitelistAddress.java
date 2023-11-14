@@ -2,50 +2,39 @@ package avs.service.providers.custom;
 
 import arc.Core;
 import arc.struct.Seq;
-import avs.service.providers.IPValidity;
-import avs.service.providers.types.CustomAddressProvider;
 
-public class WhitelistAddress extends CustomAddressProvider {
-  private Seq<IPValidity> whitelist;
-  
+import avs.service.providers.AddressValidity;
+
+
+public class WhitelistAddress extends avs.service.providers.types.CustomAddressProvider {
   public WhitelistAddress() {
     super("Whitelist", "whitelist");
   }
 
-  @Override
-  public void load() {
-    reloadSettings();
-  }
-  
   @SuppressWarnings("unchecked")
   @Override
-  public void reloadSettings() {
-    if (!Core.settings.has("avs-ip-whitelist")) saveSettings();
-    else whitelist = Core.settings.getJson("avs-ip-whitelist", Seq.class, () -> new Seq<IPValidity>());
+  public void load() {
+    if (!Core.settings.has("avs-ip-whitelist")) save();
+    else {
+      cache = Core.settings.getJson("avs-ip-whitelist", Seq.class, () -> new Seq<AddressValidity>());
+      cache.remove(v -> v == null);
+    }
   }
 
   @Override
-  public void saveSettings() {
-    Core.settings.putJson("avs-ip-whitelist", whitelist);
+  public void save() {
+    Core.settings.putJson("avs-ip-whitelist", cache);
   }
 
   @Override
-  public void blockAddress(IPValidity address) {
-    if (whitelist.remove(address)) saveSettings();  
+  public void blockAddress(AddressValidity address) {
+    if (cache.remove(address)) save();
   }
 
   @Override
-  public boolean allowAddress(IPValidity address) {
-    boolean added = whitelist.addUnique(address);
-    if(added) saveSettings();
+  public boolean allowAddress(AddressValidity address) {
+    boolean added = cache.addUnique(address);
+    if (added) save();
     return added;
-  }
-
-  @Override
-  public IPValidity checkIP(String ip) {
-    // TODO: Check with Subnet.isInNet() instead
-    
-    IPValidity.checkIP(ip);
-    return whitelist.find(v -> v.ip.equals(ip));
   }
 }

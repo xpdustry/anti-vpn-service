@@ -15,7 +15,7 @@ public class Subnet
     final private int bytesSubnetCount;
     final private BigInteger bigMask;
     final private BigInteger bigSubnetMasked;
-    final private String address;
+    final public String address;
     
     /** For use via format "192.168.0.0/24" or "2001:db8:85a3:880:0:0:0:0/57" */
     public Subnet( final InetAddress subnetAddress, final int bits )
@@ -102,7 +102,7 @@ public class Subnet
     @Override
     public String toString()
     {
-        return address + "/" + bigInteger2IpString( this.bigMask, this.bytesSubnetCount );
+        return address + (this.bigMask.intValue() == -1 ? "" : "/" + bigInteger2IpString( this.bigMask, this.bytesSubnetCount ));
     }
 
     static public String bigInteger2IpString( final BigInteger bigInteger, final int displayBytes )

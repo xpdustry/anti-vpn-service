@@ -3,8 +3,7 @@ package avs.service;
 import arc.struct.Seq;
 
 import avs.service.providers.types.*;
-import avs.service.providers.IPInfos;
-import avs.service.providers.IPValidity;
+import avs.service.providers.*;
 import avs.service.providers.custom.*;
 import avs.service.providers.local.*;
 import avs.service.providers.online.*;
@@ -38,17 +37,19 @@ public class AntiVpnService {
   );
   
 
-  public static IPValidity checkIP(String ip) {
-    IPInfos infos = new IPInfos(ip);
+  public static AddressValidity checkIP(String ip) {
+    AddressInfos infos = new AddressInfos(ip);
     
     
-    IPValidity result = new IPValidity(ip, infos);
+    AddressValidity result = new AddressValidity(ip, infos);
     
     return result;
   }
   
   public static void loadProviders() {
-    
+    customProviders.each(p -> p.load());
+    localProviders.each(p -> p.load());
+    onlineProviders.each(p -> p.load());
   }
 
   public static void loadSettins() {

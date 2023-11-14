@@ -1,8 +1,10 @@
 package avs.service.providers.types;
 
-import avs.service.providers.IPValidity;
+import avs.service.providers.AddressValidity;
 
 public abstract class OnlineAddressProvider extends AddressProvider {
+  private String url, token;
+  
   public OnlineAddressProvider(String name) { super(name); }
   public OnlineAddressProvider(String displayName, String name) { super(displayName, name); }
   
@@ -12,11 +14,16 @@ public abstract class OnlineAddressProvider extends AddressProvider {
     // TODO Auto-generated method stub
     
   }
+  
   @Override
-  public IPValidity checkIP(String ip) {
+  public void save() {
+    // TODO Auto-generated method stub
+    
+  }  
+  
+  @Override
+  public AddressValidity checkIP(String ip) {
     // TODO Auto-generated method stub
     return null;
   }
-
-  
 }

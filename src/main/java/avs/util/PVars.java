@@ -11,7 +11,7 @@ public class PVars {
   
   public static void loadSettings() {
     if (Core.settings.has("avs-settings")) {
-      boolean[] settings = Strings.integer2binary(Core.settings.getInt("avs-settings"));
+      boolean[] settings = Strings.integer2binary(Core.settings.getInt("avs-settings"), 2);
 
       // Avoid errors when adding new settings
       try {
@@ -25,6 +25,6 @@ public class PVars {
 
   public static void saveSettings() {
     Core.settings.put("avs-settings", 
-        Strings.binary2integer(true, serviceEnabled, printIP));
+        Strings.binary2integer(serviceEnabled, printIP));
   }
 }

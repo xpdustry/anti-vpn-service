@@ -6,5 +6,4 @@ public class VpnApiService extends avs.service.providers.types.OnlineAddressProv
   public VpnApiService() {
     super("VpnAPI.io Service", "vpnapi");
   }
-
 }
