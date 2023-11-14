@@ -1,6 +1,6 @@
 package avs.service.providers.types;
 
-import avs.service.IPValidity;
+import avs.service.providers.IPValidity;
 
 public abstract class OnlineAddressProvider extends AddressProvider {
   public OnlineAddressProvider(String name) { super(name); }

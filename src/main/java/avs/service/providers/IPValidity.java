@@ -1,5 +1,4 @@
-package avs.service;
-
+package avs.service.providers;
 
 public class IPValidity {
   public final String ip;

@@ -1,4 +1,4 @@
-package avs.service;
+package avs.service.providers;
 
 public class IPInfos {
   public final String ip;

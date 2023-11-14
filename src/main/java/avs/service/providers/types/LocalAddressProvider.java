@@ -4,8 +4,7 @@ import java.net.InetAddress;
 
 import arc.files.Fi;
 import arc.struct.Seq;
-
-import avs.service.IPValidity;
+import avs.service.providers.IPValidity;
 import avs.util.Logger;
 import avs.util.Subnet;
 import avs.util.PVars;

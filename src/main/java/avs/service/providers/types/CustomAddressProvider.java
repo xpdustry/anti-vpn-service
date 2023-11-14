@@ -1,6 +1,6 @@
 package avs.service.providers.types;
 
-import avs.service.IPValidity;
+import avs.service.providers.IPValidity;
 
 public abstract class CustomAddressProvider extends AddressProvider {
   public CustomAddressProvider(String name) { super(name); }
@@ -8,6 +8,6 @@ public abstract class CustomAddressProvider extends AddressProvider {
 
   public abstract void reloadSettings();
   public abstract void saveSettings();
-  public abstract void blockIP(IPValidity address);
-  public abstract boolean allowIP(IPValidity address);
+  public abstract void blockAddress(IPValidity address);
+  public abstract boolean allowAddress(IPValidity address);
 }

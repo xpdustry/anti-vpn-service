@@ -13,5 +13,5 @@ public abstract class AddressProvider {
   }
 
   public abstract void load();
-  public abstract avs.service.IPValidity checkIP(String ip);
+  public abstract avs.service.providers.IPValidity checkIP(String ip);
 }

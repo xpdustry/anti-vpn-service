@@ -1,8 +1,7 @@
 package avs.service.providers.custom;
 
 import arc.struct.Seq;
-
-import avs.service.IPValidity;
+import avs.service.providers.IPValidity;
 import avs.util.Logger;
 import avs.util.Strings;
 import avs.util.PVars;
@@ -63,12 +62,12 @@ public class CachedFlaggedAddress extends avs.service.providers.types.CustomAddr
   }
 
   @Override
-  public void blockIP(IPValidity address) {
+  public void blockAddress(IPValidity address) {
     if(blacklistedIPs.addUnique(address)) saveSettings();
   }
 
   @Override
-  public boolean allowIP(IPValidity address) {
+  public boolean allowAddress(IPValidity address) {
     boolean removed = blacklistedIPs.remove(address);
     if (removed) saveSettings();
     return removed;
@@ -76,8 +75,6 @@ public class CachedFlaggedAddress extends avs.service.providers.types.CustomAddr
 
   @Override
   public IPValidity checkIP(String ip) {
-    // TODO: Check with Subnet.isInNet() instead
-    
     IPValidity.checkIP(ip);
     return blacklistedIPs.find(v -> v.ip.equals(ip));
   }

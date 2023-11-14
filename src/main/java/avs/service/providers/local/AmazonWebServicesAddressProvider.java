@@ -5,7 +5,7 @@ import avs.service.providers.types.LocalAddressProvider;
 import avs.util.Subnet;
 
 public class AmazonWebServicesAddressProvider extends LocalAddressProvider {
-  public AmazonWebServicesAddressProvider(String displayName, String name) {
+  public AmazonWebServicesAddressProvider() {
     super("Amazon Web Services", "amazon-web-services");
   }
 

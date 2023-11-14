@@ -2,7 +2,7 @@ package avs.service.providers.custom;
 
 import arc.Core;
 import arc.struct.Seq;
-import avs.service.IPValidity;
+import avs.service.providers.IPValidity;
 import avs.service.providers.types.CustomAddressProvider;
 
 public class WhitelistAddress extends CustomAddressProvider {
@@ -30,12 +30,12 @@ public class WhitelistAddress extends CustomAddressProvider {
   }
 
   @Override
-  public void blockIP(IPValidity address) {
+  public void blockAddress(IPValidity address) {
     if (whitelist.remove(address)) saveSettings();  
   }
 
   @Override
-  public boolean allowIP(IPValidity address) {
+  public boolean allowAddress(IPValidity address) {
     boolean added = whitelist.addUnique(address);
     if(added) saveSettings();
     return added;
@@ -43,6 +43,8 @@ public class WhitelistAddress extends CustomAddressProvider {
 
   @Override
   public IPValidity checkIP(String ip) {
+    // TODO: Check with Subnet.isInNet() instead
+    
     IPValidity.checkIP(ip);
     return whitelist.find(v -> v.ip.equals(ip));
   }
