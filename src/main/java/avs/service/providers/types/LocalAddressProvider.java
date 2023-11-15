@@ -1,23 +1,28 @@
 package avs.service.providers.types;
 
-import arc.files.Fi;
 import arc.struct.Seq;
 
 import avs.service.providers.AddressValidity;
 import avs.util.Logger;
-import avs.util.Subnet;
 import avs.util.PVars;
+import avs.util.Subnet;
 
 
 public abstract class LocalAddressProvider extends AddressProvider {
-  /* Define the type of provider, used for statistics */
+  /* Define the type of provider, used for statistics. Default is VPN */
   protected LocalAddressProviderType providerType = LocalAddressProviderType.basic;
   
-  public LocalAddressProvider(String displayName, String name) { super(displayName, name); }
-  public LocalAddressProvider(String name) { super(name); }
+  public LocalAddressProvider(String displayName, String name) { 
+    super(displayName, name); 
+    customFolder = PVars.cacheFolder.child("cloud");
+  }
+  public LocalAddressProvider(String name) { 
+    super(name); 
+    customFolder = PVars.cacheFolder.child("cloud");
+  }
 
   @Override
-  public void load() { 
+  public void load() {
     Seq<Subnet> list = downloadList();
     
     if (list == null) throw new NullPointerException(".downloadList() should not return null");
@@ -37,6 +42,8 @@ public abstract class LocalAddressProvider extends AddressProvider {
         valid.isProxy = providerType.isProxy();
         valid.isTOR = providerType.isTOR();
         valid.isRelay = providerType.isRelay();
+        valid.isOther = providerType.isOther();
+        
         cache.add(valid);
       });
       save();
@@ -46,32 +53,14 @@ public abstract class LocalAddressProvider extends AddressProvider {
   // Reload only cache. To reload the all, call .load()
   @Override
   public void reload() {
-    Fi cacheFile = PVars.cacheFolder.child("cloud").child(name + ".txt");
-    Seq<AddressValidity> ips = new Seq<>();
-    
-    if (cacheFile.exists() && !cacheFile.isDirectory()) {
-      try { ips = Seq.with(cacheFile.readString().split("\n")).map(line -> line.isBlank() ? null : AddressValidity.fromString(line.strip())); }
-      catch (Exception e) { 
-        Logger.err("Failed to load cache file '@'. ", cacheFile.path());
-        Logger.err("Error: @", e.toString()); 
-      }
-    } 
-    
-    ips.removeAll(v -> v == null);
-    cache = ips;
+    cache.clear();
+    loadCache();
     
     // Cache file probably not existing
-    if (cache.isEmpty()) Logger.err("Failed to load addresses from cloud provider '@'! Skipping this provider...", displayName);
-    else Logger.info("Loaded @ addresses from provider cache file '@'.", cache.size, displayName);
+    if (cache.isEmpty()) Logger.err("Failed to load addresses from cloud provider '@'! Skipping it...", displayName);
+    else Logger.info("Loaded @ addresses for provider '@' from cache file.", cache.size, displayName);
   }
-  
-  @Override
-  public void save() {
-    Fi cacheFile = PVars.cacheFolder.child("cloud").child(name + ".txt");
-    cacheFile.writeString("");
-    cache.each(s -> cacheFile.writeString(s.toString() + "\n", true));
-  }
-  
+
   public abstract Seq<Subnet> downloadList();
   
   
@@ -93,6 +82,8 @@ public abstract class LocalAddressProvider extends AddressProvider {
     public boolean isProxy() { return this == proxy; }
     public boolean isTOR() { return this == tor; }
     public boolean isRelay() { return this == relay; }
+    public boolean isOther() { return this == other; }
+    
     
     // TODO: implement a way to specifies multiple type of provider
   }

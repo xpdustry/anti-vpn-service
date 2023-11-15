@@ -12,7 +12,8 @@ public class AddressValidity {
   public boolean isVPN = false, 
       isProxy = false, 
       isTOR = false, 
-      isRelay = false;
+      isRelay = false,
+      isOther = false;
   
   public AddressValidity(String ip) { this(ip, null); }
   public AddressValidity(String ip, AddressInfos infos) { this(Subnet.createInstance(ip), infos); }
@@ -35,7 +36,8 @@ public class AddressValidity {
            isVPN == other.isVPN &&
            isProxy == other.isProxy &&
            isTOR == other.isTOR &&
-           isRelay == other.isRelay;
+           isRelay == other.isRelay &&
+           isOther == other.isOther;
   }
   
   @Override
@@ -56,14 +58,19 @@ public class AddressValidity {
   public static AddressValidity fromString(String str) { return fromJson(new arc.util.serialization.JsonReader().parse(str)); }
   public static AddressValidity fromJson(JsonValue content) {
     Subnet net = Subnet.createInstance(content.getString(0));
-    boolean[] type = Strings.integer2binary(content.getInt(1), 4);
+    int value = content.getInt(1);
     AddressInfos infos = AddressInfos.fromJson(content.get(2));
     
     AddressValidity valid = new AddressValidity(net, infos);
-    if (type[0]) valid.isVPN = true;
-    if (type[1]) valid.isProxy = true;
-    if (type[2]) valid.isTOR = true;
-    if (type[3]) valid.isRelay = true;   
+    if (value == 0) valid.isOther = true;
+    else {
+      boolean[] type = Strings.integer2binary(value, 4);
+      
+      if (type[0]) valid.isVPN = true;
+      if (type[1]) valid.isProxy = true;
+      if (type[2]) valid.isTOR = true;
+      if (type[3]) valid.isRelay = true;        
+    }
     
     return valid;    
   }

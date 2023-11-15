@@ -1,14 +1,26 @@
 package avs.service.providers.types;
 
 import avs.service.providers.AddressValidity;
+import avs.util.Logger;
 
 public abstract class CustomAddressProvider extends AddressProvider {
   public CustomAddressProvider(String name) { super(name); }
   public CustomAddressProvider(String displayName, String name) { super(displayName, name); }
 
-  public void blockAddress(AddressValidity address) {
+  
+  @Override
+  public void load() {
+    super.load();
+    
+    if (cache.isEmpty()) Logger.err("Failed to load addresses from provider '@'! Skipping it...", displayName);
+    else Logger.info("Loaded @ addresses for provider '@'.", cache.size, displayName);
+  }
+  
+  public boolean blockAddress(AddressValidity address) {
     // TODO: fire an event. Wanted?
-    if (cache.addUnique(address)) save();
+    boolean added = cache.addUnique(address);
+    if (added) save();
+    return added;
   }
 
   public boolean allowAddress(AddressValidity address) {
