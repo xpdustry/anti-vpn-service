@@ -19,6 +19,7 @@ import avs.util.PVars;
 public class ServiceManager {
   private static ThreadPoolExecutor threadPool = (ThreadPoolExecutor) Threads.boundedExecutor("IPValidator", PVars.threadPoolSize);
   private static String message = "Your ip is flagged as VPN!"; // Message for player
+  private static Logger logger = new Logger();
   
   
   @SuppressWarnings("unchecked")
@@ -66,17 +67,17 @@ public class ServiceManager {
           });          
         } catch (java.util.concurrent.RejectedExecutionException e) {
           // To many connection at same time, kick the player and invite it to retry connection
-          Logger.debug("Failed to start ip check for client @ [@]", con.address, con.uuid);
+          logger.debug("Failed to start ip check for client @ [@]", con.address, con.uuid);
           con.kick(mindustry.net.Packets.KickReason.serverRestarting, 0);
         }
       });
 
     } catch (final ReflectiveOperationException | SecurityException err) {
-      Logger.err("A security manager is present in this java version! Cannot put the blacklist listeners first in events list.");
-      Logger.err("Please remove the security manager if you want a first priority execution for backlist listener");
+      logger.err("A security manager is present in this java version! Cannot put the blacklist listeners first in events list.");
+      logger.err("Please remove the security manager if you want a first priority execution for backlist listener");
       threadPool.shutdown();
-      Logger.warn("");
-      Logger.warn("Anti VPN Service has been disabled due to previous errors");
+      logger.warn("");
+      logger.warn("Anti VPN Service has been disabled due to previous errors");
     }
   }
 }

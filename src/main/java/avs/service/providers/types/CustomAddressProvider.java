@@ -1,7 +1,7 @@
 package avs.service.providers.types;
 
 import avs.service.providers.AddressValidity;
-import avs.util.Logger;
+
 
 public abstract class CustomAddressProvider extends AddressProvider {
   public CustomAddressProvider(String name) { super(name); }
@@ -9,11 +9,14 @@ public abstract class CustomAddressProvider extends AddressProvider {
 
   
   @Override
-  public void load() {
-    super.load();
+  public boolean load() {
+    boolean loaded = super.load();
     
-    if (cache.isEmpty()) Logger.err("Failed to load addresses from provider '@'! Skipping it...", displayName);
-    else Logger.info("Loaded @ addresses for provider '@'.", cache.size, displayName);
+    if (!loaded) logger.err("Failed to load addresses! Skipping it...");
+    else if (cache.isEmpty()) logger.warn("No addresses found.");
+    else logger.info("Loaded @ addresses from cache file.", cache.size);
+    
+    return loaded;
   }
   
   public boolean blockAddress(AddressValidity address) {

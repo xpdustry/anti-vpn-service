@@ -4,7 +4,7 @@ import arc.struct.Seq;
 
 import avs.util.Subnet;
 
-public class GoogleCloudAddressProvider extends avs.service.providers.types.LocalAddressProvider {
+public class GoogleCloudAddressProvider extends avs.service.providers.types.CloudDownloadedAddressProvider {
 
   public GoogleCloudAddressProvider() {
     super("Google", "google");

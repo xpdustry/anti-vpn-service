@@ -4,7 +4,7 @@ import arc.struct.Seq;
 
 import avs.util.Subnet;
 
-public class OracleCloudAddressProvider extends avs.service.providers.types.LocalAddressProvider {
+public class OracleCloudAddressProvider extends avs.service.providers.types.CloudDownloadedAddressProvider {
   public OracleCloudAddressProvider() {
     super("Oracle", "oracle");
   }

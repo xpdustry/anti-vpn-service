@@ -67,6 +67,7 @@ public class Subnet
     
     public boolean isInNet( final InetAddress address )
     {
+      // TODO: improve the check to handle properly the case when the subnet is just an ip without mask
         final byte[] bytesAddress = address.getAddress();
         if ( this.bytesSubnetCount != bytesAddress.length )
             return false;

@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import arc.files.Fi;
 import arc.struct.Seq;
 import arc.util.Strings;
+
 import avs.service.providers.AddressValidity;
 import avs.util.Logger;
 import avs.util.PVars;
@@ -14,7 +15,9 @@ public abstract class AddressProvider {
   protected Seq<AddressValidity> cache = new Seq<>();
   /* Custom folder from plugin settings folder */
   protected Fi customFolder = null;
+  
   public final String name, displayName;
+  public final Logger logger;
   
   public AddressProvider(String name) { this(name, name.toLowerCase().replace(" ", "-")); }
   public AddressProvider(String displayName, String name) {
@@ -23,22 +26,23 @@ public abstract class AddressProvider {
       
     this.name = name;
     this.displayName = displayName;
+    this.logger = new Logger("&ly[" + displayName + "]");
   }
 
-  public void load() {
-    loadCache();
+  public boolean load() {
+    return loadCache();
   }
   
-  public void reload() {
+  public boolean reload() {
     cache.clear();
-    load();
+    return load();
   }
   
-  public void save() {
-    saveCache();
+  public boolean save() {
+    return saveCache();
   }
   
-  protected void loadCache() {
+  protected boolean loadCache() {
     Fi cacheFile = getFile();
     Seq<AddressValidity> ips = new Seq<>();
     
@@ -46,16 +50,18 @@ public abstract class AddressProvider {
       try { ips = Seq.with(cacheFile.readString().split("\n"))
                      .map(line -> line.isBlank() || line.strip().startsWith("#") ? null : AddressValidity.fromString(line.strip())); }
       catch (Exception e) { 
-        Logger.err("Failed to load cache file '@'. ", cacheFile.path());
-        Logger.err("Error: @", e.toString()); 
+        logger.err("Failed to load cache file '@'. ", cacheFile.path());
+        logger.err("Error: @", e.toString()); 
+        return false;
       }
     } 
     
     ips.removeAll(v -> v == null);
     cache = ips;
+    return true;
   }
   
-  protected void saveCache() {
+  protected boolean saveCache() {
     Fi cacheFile = getFile();
     
     try {
@@ -63,15 +69,20 @@ public abstract class AddressProvider {
       cache.each(s -> cacheFile.writeString(s.toString() + "\n", true));  
       
     } catch(Exception e) {
-      Logger.err("Failed to write cache file '@'.", cacheFile.path());
-      Logger.err("Error: @", e.toString());
+      logger.err("Failed to write cache file '@'.", cacheFile.path());
+      logger.err("Error: @", e.toString());
+      return false;
     }
-
+    return true;
   }
   
+  /* Check if address is blacklisted.
+   * The address format must be validated before this.
+   * 
+   * Return null if ip is not blacklisted
+   */
   public AddressValidity checkIP(String ip) {
     try {
-      AddressValidity.checkIP(ip);
       InetAddress inet = InetAddress.getByName(ip); // Normally, never throw an error
       AddressValidity valid = cache.find(v -> v.ip.isInNet(inet));
       // TODO: fire an event
@@ -79,8 +90,8 @@ public abstract class AddressProvider {
 
     } catch (Exception e) {
       // TODO: fire an event
-      Logger.debug("Failed to check ip '@'", ip);
-      Logger.debug("Error: @", e.toString()); 
+      logger.debug("Failed to check ip '@'", ip);
+      logger.debug("Error: @", e.toString()); 
     }
     
     return null;

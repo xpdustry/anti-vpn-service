@@ -7,7 +7,10 @@ import mindustry.Vars;
 
 public class PVars {
   public static Fi pluginFolder, cacheFolder, settingsFolder, tokensFolder;
-  public static int threadPoolSize = 100;
+  public static int threadPoolSize = 100,
+      // Timeout to re-check the validity of token when one has reached it's limit
+      tokenValdityCheckTimeout = 100, // re-check the validity after X player ip check
+      serviceValidityTimeout = 30;
   public static boolean serviceEnabled = true, printIP = true;
   
   

@@ -18,7 +18,7 @@ public class AntiVpnService {
       new UserAddressList(),
       new CachedFlaggedAddress()
   );
-  public static Seq<LocalAddressProvider> 
+  public static Seq<CloudDownloadedAddressProvider> 
     // Next we have local lists, downloaded from providers and saved in cache
     // Must be checked at second for more speed reponse
     localProviders = Seq.with(
@@ -28,7 +28,7 @@ public class AntiVpnService {
       new GoogleCloudAddressProvider(),
       new OracleCloudAddressProvider()
   );
-  public static Seq<OnlineAddressProvider> 
+  public static Seq<OnlineServiceAddressProvider> 
     // And the online Services API
     // Must be used when local providers founds nothing
     // This list is in rotation: when a service is down or token limit is reach, this will use the next service
@@ -36,12 +36,18 @@ public class AntiVpnService {
       new VpnApiService()
   );
   
+  private CustomAddressProvider whitelist;
+  
 
   public static AddressValidity checkIP(String ip) {
+    AddressValidity.checkIP(ip);
     AddressInfos infos = new AddressInfos(ip);
     
     
     AddressValidity result = new AddressValidity(ip, infos);
+    
+    // Whitelist is a special provider, the check is inverted
+    
     
     return result;
   }

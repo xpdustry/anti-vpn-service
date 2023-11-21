@@ -4,7 +4,7 @@ import arc.struct.Seq;
 
 import avs.util.Subnet;
 
-public class GithubActionsAddressProvider extends avs.service.providers.types.LocalAddressProvider {
+public class GithubActionsAddressProvider extends avs.service.providers.types.CloudDownloadedAddressProvider {
   public GithubActionsAddressProvider() {
     super("Github Actions", "github-actions");
   }

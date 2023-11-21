@@ -9,6 +9,7 @@ import avs.util.Subnet;
 public class AddressValidity {
   public final Subnet ip;
   public final @arc.util.Nullable AddressInfos infos;
+  public final AddressStats stats;
   public boolean isVPN = false, 
       isProxy = false, 
       isTOR = false, 
@@ -21,6 +22,7 @@ public class AddressValidity {
   public AddressValidity(Subnet ip, AddressInfos infos) {
     this.ip = ip;
     this.infos = infos;
+    this.stats = new AddressStats();
   }
   
   public boolean isValid() {

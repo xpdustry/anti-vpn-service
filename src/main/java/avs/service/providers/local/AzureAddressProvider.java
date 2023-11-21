@@ -4,7 +4,7 @@ import arc.struct.Seq;
 
 import avs.util.Subnet;
 
-public class AzureAddressProvider extends avs.service.providers.types.LocalAddressProvider {
+public class AzureAddressProvider extends avs.service.providers.types.CloudDownloadedAddressProvider {
   public AzureAddressProvider() {
     super("Azure Cloud", "azure");
   }
