@@ -7,6 +7,7 @@ import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Http;
 
+import avs.service.AntiVpnService;
 import avs.service.providers.AddressValidity;
 import avs.util.PVars;
 
@@ -16,7 +17,7 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
    * The URL of service to use. 
    * Don't forgot to add '{0}' = the ip, '{1}' = the token (optional), in the URL.
    */
-  protected final String url;
+  public final String url;
  
   protected ObjectMap<String, Integer> tokens = new ObjectMap<>();
   protected boolean hasTokens = false, available = true;
@@ -82,7 +83,7 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     Fi tokensFile = getFile();
     
     try {
-      tokensFile.writeString("");
+      tokensFile.writeString("# vv Add service tokens below vv (one token per line)");
       tokens.each((t, v) -> tokensFile.writeString(t + "\n", true));
       
     } catch (Exception e) {
@@ -117,9 +118,11 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
   
   @Override
   public AddressValidity checkIP(String ip) {
+    if (!enabled) return null;
+    
     // if service is unavailable for moment, don't use it 
     if (unavailableTimeout > 0 && unavailableTimeout-- > 0) {
-      logger.debug("Service unavailable for moment. @ IP checks before availability check", unavailableTimeout);
+      logger.debug("Service unavailable for moment. @ IP checks before availability verification", unavailableTimeout);
       return null;
     }
     
@@ -144,28 +147,31 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
             logger.err("Error while checking ip '@'. Token '@'" + 
                 (reply.type == ServiceReplyType.LIMIT_REACHED ? "has reached his limit" : " is invalid."), 
               ip, token.key);
-            logger.err("Http status: @ '@'", reply.status.code, reply.message);
+            logger.err("Status: @ '@'", reply.status.code, reply.message);
             token.value = PVars.tokenValdityCheckTimeout;
             logger.warn("Token added in waiting list. It will be reused after @ IP checks", token.value);
             
           } else if (reply.type == ServiceReplyType.UNAVAILABLE ||
                      reply.type == ServiceReplyType.NOT_FOUND) {
             logger.err("Error while checking ip '@'. Service @.", ip, reply.type.toString().toLowerCase().replace('_', ' '));
-            logger.err("Http status: @ '@'", reply.status.code, reply.message);
+            logger.err("Status: @ '@'", reply.status.code, reply.message);
             unavailableTimeout = PVars.serviceValidityTimeout;
             logger.warn("Service added in waiting list. It will be reused after @ IP checks", unavailableTimeout);
             return null;
             
           } else if (reply.type == ServiceReplyType.ERROR) {
             logger.err("Error while checking ip '@'. Unknown error.", ip);
-            logger.err("Http status: @ '@'", reply.status.code, reply.message);
+            logger.err("Status: @ '@'", reply.status.code, reply.message);
             logger.warn("Skipping this token...");
             
-          } else break;
+          } else {
+            if (AntiVpnService.flaggedCache != null) AntiVpnService.flaggedCache.blockAddress(reply.result);
+            return reply.result;
+          }
         }
       }
       // No valid token
-      logger.warn("Cannot check ip, all tokens are in waiting list!");
+      logger.warn("Cannot check ip, all tokens has been skipped!");
       
     } else {
       reply = request(MessageFormat.format(url, ip));
@@ -174,17 +180,18 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
         if (reply.type == ServiceReplyType.UNAVAILABLE ||
             reply.type == ServiceReplyType.NOT_FOUND) {
           logger.err("Error while checking ip '@'. Service @.", ip, reply.type.toString().toLowerCase().replace('_', ' '));
-          logger.err("Http status: @ '@'", reply.status.code, reply.message);
+          logger.err("Status: @ '@'", reply.status.code, reply.message);
           unavailableTimeout = PVars.serviceValidityTimeout;
           logger.warn("Service added in waiting list. It will be reused after @ IP checks", unavailableTimeout);
         
         } else {
           logger.err("Error while checking ip '@'.", ip);
-          logger.err("Http status: @ '@'", reply.status.code, reply.message);
+          logger.err("Status: @ '@'", reply.status.code, reply.message);
         }
         
         return null;
-      }
+      
+      } else if (AntiVpnService.flaggedCache != null) AntiVpnService.flaggedCache.blockAddress(reply.result);
     }
 
     return reply.result;
@@ -194,15 +201,9 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     ServiceReply reply = new ServiceReply();
     
     Http.get(url, success -> {
-      ServiceReply r = new ServiceReply();
       if (success.getStatus() == Http.HttpStatus.OK) {
-        try { 
-          r = handleReply(success.getResultAsString()); 
-          reply.message = r.message;
-          reply.result = r.result;
-          reply.type = r.type;          
-          
-        } catch (Exception e) {
+        try { handleReply(success.getResultAsString(), reply); }
+        catch (Exception e) {
           reply.type = ServiceReplyType.ERROR;
           reply.message = e.toString();
         } 
@@ -240,7 +241,7 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     return reply;
   }
 
-  public abstract ServiceReply handleReply(String reply) throws Exception;
+  public abstract void handleReply(String reply, ServiceReply toProvide) throws Exception;
   
   
   // To handle service reply outside the lambda
@@ -249,6 +250,13 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     public ServiceReplyType type = ServiceReplyType.ERROR;
     public String message = "";
     public Http.HttpStatus status = Http.HttpStatus.UNKNOWN_STATUS;
+    
+    public void setReply(ServiceReply other) {
+      result = other.result;
+      type = other.type;
+      message = other.message;
+      status = other.status;
+    }
   }
   
   public static enum ServiceReplyType {

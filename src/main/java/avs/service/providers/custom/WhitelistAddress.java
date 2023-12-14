@@ -5,7 +5,7 @@ import avs.service.providers.AddressValidity;
 
 public class WhitelistAddress extends avs.service.providers.types.CustomAddressProvider {
   public WhitelistAddress() {
-    super("Whitelist", "whitelist");
+    super("Whitelist", avs.util.PVars.whitelistProviderName);
     customFolder = avs.util.PVars.settingsFolder; // Must be saved in plugin settings
   }
 

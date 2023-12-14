@@ -1,6 +1,6 @@
 package avs.service.providers;
 
 public class AddressStats {
-  public int timeKicked = 0;
+  public int kickNumber = 0;
 
 }

@@ -7,6 +7,7 @@ import arc.struct.Seq;
 import arc.util.Strings;
 
 import avs.service.providers.AddressValidity;
+import avs.util.DynamicSettings;
 import avs.util.Logger;
 import avs.util.PVars;
 
@@ -15,9 +16,12 @@ public abstract class AddressProvider {
   protected Seq<AddressValidity> cache = new Seq<>();
   /* Custom folder from plugin settings folder */
   protected Fi customFolder = null;
+  protected DynamicSettings cacheFile = null;
   
   public final String name, displayName;
   public final Logger logger;
+  
+  public boolean enabled = true;
   
   public AddressProvider(String name) { this(name, name.toLowerCase().replace(" ", "-")); }
   public AddressProvider(String displayName, String name) {
@@ -35,6 +39,7 @@ public abstract class AddressProvider {
   
   public boolean reload() {
     cache.clear();
+    getCacheFile().clear();
     return load();
   }
   
@@ -42,34 +47,28 @@ public abstract class AddressProvider {
     return saveCache();
   }
   
+  @SuppressWarnings("unchecked")
   protected boolean loadCache() {
-    Fi cacheFile = getFile();
-    Seq<AddressValidity> ips = new Seq<>();
+    DynamicSettings file = getCacheFile();
     
-    if (cacheFile.exists() && !cacheFile.isDirectory()) {
-      try { ips = Seq.with(cacheFile.readString().split("\n"))
-                     .map(line -> line.isBlank() || line.strip().startsWith("#") ? null : AddressValidity.fromString(line.strip())); }
-      catch (Exception e) { 
-        logger.err("Failed to load cache file '@'. ", cacheFile.path());
-        logger.err("Error: @", e.toString()); 
-        return false;
-      }
-    } 
+    try { 
+      file.load();
+      cache = file.getJson("cache", Seq.class, AddressValidity.class, Seq::new); 
+    } catch (Exception e) { 
+      logger.err("Failed to load cache file '@'. ", file.getSettingsFile().path());
+      logger.err("Error: @", e.toString()); 
+      return false;
+    }
     
-    ips.removeAll(v -> v == null);
-    cache = ips;
     return true;
   }
   
   protected boolean saveCache() {
-    Fi cacheFile = getFile();
+    DynamicSettings file = getCacheFile();
     
-    try {
-      cacheFile.writeString("");
-      cache.each(s -> cacheFile.writeString(s.toString() + "\n", true));  
-      
-    } catch(Exception e) {
-      logger.err("Failed to write cache file '@'.", cacheFile.path());
+    try { file.putJson("cache", cache); } 
+    catch(Exception e) {
+      logger.err("Failed to write cache file '@'.", file.getSettingsFile().path());
       logger.err("Error: @", e.toString());
       return false;
     }
@@ -82,6 +81,8 @@ public abstract class AddressProvider {
    * Return null if ip is not blacklisted
    */
   public AddressValidity checkIP(String ip) {
+    if (!enabled) return null;
+    
     try {
       InetAddress inet = InetAddress.getByName(ip); // Normally, never throw an error
       AddressValidity valid = cache.find(v -> v.ip.isInNet(inet));
@@ -97,38 +98,41 @@ public abstract class AddressProvider {
     return null;
   }
   
+  protected DynamicSettings getCacheFile() {
+    if (cacheFile == null) cacheFile = new DynamicSettings(getFile());
+    return cacheFile;
+  }
   
-  // save the custom folder to avoid doing the operation another time.
   private Fi folder = null;
   
   protected Fi getFile() {
-    if (customFolder != null) {
-      // Cut already done
-      if (folder != null) return folder.child(name + ".txt");
-      
-      /* Cut the start of path if is the same
-       * This avoid to recreate sub-folders named same as the first path
-       * 
-       * E.g. with this feature you can specifie a custom path starting into 
-       * settings folder with PVars. 
-       * Without recreates config/mods/...... into the plugin folder.
-       */
-      
-      String[] path1 = PVars.pluginFolder.absolutePath().split("/"), 
-               path2 = customFolder.absolutePath().split("/");
-      int best = 0;
-      
-      while (best < Integer.min(path1.length, path2.length)) {
-        if (!path1[best].equals(path2[best])) break;
-        best++;
+    if (folder == null) {
+      if (customFolder == null) folder = PVars.cacheFolder;  
+      else {
+        /* Cut the start of path if is the same
+         * This avoid to recreate sub-folders named same as the first path
+         * 
+         * E.g. with this feature you can specifie a custom path starting into 
+         * settings folder with PVars. 
+         * Without recreates config/mods/...... into the plugin folder.
+         */
+        
+        String[] path1 = PVars.pluginFolder.absolutePath().split("/"), 
+                 path2 = customFolder.absolutePath().split("/");
+        int best = 0;
+        
+        while (best < Integer.min(path1.length, path2.length)) {
+          if (!path1[best].equals(path2[best])) break;
+          best++;
+        }
+        
+        String[] newPath2 = new String[path2.length-best];
+        System.arraycopy(path2, best, newPath2, 0, path2.length-best);
+  
+        folder = PVars.pluginFolder.child(Strings.join("/", newPath2));
       }
-      
-      String[] newPath2 = new String[path2.length-best];
-      System.arraycopy(path2, best, newPath2, 0, path2.length-best);
-
-      folder = PVars.pluginFolder.child(Strings.join("/", newPath2));
-      return folder.child(name + ".txt");
     }
-    return PVars.cacheFolder.child(name + ".txt");
+    
+    return folder.child(name + ".bin");
   }
 }

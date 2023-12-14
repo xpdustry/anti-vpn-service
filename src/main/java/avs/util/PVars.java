@@ -7,12 +7,14 @@ import mindustry.Vars;
 
 public class PVars {
   public static Fi pluginFolder, cacheFolder, settingsFolder, tokensFolder;
-  public static int threadPoolSize = 100,
+  public static String whitelistProviderName = "whitelist", flaggedCacheProviderName = "flagged-address";
+  public static int threadPoolSize = arc.util.OS.cores * 2,
       // Timeout to re-check the validity of token when one has reached it's limit
       tokenValdityCheckTimeout = 100, // re-check the validity after X player ip check
       serviceValidityTimeout = 30;
   public static boolean serviceEnabled = true, printIP = true;
   
+  private static DynamicSettings settingsFile = null;
   
   static {
     // To have a default folder
@@ -27,7 +29,13 @@ public class PVars {
   }
   
   public static void loadSettings() {
-    if (Core.settings.has("avs-settings")) {
+    // TODO: save this to plain text json
+    if (settingsFile == null) {
+      settingsFile = new DynamicSettings(settingsFolder.child("settings.bin"));
+      settingsFile.load();
+    }
+    
+    if (settingsFile.has("avs-settings")) {
       boolean[] settings = Strings.integer2binary(Core.settings.getInt("avs-settings"), 2);
 
       // Avoid errors when adding new settings
@@ -41,7 +49,14 @@ public class PVars {
   }
 
   public static void saveSettings() {
-    Core.settings.put("avs-settings", 
+    if (settingsFile == null) {
+      settingsFile = new DynamicSettings(settingsFolder.child("settings.bin"));
+      settingsFile.load();
+    }
+    
+    // TODO: put settings for providers
+    
+    settingsFile.put("avs-settings", 
         Strings.binary2integer(serviceEnabled, printIP));
   }
 }

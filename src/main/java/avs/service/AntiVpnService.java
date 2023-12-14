@@ -2,8 +2,10 @@ package avs.service;
 
 import arc.struct.Seq;
 
-import avs.service.providers.types.*;
+import avs.util.Logger;
+import avs.util.PVars;
 import avs.service.providers.*;
+import avs.service.providers.types.*;
 import avs.service.providers.custom.*;
 import avs.service.providers.local.*;
 import avs.service.providers.online.*;
@@ -36,33 +38,37 @@ public class AntiVpnService {
       new VpnApiService()
   );
   
-  private CustomAddressProvider whitelist;
+  // These providers are used, and need to be global
+  public static CustomAddressProvider whitelist, flaggedCache;
+  // Logger without a topic is by default the main plugin topic
+  public static Logger logger = new Logger();
   
 
   public static AddressValidity checkIP(String ip) {
     AddressValidity.checkIP(ip);
-    AddressInfos infos = new AddressInfos(ip);
-    
-    
-    AddressValidity result = new AddressValidity(ip, infos);
+    AddressValidity result;
     
     // Whitelist is a special provider, the check is inverted
     
-    
-    return result;
+
+    return null;
   }
   
   public static void loadProviders() {
     customProviders.each(p -> p.load());
     localProviders.each(p -> p.load());
     onlineProviders.each(p -> p.load());
-  }
-
-  public static void loadSettins() {
     
+    // Set lists used by other providers
+    whitelist = customProviders.find(p -> p.name.equals(PVars.whitelistProviderName));
+    if (whitelist == null) logger.warn("Unable to find whitelist provider.");
+    flaggedCache = customProviders.find(p -> p.name.equals(PVars.flaggedCacheProviderName));
+    if (flaggedCache == null) logger.warn("Unable to find flagged IPs cache.");
   }
-
-  public static void saveSettings() {
-    
+  
+  public static void saveProviders() {
+    customProviders.each(p -> p.save());
+    localProviders.each(p -> p.save());
+    onlineProviders.each(p -> p.save());
   }
 }

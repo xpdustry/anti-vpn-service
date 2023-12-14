@@ -3,7 +3,7 @@ package avs.service.providers.custom;
 
 public class CachedFlaggedAddress extends avs.service.providers.types.CustomAddressProvider {
   public CachedFlaggedAddress() {
-    super("Flagged Address Cache", "flagged-address");
+    super("Flagged Address Cache", avs.util.PVars.flaggedCacheProviderName);
   }
 
   @Override

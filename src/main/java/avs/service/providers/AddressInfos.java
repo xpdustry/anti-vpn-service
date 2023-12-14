@@ -7,7 +7,8 @@ public class AddressInfos {
   // Default values if the supplier does not provide all the information
   public String  network = "0.0.0.0/0", 
       location = "<unknown>",
-      ISP = "", 
+      ISP = "",
+      ASN = "ASN00000",
       locale = "en";
   public float longitude = 0, latitude = 0;
   
@@ -27,6 +28,7 @@ public class AddressInfos {
     o.addChild(new JsonValue(network));
     o.addChild(new JsonValue(location));
     o.addChild(new JsonValue(ISP));
+    o.addChild(new JsonValue(ASN));
     o.addChild(new JsonValue(locale));
     o.addChild(new JsonValue(longitude));
     o.addChild(new JsonValue(latitude));
@@ -42,9 +44,10 @@ public class AddressInfos {
     n.network = content.getString(1);
     n.location = content.getString(2);
     n.ISP = content.getString(3);
-    n.locale = content.getString(4);
-    n.longitude = content.getFloat(5);
-    n.latitude = content.getFloat(6);
+    n.ASN = content.getString(4);
+    n.locale = content.getString(5);
+    n.longitude = content.getFloat(6);
+    n.latitude = content.getFloat(7);
     
     return n;
   }

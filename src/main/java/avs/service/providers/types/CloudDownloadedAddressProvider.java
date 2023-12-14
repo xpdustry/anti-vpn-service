@@ -72,6 +72,7 @@ public abstract class CloudDownloadedAddressProvider extends AddressProvider {
   @Override
   public boolean reload() {
     cache.clear();
+    getCacheFile().clear();
     boolean loaded = loadCache();
     
     // Cache file probably not existing
