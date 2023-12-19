@@ -42,6 +42,8 @@ public class AntiVpnService {
   public static CustomAddressProvider whitelist, flaggedCache;
   // Logger without a topic is by default the main plugin topic
   public static Logger logger = new Logger();
+  public static boolean operational = false;
+  public static int totalAddresses = 0, totalLocalProviders = 0;
   
 
   public static AddressValidity checkIP(String ip) {
@@ -50,23 +52,44 @@ public class AntiVpnService {
     
     // Whitelist is a special provider, the check is inverted
     
+    
 
     return null;
   }
   
   public static void loadProviders() {
+    operational = false;
+    
     customProviders.each(p -> p.load());
     localProviders.each(p -> p.load());
     onlineProviders.each(p -> p.load());
+    
+    // TODO: print total count
     
     // Set lists used by other providers
     whitelist = customProviders.find(p -> p.name.equals(PVars.whitelistProviderName));
     if (whitelist == null) logger.warn("Unable to find whitelist provider.");
     flaggedCache = customProviders.find(p -> p.name.equals(PVars.flaggedCacheProviderName));
     if (flaggedCache == null) logger.warn("Unable to find flagged IPs cache.");
+
+    totalAddresses = 0;
+    totalLocalProviders = 0;
+    customProviders.each(p -> {
+      totalAddresses += p.cacheSize();
+      totalLocalProviders++;
+    });
+    localProviders.each(p -> {
+      totalAddresses += p.cacheSize();
+      totalLocalProviders++;
+    });
+    logger.info("Loaded @ addresses ranges from @ providers", totalAddresses, totalLocalProviders);
+    
+    operational = true;
   }
   
   public static void saveProviders() {
+    if (!operational) return;
+    
     customProviders.each(p -> p.save());
     localProviders.each(p -> p.save());
     onlineProviders.each(p -> p.save());

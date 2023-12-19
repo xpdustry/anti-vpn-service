@@ -22,7 +22,7 @@ public class AddressInfos {
   }
   
   public JsonValue toJson() {
-     JsonValue o = new JsonValue(JsonValue.ValueType.array);
+    JsonValue o = new JsonValue(JsonValue.ValueType.array);
     
     o.addChild(new JsonValue(ip));
     o.addChild(new JsonValue(network));

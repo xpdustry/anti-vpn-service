@@ -16,6 +16,7 @@ public abstract class AddressProvider {
   protected Seq<AddressValidity> cache = new Seq<>();
   /* Custom folder from plugin settings folder */
   protected Fi customFolder = null;
+  protected String fileExt = "bin";
   protected DynamicSettings cacheFile = null;
   
   public final String name, displayName;
@@ -31,6 +32,10 @@ public abstract class AddressProvider {
     this.name = name;
     this.displayName = displayName;
     this.logger = new Logger("&ly[" + displayName + "]");
+  }
+  
+  public int cacheSize() {
+    return cache.size;
   }
 
   public boolean load() {
@@ -53,7 +58,8 @@ public abstract class AddressProvider {
     
     try { 
       file.load();
-      cache = file.getJson("cache", Seq.class, AddressValidity.class, Seq::new); 
+      cache = file.getJson("cache", Seq.class, Seq::new); 
+      logger.debug("Cache loaded");
     } catch (Exception e) { 
       logger.err("Failed to load cache file '@'. ", file.getSettingsFile().path());
       logger.err("Error: @", e.toString()); 
@@ -66,8 +72,10 @@ public abstract class AddressProvider {
   protected boolean saveCache() {
     DynamicSettings file = getCacheFile();
     
-    try { file.putJson("cache", cache); } 
-    catch(Exception e) {
+    try { 
+      file.putJson("cache", cache); 
+      logger.debug(file.isModified() ? "Cache saved" : "Cache not modified");
+    } catch(Exception e) {
       logger.err("Failed to write cache file '@'.", file.getSettingsFile().path());
       logger.err("Error: @", e.toString());
       return false;
@@ -99,7 +107,10 @@ public abstract class AddressProvider {
   }
   
   protected DynamicSettings getCacheFile() {
-    if (cacheFile == null) cacheFile = new DynamicSettings(getFile());
+    if (cacheFile == null) {
+      cacheFile = new DynamicSettings(getFile());
+      cacheFile.setErrorHandler(logger::err);
+    }
     return cacheFile;
   }
   
@@ -133,6 +144,6 @@ public abstract class AddressProvider {
       }
     }
     
-    return folder.child(name + ".bin");
+    return folder.child(name + "." + fileExt);
   }
 }

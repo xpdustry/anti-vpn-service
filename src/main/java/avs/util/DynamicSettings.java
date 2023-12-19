@@ -36,17 +36,18 @@ public class DynamicSettings {
   
   public static Fi logFile = mindustry.Vars.modDirectory.child("settings.log");
   public static int autosaveTimeout = 360; // in seconds
-  
-  protected static Thread autosaveThread = Threads.daemon("AVS-Autosave", () -> {
+  public static Thread autosaveThread = Threads.daemon("AVS-Autosave", () -> {
+    try { Threads.sleep(autosaveTimeout * 1000); }
+    catch (RuntimeException e) { return; };
+    writeLogStatic("Autosave...");
     files.each(s -> s.autosave());
-    Threads.sleep(autosaveTimeout * 1000);
   });
   
   protected final Fi file;
   
   protected HashMap<String, Object> values = new HashMap<>();
   protected boolean modified;
-  protected Cons<Throwable> errorHandler;
+  protected Cons<Throwable> errorHandler = Log::err;
   protected boolean hasErrored = false, 
                     shouldAutosave = true, 
                     loaded = false, 
@@ -117,7 +118,7 @@ public class DynamicSettings {
       try{
           saveValues();
       }catch(Throwable error){
-          writeLog("Error in forceSave to " + getSettingsFile() + ":\n" + Strings.getStackTrace(error));
+          writeLog("Error in forceSave to:\n" + Strings.getStackTrace(error));
           if(errorHandler != null){
               if(!hasErrored) errorHandler.get(error);
           }else{
@@ -140,10 +141,12 @@ public class DynamicSettings {
       if(modified && shouldAutosave){
           forceSave();
           modified = false;
+          writeLog("autosave");
       }
   }
   
   public synchronized static void forceGlobalAutosave() {
+    writeLogStatic("Forcing autosave...");
     files.each(s -> s.autosave());
   }
 
@@ -151,7 +154,8 @@ public class DynamicSettings {
   public synchronized void loadValues(){
       //don't load settings files if neither of them exist
       if(!getSettingsFile().exists()){
-          writeLog("No settings file found: " + getSettingsFile().absolutePath());
+          writeLog("No settings file found");
+          saveValues();
           return;
       }
 
@@ -160,7 +164,7 @@ public class DynamicSettings {
           writeLog("Loaded " + values.size() + " values");
       }catch(Throwable e){
           Log.err("Failed to load settings file.", e);
-          writeLog("Failed to load file " + getSettingsFile() + ":\n" + Strings.getStackTrace(e));
+          writeLog("Failed to load file:\n" + Strings.getStackTrace(e));
       }
   }
 
@@ -400,10 +404,19 @@ public class DynamicSettings {
   /** Appends to the settings log. Used for diagnosis of the save wipe bug. Never throws an error. */
   protected void writeLog(String text){
     if (!logging) return; 
-      try{
-          logFile.writeString("[" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()) + "] {" + file.path() + "} " + text + "\n", true);
-      }catch(Throwable t){
-          Log.err("Failed to write settings logs of file '" + file.path() + "' at '" + logFile.path() + "'", t);
-      }
+    try{
+        logFile.writeString("[" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()) + "] {" + file.path() + "} " + text + "\n", true);
+    }catch(Throwable t){
+        Log.err("Failed to write settings logs of file '" + file.path() + "' at '" + logFile.path() + "'", t);
+    }
   }
+  
+  protected static void writeLogStatic(String text){
+    try{
+        logFile.writeString("[" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()) + "] " + text + "\n", true);
+    }catch(Throwable t){
+        Log.err("Failed to write settings logs at '" + logFile.path() + "'", t);
+    }
+  }
+  
 }

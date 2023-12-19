@@ -1,43 +1,62 @@
 package avs.service.providers.types;
 
 import arc.struct.Seq;
+import arc.util.serialization.JsonValue;
 
 import avs.service.providers.AddressValidity;
+import avs.util.AwaitHttp;
 import avs.util.PVars;
 import avs.util.Subnet;
 
 
 public abstract class CloudDownloadedAddressProvider extends AddressProvider {
+  public final String url;
   /* Define the type of provider, used for statistics. Default is VPN */
   protected LocalAddressProviderType providerType = LocalAddressProviderType.basic;
   
-  public CloudDownloadedAddressProvider(String displayName, String name) { 
+  private boolean loaded;
+  private Seq<Subnet> list;
+  private Throwable error;
+  
+  public CloudDownloadedAddressProvider(String displayName, String name, String url) { 
     super(displayName, name); 
     customFolder = PVars.cacheFolder.child("cloud");
+    if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
+    this.url = url.strip();
   }
-  public CloudDownloadedAddressProvider(String name) { 
+  public CloudDownloadedAddressProvider(String name, String url) { 
     super(name); 
     customFolder = PVars.cacheFolder.child("cloud");
+    if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
+    this.url = url.strip();
   }
 
   @Override
   public boolean load() {
-    boolean loaded = true;
-    Seq<Subnet> list;
-    Exception error = new NullPointerException();
+    loaded = false;
+    list = new Seq<>();
+    error = new Exception("unknown error");
+
+    try { 
+      JsonValue fetched = downloadList();
+      
+      if (fetched != null) {
+        list = extractAddressRanges(fetched);
+        loaded = true;
+        
+      } else {
+        AwaitHttp.get(url, success -> {
+          if (success.getStatus() == AwaitHttp.HttpStatus.OK) {
+            list.addAll(extractAddressRanges(new arc.util.serialization.JsonReader().parse(success.getResultAsString().strip())));
+            loaded = true;
+            
+          } else error = new Exception(success.getStatus().toString().replace('_', ' '));
+        }, failure -> error = failure);
+      }
+      
+    } catch (Exception e) { error = e; }
     
-    try { list = downloadList(); }
-    catch (Exception e) {
-      list = new Seq<>();
-      loaded = false;
-      error = e;
-    }
-    
-    if (list == null) {
-      list = new Seq<>();
-      loaded = false;
-    }
-    
+    if (list == null) list = new Seq<>();
     list.removeAll(v -> v == null);
     
     // If failed to fetch list, use cached list
@@ -46,7 +65,7 @@ public abstract class CloudDownloadedAddressProvider extends AddressProvider {
         logger.warn("Fetched list is empty. Using cached list...");
       } else {
         logger.err("Failed to fetch addresses!");
-        logger.err("Error: " + error.toString());
+        logger.err("Error: " + error.getLocalizedMessage());
         logger.warn("Using cached list...");
       }
       return reload();
@@ -77,14 +96,18 @@ public abstract class CloudDownloadedAddressProvider extends AddressProvider {
     
     // Cache file probably not existing
     if (!loaded) logger.err("Failed to load addresses! Skipping it...");
-    else if (cache.isEmpty()) logger.debug("No addresses found.");
+    else if (cache.isEmpty()) logger.warn("No addresses found.");
     else logger.info("Loaded @ address" + (cache.size > 1 ? "es" : "") + " from cache file.", cache.size);
     
     return loaded;
   }
 
-  public abstract Seq<Subnet> downloadList();
-  
+  /* Redefine this if your provider have a custom way to get addresses */
+  public JsonValue downloadList() {
+    return null;
+  }
+  /* Extract wanted addresses from server reply */
+  public abstract Seq<Subnet> extractAddressRanges(JsonValue downloaded);
   
   protected static enum LocalAddressProviderType {
     vpn(0b1000),

@@ -11,14 +11,17 @@ public class Logger{
   public static String pluginTopic = "&lc[Anti VPN Service]";
   
   public final String topic;
+  private final Object[] empty = {};
+  private final String tag;
   
   public Logger() { this(""); }
   public Logger(String topic) {
     this.topic = topic;
+    this.tag = topic.isEmpty() ? "&fr" : topic + "&fr ";
   }
   
   public void log(LogLevel level, String text, Object... args){
-    Log.log(level, String.join(" ", pluginTopic, topic + "&fr", text), args);
+    Log.log(level, pluginTopic + " " + tag + text, args);
   }
 
   public void debug(String text, Object... args){
@@ -26,7 +29,7 @@ public class Logger{
   }
   
   public void debug(Object object){
-    debug(String.valueOf(object));
+    debug(String.valueOf(object), empty);
   }
   
   public  void info(String text, Object... args){
@@ -34,7 +37,7 @@ public class Logger{
   }
   
   public void info(Object object){
-    info(String.valueOf(object));
+    info(String.valueOf(object), empty);
   }
   
   public void warn(String text, Object... args){

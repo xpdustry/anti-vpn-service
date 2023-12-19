@@ -12,6 +12,7 @@ import mindustry.net.Packets.ConnectPacket;
 import mindustry.net.Packets.KickReason;
 
 import avs.service.providers.AddressValidity;
+import avs.util.DynamicSettings;
 import avs.util.Logger;
 import avs.util.PVars;
 
@@ -21,21 +22,20 @@ public class ServiceManager {
   private static String message = "Your ip is flagged as VPN!"; // Message for player
   private static Logger logger = new Logger();
   
-  public static void registerServerListeners() {
+  public static boolean registerServerListeners() {
     setPoolSize();
     try { registerVpnCheckerListener(); } 
     catch (Exception err) {
       logger.err("A security manager is present in this java version! Cannot put the blacklist listeners first in events list.");
-      logger.err("Please remove the security manager if you want a first priority execution for backlist listener");
-      logger.err("");
       logger.err(err);
       logger.warn("");
       logger.warn("Anti VPN Service has been disabled due to previous errors");
       logger.info("Shutting down IP Validator...");
       Threads.await(threadPool);
-      return;
+      return false;
     }
     registerServerExitListener();
+    return true;
   }
   
   /* Set size of thread pool */
@@ -55,10 +55,16 @@ public class ServiceManager {
     final java.lang.reflect.Field field = mindustry.net.Net.class.getDeclaredField("serverListeners");
     field.setAccessible(true);
     @SuppressWarnings("unchecked")
-    final Cons2<NetConnection, Object> originalListener = ((arc.struct.ObjectMap<Class<?>, Cons2<NetConnection, Object>>) field.get(null)).get(ConnectPacket.class);
+    final Cons2<NetConnection, Object> originalListener = ((arc.struct.ObjectMap<Class<?>, Cons2<NetConnection, Object>>) field.get(Vars.net)).get(ConnectPacket.class);
 
     // Wrap the original listener
     Vars.net.handleServer(ConnectPacket.class, (con, packet) -> {
+      if (!AntiVpnService.operational) {
+        logger.warn("Receive connection from client @, but the service is not operational.", con.address);
+        con.kick(mindustry.net.Packets.KickReason.serverRestarting, 0);
+        return;
+      }
+      
       // Rewrite some part of the initial listener
       if(con.kicked) return;
       if(con.address.startsWith("steam:")) packet.uuid = con.address.substring("steam:".length());
@@ -83,20 +89,20 @@ public class ServiceManager {
           // Check the IP
           AddressValidity reply = AntiVpnService.checkIP(con.address);
     
-          if (!reply.isValid()) {
+          if (reply != null && !reply.isValid()) {
             // Kick the client without duration to avoid creating an empty account, but still register an kick duration
             con.kick(message + (PVars.printIP ? "[lightgray](IP: " + con.address + ")[]" : ""), infos == null ? 0 : 30 * 1000);
             if (infos == null) 
               Vars.netServer.admins.kickedIPs.put(con.address, Math.max(Vars.netServer.admins.kickedIPs.get(con.address, 0L), Time.millis() + 30 * 1000));
             return;
-          }
+          } else logger.info("Check passed for client @ [@]", con.address, con.uuid);
           
           // Now run the original listener
           if (originalListener != null) arc.Core.app.post(() -> originalListener.get(con, packet));         
         });          
       } catch (java.util.concurrent.RejectedExecutionException e) {
         // To many connection at same time, kick the player and invite it to retry connection
-        logger.debug("Failed to stats ip for client @ [@]", con.address, con.uuid);
+        logger.warn("Failed to stats ip for client @ [@]", con.address, con.uuid);
         con.kick(mindustry.net.Packets.KickReason.serverRestarting, 0);
       }
     });
@@ -109,12 +115,13 @@ public class ServiceManager {
       public void dispose() {
         logger.info("Waiting for IP checks to be completed...");
         Threads.await(threadPool);
+        DynamicSettings.autosaveThread.interrupt();
         logger.info("Saving providers...");
         AntiVpnService.saveProviders();
         logger.info("Saving settings...");
         PVars.saveSettings();
         logger.debug("Writing settings files...");
-        avs.util.DynamicSettings.forceGlobalAutosave();
+        DynamicSettings.forceGlobalAutosave();
       }
     });    
   }

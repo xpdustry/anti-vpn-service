@@ -1,7 +1,7 @@
 package avs.util;
 
-import arc.Core;
 import arc.files.Fi;
+
 import mindustry.Vars;
 
 
@@ -29,14 +29,10 @@ public class PVars {
   }
   
   public static void loadSettings() {
-    // TODO: save this to plain text json
-    if (settingsFile == null) {
-      settingsFile = new DynamicSettings(settingsFolder.child("settings.bin"));
-      settingsFile.load();
-    }
+    // TODO: save this to plain text json instead
     
-    if (settingsFile.has("avs-settings")) {
-      boolean[] settings = Strings.integer2binary(Core.settings.getInt("avs-settings"), 2);
+    if (getSettingsFile().has("avs-settings")) {
+      boolean[] settings = Strings.integer2binary(getSettingsFile().getLong("avs-settings"), 2);
 
       // Avoid errors when adding new settings
       try {
@@ -49,14 +45,19 @@ public class PVars {
   }
 
   public static void saveSettings() {
+    // TODO: put settings for providers
+    
+    getSettingsFile().put("avs-settings", 
+        Strings.binary2integer(serviceEnabled, printIP));
+  }
+  
+  public static DynamicSettings getSettingsFile() {
     if (settingsFile == null) {
       settingsFile = new DynamicSettings(settingsFolder.child("settings.bin"));
+      settingsFile.setErrorHandler(new Logger()::err);
       settingsFile.load();
     }
     
-    // TODO: put settings for providers
-    
-    settingsFile.put("avs-settings", 
-        Strings.binary2integer(serviceEnabled, printIP));
+    return settingsFile;
   }
 }

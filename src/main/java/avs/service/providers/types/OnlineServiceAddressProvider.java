@@ -5,10 +5,10 @@ import java.text.MessageFormat;
 import arc.files.Fi;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
-import arc.util.Http;
 
 import avs.service.AntiVpnService;
 import avs.service.providers.AddressValidity;
+import avs.util.AwaitHttp;
 import avs.util.PVars;
 
 
@@ -28,12 +28,14 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
     this.url = url.strip();
     customFolder = PVars.tokensFolder;
+    fileExt = "txt";
   }
   public OnlineServiceAddressProvider(String displayName, String name, String url) { 
     super(displayName, name); 
     if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
     this.url = url.strip();
     customFolder = PVars.tokensFolder;
+    fileExt = "txt";
   }
   
   @Override
@@ -83,7 +85,7 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     Fi tokensFile = getFile();
     
     try {
-      tokensFile.writeString("# vv Add service tokens below vv (one token per line)");
+      tokensFile.writeString("# vv Add service tokens below vv (one token per line)\n");
       tokens.each((t, v) -> tokensFile.writeString(t + "\n", true));
       
     } catch (Exception e) {
@@ -200,8 +202,8 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
   private ServiceReply request(String url) {
     ServiceReply reply = new ServiceReply();
     
-    Http.get(url, success -> {
-      if (success.getStatus() == Http.HttpStatus.OK) {
+    AwaitHttp.get(url, success -> {
+      if (success.getStatus() == AwaitHttp.HttpStatus.OK) {
         try { handleReply(success.getResultAsString(), reply); }
         catch (Exception e) {
           reply.type = ServiceReplyType.ERROR;
@@ -215,9 +217,8 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
       
       reply.status = success.getStatus();
       
-    }, failed -> {
-      if (failed instanceof Http.HttpStatusException) {
-        Http.HttpStatusException status = (Http.HttpStatusException) failed;
+    }, failure -> {
+      if (failure instanceof AwaitHttp.HttpStatusException status) {
         reply.status = status.status;
         
         if (status.status.code >= 500 || (
@@ -229,13 +230,13 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
           reply.type = ServiceReplyType.ERROR;
         
         String message = status.response.getResultAsString();
-        if (message.isBlank()) reply.message = status.toString();
+        if (message.isBlank()) reply.message = status.getLocalizedMessage();
         else reply.message = message.strip();
       }
       
       // Error while processing the request so tell the service not found
       reply.type = ServiceReplyType.NOT_FOUND;
-      reply.message = failed.toString();
+      reply.message = failure.toString();
     });
     
     return reply;
@@ -249,7 +250,7 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     public @arc.util.Nullable AddressValidity result = null;
     public ServiceReplyType type = ServiceReplyType.ERROR;
     public String message = "";
-    public Http.HttpStatus status = Http.HttpStatus.UNKNOWN_STATUS;
+    public AwaitHttp.HttpStatus status = AwaitHttp.HttpStatus.UNKNOWN_STATUS;
     
     public void setReply(ServiceReply other) {
       result = other.result;
