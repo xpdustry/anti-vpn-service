@@ -3,7 +3,7 @@ package avs.service.providers.custom;
 
 public class CachedFlaggedAddress extends avs.service.providers.types.CustomAddressProvider {
   public CachedFlaggedAddress() {
-    super("Flagged Address Cache", avs.util.PVars.flaggedCacheProviderName);
+    super("Flagged Address Cache", avs.config.PVars.flaggedCacheProviderName);
   }
 
   @Override
@@ -14,7 +14,7 @@ public class CachedFlaggedAddress extends avs.service.providers.types.CustomAddr
     // So check if doen't have a mask and it's not a network IP or broadcast IP. 
     try { 
       cache.each(v -> {
-        try { avs.service.providers.AddressValidity.checkIP(v.ip.toString()); }
+        try { avs.util.address.AddressValidity.checkIP(v.ip.toString()); }
         catch (Exception e) { 
           logger.err("Failed to load flagged IPs cache file. (ip: @)", v.ip.toString());
           logger.err("Error: @", e.toString());

@@ -1,12 +1,12 @@
 package avs.service.providers.custom;
 
-import avs.service.providers.AddressValidity;
+import avs.util.address.AddressValidity;
 
 
 public class WhitelistAddress extends avs.service.providers.types.CustomAddressProvider {
   public WhitelistAddress() {
-    super("Whitelist", avs.util.PVars.whitelistProviderName);
-    customFolder = avs.util.PVars.settingsFolder; // Must be saved in plugin settings
+    super("Whitelist", avs.config.PVars.whitelistProviderName);
+    customFolder = avs.config.PVars.settingsFolder; // Must be saved in plugin settings
   }
 
   @Override

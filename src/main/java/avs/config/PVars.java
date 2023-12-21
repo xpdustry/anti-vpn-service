@@ -1,6 +1,10 @@
-package avs.util;
+package avs.config;
 
 import arc.files.Fi;
+
+import avs.util.DynamicSettings;
+import avs.util.Logger;
+import avs.util.Strings;
 
 import mindustry.Vars;
 

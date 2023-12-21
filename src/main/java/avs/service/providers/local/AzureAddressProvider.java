@@ -7,9 +7,8 @@ import java.util.regex.Matcher;
 import arc.struct.Seq;
 import arc.struct.OrderedSet;
 import arc.util.serialization.JsonValue;
-
-import avs.util.AwaitHttp;
-import avs.util.Subnet;
+import avs.util.network.AwaitHttp;
+import avs.util.network.Subnet;
 
 
 public class AzureAddressProvider extends avs.service.providers.types.CloudDownloadedAddressProvider {
@@ -27,6 +26,7 @@ public class AzureAddressProvider extends avs.service.providers.types.CloudDownl
   
   public AzureAddressProvider() {
     super("Azure Cloud", "azure", urls.toString("\n"));
+    this.providerType = CloudAddressProviderType.proxy;
   }
 
   @Override

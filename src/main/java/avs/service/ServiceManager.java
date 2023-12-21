@@ -10,11 +10,10 @@ import mindustry.Vars;
 import mindustry.net.NetConnection;
 import mindustry.net.Packets.ConnectPacket;
 import mindustry.net.Packets.KickReason;
-
-import avs.service.providers.AddressValidity;
+import avs.config.PVars;
 import avs.util.DynamicSettings;
 import avs.util.Logger;
-import avs.util.PVars;
+import avs.util.address.AddressValidity;
 
 
 public class ServiceManager {
@@ -89,9 +88,10 @@ public class ServiceManager {
           // Check the IP
           AddressValidity reply = AntiVpnService.checkIP(con.address);
     
-          if (reply != null && !reply.isValid()) {
+          if (reply != null && reply.type.isNotValid()) {
+            logger.info("Detected a blacklisted ip for client @ [@]!", con.address, con.uuid);
             // Kick the client without duration to avoid creating an empty account, but still register an kick duration
-            con.kick(message + (PVars.printIP ? "[lightgray](IP: " + con.address + ")[]" : ""), infos == null ? 0 : 30 * 1000);
+            con.kick(message + (PVars.printIP ? "\n\n[lightgray]IP: " + con.address + "[]" : ""), infos == null ? 0 : 30 * 1000);
             if (infos == null) 
               Vars.netServer.admins.kickedIPs.put(con.address, Math.max(Vars.netServer.admins.kickedIPs.get(con.address, 0L), Time.millis() + 30 * 1000));
             return;

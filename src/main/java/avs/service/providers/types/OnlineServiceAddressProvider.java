@@ -5,11 +5,10 @@ import java.text.MessageFormat;
 import arc.files.Fi;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
-
+import avs.config.PVars;
 import avs.service.AntiVpnService;
-import avs.service.providers.AddressValidity;
-import avs.util.AwaitHttp;
-import avs.util.PVars;
+import avs.util.address.AddressValidity;
+import avs.util.network.AwaitHttp;
 
 
 public abstract class OnlineServiceAddressProvider extends AddressProvider {
@@ -120,7 +119,10 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
   
   @Override
   public AddressValidity checkIP(String ip) {
-    if (!enabled) return null;
+    if (!enabled) {
+      logger.debug("Provider disabled, cannot check ip");
+      return null;
+    }
     
     // if service is unavailable for moment, don't use it 
     if (unavailableTimeout > 0 && unavailableTimeout-- > 0) {
@@ -128,6 +130,7 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
       return null;
     }
     
+    logger.debug("Checking ip '@'", ip);
     ServiceReply reply = new ServiceReply();
     
     if (hasTokens) {
@@ -167,7 +170,11 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
             logger.warn("Skipping this token...");
             
           } else {
-            if (AntiVpnService.flaggedCache != null) AntiVpnService.flaggedCache.blockAddress(reply.result);
+            if (reply.result != null) {
+              logger.debug("Match found! IP is @", (reply.result.type.isNotValid() ? "not " : "") + "valid");
+              if (AntiVpnService.flaggedCache != null && reply.result.type.isNotValid()) AntiVpnService.flaggedCache.blockAddress(reply.result);
+            }
+            
             return reply.result;
           }
         }
@@ -193,7 +200,10 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
         
         return null;
       
-      } else if (AntiVpnService.flaggedCache != null) AntiVpnService.flaggedCache.blockAddress(reply.result);
+      } else if (reply.result != null) {
+        logger.debug("Match found! IP is @", (reply.result.type.isNotValid() ? "not " : "") + "valid");
+        if (AntiVpnService.flaggedCache != null && reply.result.type.isNotValid()) AntiVpnService.flaggedCache.blockAddress(reply.result);
+      }
     }
 
     return reply.result;
@@ -204,8 +214,10 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     
     AwaitHttp.get(url, success -> {
       if (success.getStatus() == AwaitHttp.HttpStatus.OK) {
-        try { handleReply(success.getResultAsString(), reply); }
-        catch (Exception e) {
+        try { 
+          handleReply(success.getResultAsString(), reply); 
+          reply.type = ServiceReplyType.OK;
+        } catch (Exception e) {
           reply.type = ServiceReplyType.ERROR;
           reply.message = e.toString();
         } 

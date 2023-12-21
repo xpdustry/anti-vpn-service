@@ -1,6 +1,6 @@
 package avs.service.providers.types;
 
-import avs.service.providers.AddressValidity;
+import avs.util.address.AddressValidity;
 
 
 public abstract class CustomAddressProvider extends AddressProvider {
@@ -20,6 +20,9 @@ public abstract class CustomAddressProvider extends AddressProvider {
   }
   
   public boolean blockAddress(AddressValidity address) {
+    if (address == null) throw new NullPointerException("null address not allowed");
+    // IP is valid, no need to add it in cache
+    if (!address.type.isNotValid()) return false;
     // TODO: fire an event. Wanted?
     boolean added = cache.addUnique(address);
     if (added) save();

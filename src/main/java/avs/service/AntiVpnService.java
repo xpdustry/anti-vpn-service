@@ -3,8 +3,8 @@ package avs.service;
 import arc.struct.Seq;
 
 import avs.util.Logger;
-import avs.util.PVars;
-import avs.service.providers.*;
+import avs.util.address.AddressValidity;
+import avs.config.PVars;
 import avs.service.providers.types.*;
 import avs.service.providers.custom.*;
 import avs.service.providers.local.*;
@@ -17,12 +17,12 @@ public class AntiVpnService {
     // These providers must be checked at first
     customProviders = Seq.with(
       new WhitelistAddress(),
-      new UserAddressList(),
+      new CustomBlacklistAddressProvider(),
       new CachedFlaggedAddress()
   );
   public static Seq<CloudDownloadedAddressProvider> 
     // Next we have local lists, downloaded from providers and saved in cache
-    // Must be checked at second for more speed reponse
+    // Must be checked at second for more speed response
     localProviders = Seq.with(
       new AmazonWebServicesAddressProvider(),
       new AzureAddressProvider(),
@@ -51,9 +51,33 @@ public class AntiVpnService {
     AddressValidity result;
     
     // Whitelist is a special provider, the check is inverted
+    if (whitelist != null) {
+      result = whitelist.checkIP(ip);
+      if (result != null) {
+        logger.debug("Ignoring this ip, because it is whitelisted");
+        return null;
+      }
+    }
     
+    result = checkIP(ip, customProviders, p -> !p.name.equals(PVars.whitelistProviderName));
+    if (result != null && result.type.isNotValid()) return result;
+    result = checkIP(ip, localProviders);
+    if (result != null && result.type.isNotValid()) return result;
+    result = checkIP(ip, onlineProviders);
     
-
+    return result;
+  }
+  
+  public static AddressValidity checkIP(String ip, Seq<? extends AddressProvider> providers) { return checkIP(ip, providers, null); }
+  public static AddressValidity checkIP(String ip, Seq<? extends AddressProvider> providers, arc.func.Boolf<AddressProvider> predicate) {
+    AddressValidity result;
+    
+    for (int i=0; i<providers.size; i++) {
+      if (predicate != null && !predicate.get(providers.items[i])) continue;
+      result = providers.items[i].checkIP(ip);
+      if (result != null && result.type.isNotValid()) return result;
+    }
+    
     return null;
   }
   
@@ -63,15 +87,14 @@ public class AntiVpnService {
     customProviders.each(p -> p.load());
     localProviders.each(p -> p.load());
     onlineProviders.each(p -> p.load());
-    
-    // TODO: print total count
-    
+
     // Set lists used by other providers
     whitelist = customProviders.find(p -> p.name.equals(PVars.whitelistProviderName));
     if (whitelist == null) logger.warn("Unable to find whitelist provider.");
     flaggedCache = customProviders.find(p -> p.name.equals(PVars.flaggedCacheProviderName));
     if (flaggedCache == null) logger.warn("Unable to find flagged IPs cache.");
 
+    // Count the total
     totalAddresses = 0;
     totalLocalProviders = 0;
     customProviders.each(p -> {

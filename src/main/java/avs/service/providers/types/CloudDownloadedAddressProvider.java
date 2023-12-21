@@ -2,17 +2,16 @@ package avs.service.providers.types;
 
 import arc.struct.Seq;
 import arc.util.serialization.JsonValue;
-
-import avs.service.providers.AddressValidity;
-import avs.util.AwaitHttp;
-import avs.util.PVars;
-import avs.util.Subnet;
+import avs.config.PVars;
+import avs.util.address.AddressValidity;
+import avs.util.network.AwaitHttp;
+import avs.util.network.Subnet;
 
 
 public abstract class CloudDownloadedAddressProvider extends AddressProvider {
   public final String url;
   /* Define the type of provider, used for statistics. Default is VPN */
-  protected LocalAddressProviderType providerType = LocalAddressProviderType.basic;
+  protected CloudAddressProviderType providerType = CloudAddressProviderType.basic;
   
   private boolean loaded;
   private Seq<Subnet> list;
@@ -75,14 +74,15 @@ public abstract class CloudDownloadedAddressProvider extends AddressProvider {
     cache.clear();
     list.each(s -> {
       AddressValidity valid = new AddressValidity(s);
-      valid.isVPN = providerType.isVPN();
-      valid.isProxy = providerType.isProxy();
-      valid.isTOR = providerType.isTOR();
-      valid.isRelay = providerType.isRelay();
-      valid.isOther = providerType.isOther();
+      valid.type.vpn = providerType.isVPN();
+      valid.type.proxy = providerType.isProxy();
+      valid.type.tor = providerType.isTOR();
+      valid.type.relay = providerType.isRelay();
+      valid.type.other = providerType.isOther();
       
       cache.add(valid);
     });
+    list.clear();
     
     return save();
   }
@@ -91,8 +91,8 @@ public abstract class CloudDownloadedAddressProvider extends AddressProvider {
   @Override
   public boolean reload() {
     cache.clear();
-    getCacheFile().clear();
     boolean loaded = loadCache();
+    cache.removeAll(s -> s == null || s.ip == null || s.type == null);
     
     // Cache file probably not existing
     if (!loaded) logger.err("Failed to load addresses! Skipping it...");
@@ -109,7 +109,8 @@ public abstract class CloudDownloadedAddressProvider extends AddressProvider {
   /* Extract wanted addresses from server reply */
   public abstract Seq<Subnet> extractAddressRanges(JsonValue downloaded);
   
-  protected static enum LocalAddressProviderType {
+  
+  public static enum CloudAddressProviderType {
     vpn(0b1000),
     proxy(0b100),
     tor(0b10),
@@ -119,15 +120,15 @@ public abstract class CloudDownloadedAddressProvider extends AddressProvider {
     
     public final int val;
     
-    LocalAddressProviderType(int val) {
+    CloudAddressProviderType(int val) {
       this.val = val;
     }
     
-    public boolean isVPN() { return this == vpn; }
-    public boolean isProxy() { return this == proxy; }
-    public boolean isTOR() { return this == tor; }
-    public boolean isRelay() { return this == relay; }
-    public boolean isOther() { return this == other; }
+    public boolean isVPN() { return this.val == vpn.val; }
+    public boolean isProxy() { return this.val == proxy.val; }
+    public boolean isTOR() { return this.val == tor.val; }
+    public boolean isRelay() { return this.val == relay.val; }
+    public boolean isOther() { return this.val == other.val; }
     
     
     // TODO: implement a way to specifies multiple type of provider

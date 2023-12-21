@@ -1,4 +1,4 @@
-package avs.util;
+package avs.config;
 
 public class AVSConfig {
 

@@ -66,6 +66,7 @@ public class DynamicSettings {
     this.file = file;
     this.simpleJson = simpleJson;
     this.ureader = new UBJsonReader();
+    JsonSerializers.apply(json);
     files.add(this);
   }
 
@@ -114,11 +115,14 @@ public class DynamicSettings {
   /** Saves all values. */
   public synchronized void forceSave(){
       //never loaded, nothing to save
-      if(!loaded) return;
+      if(!loaded) {
+        writeLog("Tried to save a non-loaded file.");
+        return;
+      }
       try{
           saveValues();
       }catch(Throwable error){
-          writeLog("Error in forceSave to:\n" + Strings.getStackTrace(error));
+          writeLog("Error in forceSave:\n" + Strings.getStackTrace(error));
           if(errorHandler != null){
               if(!hasErrored) errorHandler.get(error);
           }else{
@@ -141,7 +145,6 @@ public class DynamicSettings {
       if(modified && shouldAutosave){
           forceSave();
           modified = false;
-          writeLog("autosave");
       }
   }
   
@@ -249,7 +252,8 @@ public class DynamicSettings {
       }catch(Throwable e){
           //file is now corrupt, delete it
           file.delete();
-          throw new RuntimeException("Error writing preferences: " + file, e);
+          writeLog("Error while writing values; File is now corrupt, deleted");
+          throw new RuntimeException("Error while writing preferences: " + file, e);
       }
 
       writeLog("Saving " + values.size() + " values; " + file.length() + " bytes");

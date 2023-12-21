@@ -4,25 +4,25 @@ version '1.0'
 
 sourceCompatibility = 16
 
-repositories{
+repositories {
     mavenCentral()
-    maven{ url 'https://www.jitpack.io' }
+    maven { url 'https://www.jitpack.io' }
 }
 
-ext{
+ext {
     //the build number that this plugin is made for
     mindustryVersion = 'v146'
 }
 
-dependencies{
+dependencies {
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
 }
 
-jar{
+jar {
     archiveFileName = "anti-vpn-service.jar"
     version="1.0"
-    from{
-        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }

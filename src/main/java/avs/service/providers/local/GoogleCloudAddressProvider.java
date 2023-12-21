@@ -3,8 +3,7 @@ package avs.service.providers.local;
 import arc.struct.OrderedSet;
 import arc.struct.Seq;
 import arc.util.serialization.JsonValue;
-
-import avs.util.Subnet;
+import avs.util.network.Subnet;
 
 
 public class GoogleCloudAddressProvider extends avs.service.providers.types.CloudDownloadedAddressProvider {

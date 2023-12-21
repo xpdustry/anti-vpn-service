@@ -1,15 +1,19 @@
-package avs.util;
+package avs.util.network;
 
 import arc.func.Cons;
 import arc.func.ConsT;
 
 
 public class AwaitHttp extends arc.util.Http {
+  // To disable http requests if nedded
+  public static boolean disabled = false;
+  
   public static HttpRequest request(AwaitHttp.HttpMethod method, String url){
     if(url == null || url.isEmpty()) throw new NullPointerException("url cannot be null or empty.");
     return new HttpRequest(method) {
       @Override
       public void submit(arc.func.ConsT<HttpResponse, Exception> success){
+        if (disabled) return;
         try { AwaitHttp.exec.submit(() -> block(success)).get(); } 
         catch (Exception e) { arc.util.Log.err(e); }
       }

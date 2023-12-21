@@ -5,11 +5,10 @@ import java.net.InetAddress;
 import arc.files.Fi;
 import arc.struct.Seq;
 import arc.util.Strings;
-
-import avs.service.providers.AddressValidity;
+import avs.config.PVars;
 import avs.util.DynamicSettings;
 import avs.util.Logger;
-import avs.util.PVars;
+import avs.util.address.AddressValidity;
 
 
 public abstract class AddressProvider {
@@ -45,6 +44,7 @@ public abstract class AddressProvider {
   public boolean reload() {
     cache.clear();
     getCacheFile().clear();
+    getCacheFile().load();
     return load();
   }
   
@@ -57,8 +57,8 @@ public abstract class AddressProvider {
     DynamicSettings file = getCacheFile();
     
     try { 
-      file.load();
-      cache = file.getJson("cache", Seq.class, Seq::new); 
+      if (!file.has("cache")) logger.debug("Key 'cache' not found in file");
+      cache = file.getJson("cache", Seq.class, AddressValidity.class, Seq::new); 
       logger.debug("Cache loaded");
     } catch (Exception e) { 
       logger.err("Failed to load cache file '@'. ", file.getSettingsFile().path());
@@ -73,7 +73,7 @@ public abstract class AddressProvider {
     DynamicSettings file = getCacheFile();
     
     try { 
-      file.putJson("cache", cache); 
+      file.putJson("cache", AddressValidity.class, cache); 
       logger.debug(file.isModified() ? "Cache saved" : "Cache not modified");
     } catch(Exception e) {
       logger.err("Failed to write cache file '@'.", file.getSettingsFile().path());
@@ -89,12 +89,17 @@ public abstract class AddressProvider {
    * Return null if ip is not blacklisted
    */
   public AddressValidity checkIP(String ip) {
-    if (!enabled) return null;
+    if (!enabled) {
+      logger.debug("Provider disabled, cannot check ip");
+      return null;
+    }
     
+    logger.debug("Checking ip '@'", ip);
     try {
       InetAddress inet = InetAddress.getByName(ip); // Normally, never throw an error
       AddressValidity valid = cache.find(v -> v.ip.isInNet(inet));
       // TODO: fire an event
+      if (valid != null) logger.debug("Match found! IP is @", (valid.type.isNotValid() ? "not " : "") + "valid");
       return valid;
 
     } catch (Exception e) {
@@ -110,6 +115,7 @@ public abstract class AddressProvider {
     if (cacheFile == null) {
       cacheFile = new DynamicSettings(getFile());
       cacheFile.setErrorHandler(logger::err);
+      cacheFile.load();
     }
     return cacheFile;
   }

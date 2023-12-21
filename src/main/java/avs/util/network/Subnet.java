@@ -1,4 +1,4 @@
-package avs.util;
+package avs.util.network;
 
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -13,6 +13,7 @@ import java.net.UnknownHostException;
 public class Subnet
 {
     final private int bytesSubnetCount;
+    final private int bitsMaskCount;
     final private BigInteger bigMask;
     final private BigInteger bigSubnetMasked;
     final public String address;
@@ -21,6 +22,7 @@ public class Subnet
     public Subnet( final InetAddress subnetAddress, final int bits )
     {
         this.bytesSubnetCount = subnetAddress.getAddress().length; // 4 or 16
+        this.bitsMaskCount = bits;
         this.bigMask = BigInteger.valueOf( -1 ).shiftLeft( this.bytesSubnetCount*8 - bits ); // mask = -1 << 32 - bits
         this.bigSubnetMasked = new BigInteger( subnetAddress.getAddress() ).and( this.bigMask );
         this.address = bigInteger2IpString( this.bigSubnetMasked, this.bytesSubnetCount );
@@ -30,6 +32,12 @@ public class Subnet
     public Subnet( final InetAddress subnetAddress, final InetAddress mask )
     {
         this.bytesSubnetCount = subnetAddress.getAddress().length;
+        if (null == mask) this.bitsMaskCount = this.bytesSubnetCount*8;
+        else {
+          int bits = 0;
+          for (byte b : mask.getAddress()) bits += Integer.bitCount(b);
+          this.bitsMaskCount = bits;
+        }
         this.bigMask = null == mask ? BigInteger.valueOf( -1 ) : new BigInteger( mask.getAddress() ); // no mask given case is handled here.
         this.bigSubnetMasked = new BigInteger( subnetAddress.getAddress() ).and( this.bigMask );
         this.address = bigInteger2IpString( this.bigSubnetMasked, this.bytesSubnetCount );
@@ -52,7 +60,7 @@ public class Subnet
                 return new Subnet( InetAddress.getByName( stringArr[ 0 ] ), InetAddress.getByName( stringArr[ 1 ] ) );
             else
                 return new Subnet( InetAddress.getByName( stringArr[ 0 ] ), Integer.parseInt( stringArr[ 1 ] ) );     
-        } catch ( final UnknownHostException e ) {
+        } catch ( final UnknownHostException | NullPointerException e ) {
             return null;
         }
     }
@@ -103,7 +111,7 @@ public class Subnet
     @Override
     public String toString()
     {
-        return address + (this.bigMask.intValue() == -1 ? "" : "/" + bigInteger2IpString( this.bigMask, this.bytesSubnetCount ));
+        return address + "/" + this.bitsMaskCount;
     }
 
     static public String bigInteger2IpString( final BigInteger bigInteger, final int displayBytes )

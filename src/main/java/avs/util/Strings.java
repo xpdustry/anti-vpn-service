@@ -78,7 +78,7 @@ public class Strings extends arc.util.Strings {
     // Check value because 0 have a negative size  
     if (number == 0) return new boolean[bits == 0 ? 1 : bits];
       
-    int size = bits == 0 ? (int) (Math.log(number)/Math.log(2)+1) : bits;
+    int size = bits < 1 ? (int) (Math.log(number)/Math.log(2)+1) : bits;
     boolean[] out = new boolean[size];
     
     while (size-- > 0) {

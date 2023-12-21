@@ -3,11 +3,11 @@ package avs;
 import mindustry.Vars;
 
 import arc.util.Log;
-
+import avs.config.PVars;
 import avs.service.AntiVpnService;
 import avs.service.ServiceManager;
 import avs.util.DynamicSettings;
-import avs.util.PVars;
+import avs.util.network.AwaitHttp;
 
 
 public class Main extends mindustry.mod.Plugin {
@@ -22,6 +22,7 @@ public class Main extends mindustry.mod.Plugin {
     DynamicSettings.logFile = PVars.settingsFolder.child("avs-logs.log");
     DynamicSettings.autosaveTimeout = mindustry.net.Administration.Config.autosaveSpacing.num();
     
+    Log.info("Checking for updates...");
     // TODO: check for new version
     
     if (ServiceManager.registerServerListeners()) {

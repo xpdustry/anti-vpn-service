@@ -1,10 +1,10 @@
 package avs.service.providers.online;
 
-import arc.util.Strings;
 import arc.util.serialization.JsonReader;
 import arc.util.serialization.JsonValue;
-import avs.service.providers.AddressInfos;
-import avs.service.providers.AddressValidity;
+
+import avs.util.address.*;
+import avs.util.Strings;
 
 
 public class VpnApiService extends avs.service.providers.types.OnlineServiceAddressProvider {
@@ -45,6 +45,7 @@ public class VpnApiService extends avs.service.providers.types.OnlineServiceAddr
     String ip = soup.getString("ip");
     AddressInfos infos = new AddressInfos(ip);
     AddressValidity valid = new AddressValidity(ip, infos);
+    AddressType type = new AddressType();
     
     JsonValue security = soup.get("security");
     JsonValue location = soup.get("location");
@@ -61,11 +62,12 @@ public class VpnApiService extends avs.service.providers.types.OnlineServiceAddr
     infos.latitude = Strings.parseFloat(location.getString("latitude"));
     
     // Fill vpn infos
-    valid.isVPN = security.getBoolean("vpn");
-    valid.isProxy = security.getBoolean("proxy");
-    valid.isTOR= security.getBoolean("tor");
-    valid.isRelay = security.getBoolean("relay");
-    valid.isOther = false;
+    type.vpn = security.getBoolean("vpn");
+    type.proxy = security.getBoolean("proxy");
+    type.tor= security.getBoolean("tor");
+    type.relay = security.getBoolean("relay");
+    type.other = false;
+    valid.type = type;
     
     // And return the all
     reply.result = valid;
