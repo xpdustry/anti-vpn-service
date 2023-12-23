@@ -80,7 +80,7 @@ public class AntiVpnService {
     if (whitelist != null) {
       result = whitelist.checkIP(ip);
       if (result != null) {
-        logger.debug("Ignoring this ip, because it is whitelisted");
+        logger.debug("Ignoring this ip, because it's whitelisted");
         return null;
       }
     }
@@ -101,7 +101,10 @@ public class AntiVpnService {
     for (int i=0; i<providers.size; i++) {
       if (predicate != null && !predicate.get(providers.items[i])) continue;
       result = providers.items[i].checkIP(ip);
-      if (result != null && result.type.isNotValid()) return result;
+      if (result != null && (result.type.isNotValid() || 
+          (providers.items[i] instanceof OnlineServiceAddressProvider && 
+            ((OnlineServiceAddressProvider) providers.items[i]).isTrusted()))) 
+        return result;
     }
     
     return null;

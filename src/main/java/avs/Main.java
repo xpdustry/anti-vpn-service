@@ -49,12 +49,19 @@ public class Main extends mindustry.mod.Plugin {
     // TODO: better welcome message
     
     mindustry.mod.Mods.ModMeta meta = Vars.mods.getMod(getClass()).meta;
-    PVars.setPluginFolder(Vars.modDirectory.child(meta.name));
-    DynamicSettings.logFile = PVars.settingsFolder.child("avs-logs.log");
-    DynamicSettings.autosaveTimeout = mindustry.net.Administration.Config.autosaveSpacing.num();
-    
     checkForUpdates(meta.repo, meta.version);
+    initPlugin(Vars.modDirectory.child(meta.name));
+    
     Log.info("");
+    Log.info("Loading finished in @ seconds", ((float) (System.currentTimeMillis()-start)/1000));
+    Log.info("&lg----------------------------------------------------------------");
+    Log.info("");
+  }
+  
+  public void initPlugin(arc.files.Fi workingDirectory) {
+    PVars.setPluginFolder(workingDirectory);
+    DynamicSettings.logFile = PVars.settingsFolder.child(workingDirectory.name() + "_files.log");
+    DynamicSettings.autosaveTimeout = mindustry.net.Administration.Config.autosaveSpacing.num();
 
     if (ServiceManager.registerServerListeners()) {
       PVars.loadSettings();
@@ -62,11 +69,6 @@ public class Main extends mindustry.mod.Plugin {
       AntiVpnService.logger.debug("Forcing autosave...");
       DynamicSettings.forceGlobalAutosave();
     }
-    
-    Log.info("");
-    Log.info("Loading finished in @ seconds", ((float) (System.currentTimeMillis()-start)/1000));
-    Log.info("&lg----------------------------------------------------------------");
-    Log.info("");
   }
 
   public void checkForUpdates(String repo, String currentVersion) {

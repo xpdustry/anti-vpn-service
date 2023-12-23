@@ -36,7 +36,9 @@ import avs.util.Strings;
 public class VpnApiService extends avs.service.providers.types.OnlineServiceAddressProvider {
   public VpnApiService() {
     super("VpnAPI.io Service", "vpnapi", "https://vpnapi.io/api/{0}?key={1}");
-    hasTokens = true;
+    canUseTokens = true;
+    urlWithoutTokens = "https://vpnapi.io/api/{0}";
+    isTrusted = true;
   }
 
   @Override

@@ -43,10 +43,16 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
    * Don't forgot to add '{0}' = the ip, '{1}' = the token (optional), in the URL.
    */
   public final String url;
+  /*
+   * The url of service, to use when 'needTokens' is false and no tokens in list.
+   */
+  public String urlWithoutTokens = "";
  
   protected ObjectMap<String, Integer> tokens = new ObjectMap<>();
-  // TODO: needTokens, if service can work without tokens
-  protected boolean hasTokens = false, available = true;
+  protected boolean canUseTokens = false, 
+      needTokens = false,
+      // Define whether the service is trusted when reporting that the IP valid, so the IP will be not checked by other services.
+      isTrusted = false; 
   protected int unavailableTimeout = 0;
   
   public OnlineServiceAddressProvider(String name, String url) { 
@@ -65,6 +71,18 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
   }
   
   @Override
+  public boolean load() {
+    // No tokens needed. skip tokens loading
+    if (!useTokens()) {
+      urlWithoutTokens = url;
+      logger.info("Service loaded");
+      return true;
+    
+    } else if (!needTokens && urlWithoutTokens.isBlank()) urlWithoutTokens = url;
+    return loadCache();
+  }
+  
+  @Override
   public boolean reload() {
     tokens.clear();
     return load();
@@ -73,12 +91,6 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
   //Cache are tokens for online services
   @Override
   protected boolean loadCache() {
-    // No tokens needed. skip this
-    if (!hasTokens) {
-      logger.info("Service loaded");
-      return true;
-    }
-    
     boolean loaded = true;
     Fi tokensFile = getFile();
     Seq<String> tokens_ = new Seq<>();
@@ -96,7 +108,8 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     tokens_.each(t -> tokens.put(t, 0));
     
     if (!loaded) logger.err("Failed to load tokens! Skipping this service...");
-    else if (tokens.isEmpty()) logger.warn("Service requires tokens, but the list is empty.");
+    else if (tokens.isEmpty() && needTokens) logger.warn("Service requires tokens, but the list is empty.");
+    else if (tokens.isEmpty()) logger.warn("No tokens found for this service, it will be used without.");
     else logger.info("Loaded @ token" + (tokens.size > 1 ? "s" : "") + ".", tokens.size);
     
     return loaded;
@@ -106,7 +119,7 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
   @Override
   protected boolean saveCache() {
     // No tokens needed. skip this
-    if (!hasTokens) return true;
+    if (!useTokens()) return true;
     
     Fi tokensFile = getFile();
     
@@ -123,22 +136,30 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
   }
   
   public boolean isAvailable() {
-    return available;
+    return unavailableTimeout <= 0;
+  }
+  
+  public boolean isTrusted() {
+    return isTrusted;
   }
   
   public boolean useTokens() {
-    return hasTokens;
+    return canUseTokens;
+  }
+  
+  public boolean willUseTokens() {
+    return useTokens() && !tokens.isEmpty();
   }
   
   public boolean addToken(String token) {
-    if (!hasTokens || tokens.containsKey(token.strip())) return false;
+    if (!useTokens() || tokens.containsKey(token.strip())) return false;
     tokens.put(token.strip(), 0);
     save();
     return true;
   }
   
   public boolean removeToken(String token) {
-    if (!hasTokens || !tokens.containsKey(token.strip())) return false;
+    if (!useTokens() || !tokens.containsKey(token.strip())) return false;
     tokens.remove(token.strip());
     save();
     return true;
@@ -152,7 +173,8 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     }
     
     // if service is unavailable for moment, don't use it 
-    if (unavailableTimeout > 0 && unavailableTimeout-- > 0) {
+    if (!isAvailable()) {
+      unavailableTimeout--;
       logger.debug("Service unavailable for moment. @ IP checks before availability verification", unavailableTimeout);
       return null;
     }
@@ -160,12 +182,12 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     logger.debug("Checking ip '@'", ip);
     ServiceReply reply = new ServiceReply();
     
-    if (hasTokens) {
-      if (tokens.isEmpty()) {
-        logger.debug("Service requires tokens, but the list is empty.");
-        return null;
-      }
-      
+    if (!willUseTokens() && needTokens) {
+      logger.debug("Service requires tokens, but the list is empty.");
+      return null;
+    }
+    
+    if (willUseTokens()) {
       for (ObjectMap.Entry<String, Integer> token : tokens.entries()) {
         if (token.value > 0) {
           token.value--;
@@ -210,7 +232,7 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
       logger.warn("Cannot check ip, all tokens has been skipped!");
       
     } else {
-      reply = request(MessageFormat.format(url, ip));
+      reply = request(MessageFormat.format(urlWithoutTokens, ip));
       
       if (reply.type != ServiceReplyType.OK) {
         if (reply.type == ServiceReplyType.UNAVAILABLE ||
@@ -236,7 +258,7 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
     return reply.result;
   }
 
-  private ServiceReply request(String url) {
+  public ServiceReply request(String url) {
     ServiceReply reply = new ServiceReply();
     
     AwaitHttp.get(url, success -> {
@@ -274,7 +296,8 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
         
         
         String message = status.response.getResultAsString();
-        if (message.isBlank()) reply.message = status.getLocalizedMessage();
+        // Use the exception message if result is empty or if is too long
+        if (message.isBlank() || message.length() > 512) reply.message = status.getLocalizedMessage();
         else reply.message = message.strip();
         return;
       }
