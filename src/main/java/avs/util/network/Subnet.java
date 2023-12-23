@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2015 CableLabs and others.  All rights reserved.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v1.0 which accompanies this distribution,
+ * and is available at http://www.eclipse.org/legal/epl-v10.html
+ */
+
 package avs.util.network;
 
 import java.math.BigInteger;
@@ -9,6 +17,7 @@ import java.net.UnknownHostException;
  * @author c3oe.de, based on snippets from Scott Plante, John Kugelmann
  * 
  * Taken from this StackOverflow post: https://stackoverflow.com/a/25165891
+ * and modified for us use.
  */
 public class Subnet
 {
