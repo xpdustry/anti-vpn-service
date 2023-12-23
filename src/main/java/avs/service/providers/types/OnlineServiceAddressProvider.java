@@ -19,6 +19,7 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
   public final String url;
  
   protected ObjectMap<String, Integer> tokens = new ObjectMap<>();
+  // TODO: needTokens, if service can work without tokens
   protected boolean hasTokens = false, available = true;
   protected int unavailableTimeout = 0;
   
@@ -240,10 +241,16 @@ public abstract class OnlineServiceAddressProvider extends AddressProvider {
           reply.type = ServiceReplyType.NOT_FOUND;
         else if (status.status.code >= 400) 
           reply.type = ServiceReplyType.ERROR;
+        else if (status.status.code == 429)
+          reply.type = ServiceReplyType.LIMIT_REACHED;
+        else if (status.status.code == 498)
+          reply.type = ServiceReplyType.INVALID_TOKEN;
+        
         
         String message = status.response.getResultAsString();
         if (message.isBlank()) reply.message = status.getLocalizedMessage();
         else reply.message = message.strip();
+        return;
       }
       
       // Error while processing the request so tell the service not found

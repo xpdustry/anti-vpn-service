@@ -3,6 +3,7 @@ package avs.service;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import arc.func.Cons2;
+import arc.util.Reflect;
 import arc.util.Threads;
 import arc.util.Time;
 
@@ -10,7 +11,9 @@ import mindustry.Vars;
 import mindustry.net.NetConnection;
 import mindustry.net.Packets.ConnectPacket;
 import mindustry.net.Packets.KickReason;
+
 import avs.config.PVars;
+import avs.util.Strings;
 import avs.util.DynamicSettings;
 import avs.util.Logger;
 import avs.util.address.AddressValidity;
@@ -18,13 +21,12 @@ import avs.util.address.AddressValidity;
 
 public class ServiceManager {
   private static ThreadPoolExecutor threadPool = (ThreadPoolExecutor) Threads.boundedExecutor("IPValidator", PVars.threadPoolSize);
-  private static String message = "Your ip is flagged as VPN!"; // Message for player
   private static Logger logger = new Logger();
   
   public static boolean registerServerListeners() {
     setPoolSize();
     try { registerVpnCheckerListener(); } 
-    catch (Exception err) {
+    catch (RuntimeException err) {
       logger.err("A security manager is present in this java version! Cannot put the blacklist listeners first in events list.");
       logger.err(err);
       logger.warn("");
@@ -49,18 +51,16 @@ public class ServiceManager {
   /* Takes control of the Connect Packet listener to wrap it
    * And be able to make the client wait while verifying his IP 
    */
-  public static void registerVpnCheckerListener() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+  public static void registerVpnCheckerListener() throws RuntimeException {
     // Get listeners by changing variable as public instead of private
-    final java.lang.reflect.Field field = mindustry.net.Net.class.getDeclaredField("serverListeners");
-    field.setAccessible(true);
     @SuppressWarnings("unchecked")
-    final Cons2<NetConnection, Object> originalListener = ((arc.struct.ObjectMap<Class<?>, Cons2<NetConnection, Object>>) field.get(Vars.net)).get(ConnectPacket.class);
+    final Cons2<NetConnection, Object> originalListener = ((arc.struct.ObjectMap<Class<?>, Cons2<NetConnection, Object>>) Reflect.get(Vars.net, "serverListeners")).get(ConnectPacket.class);
 
     // Wrap the original listener
     Vars.net.handleServer(ConnectPacket.class, (con, packet) -> {
       if (!AntiVpnService.operational) {
         logger.warn("Receive connection from client @, but the service is not operational.", con.address);
-        con.kick(mindustry.net.Packets.KickReason.serverRestarting, 0);
+        con.kick(KickReason.serverRestarting);
         return;
       }
       
@@ -80,7 +80,7 @@ public class ServiceManager {
       if(Time.millis() < Math.max(infos == null ? 0L : infos.lastKicked, Vars.netServer.admins.kickedIPs.get(con.address, 0L))){
         con.kick(KickReason.recentKick);
         return;
-    }
+      } else Vars.netServer.admins.kickedIPs.remove(PVars.kickMessage);
       
       // And submit a new task in the thread pool to avoid blocking the server
       try {
@@ -91,9 +91,9 @@ public class ServiceManager {
           if (reply != null && reply.type.isNotValid()) {
             logger.info("Detected a blacklisted ip for client @ [@]!", con.address, con.uuid);
             // Kick the client without duration to avoid creating an empty account, but still register an kick duration
-            con.kick(message + (PVars.printIP ? "\n\n[lightgray]IP: " + con.address + "[]" : ""), infos == null ? 0 : 30 * 1000);
+            con.kick(PVars.kickMessage + (PVars.printIP ? Strings.format(PVars.ipFormat, con.address): ""), infos == null ? 0 : PVars.clientRecentKickDuration);
             if (infos == null) 
-              Vars.netServer.admins.kickedIPs.put(con.address, Math.max(Vars.netServer.admins.kickedIPs.get(con.address, 0L), Time.millis() + 30 * 1000));
+              Vars.netServer.admins.kickedIPs.put(con.address, Math.max(Vars.netServer.admins.kickedIPs.get(con.address, 0L), Time.millis() + PVars.clientRecentKickDuration));
             return;
           } else logger.info("Check passed for client @ [@]", con.address, con.uuid);
           
@@ -103,7 +103,9 @@ public class ServiceManager {
       } catch (java.util.concurrent.RejectedExecutionException e) {
         // To many connection at same time, kick the player and invite it to retry connection
         logger.warn("Failed to stats ip for client @ [@]", con.address, con.uuid);
-        con.kick(mindustry.net.Packets.KickReason.serverRestarting, 0);
+        con.kick(PVars.serverBusyMessage, infos == null ? 0 : PVars.clientRecentKickDuration);
+        if (infos == null) 
+          Vars.netServer.admins.kickedIPs.put(con.address, Math.max(Vars.netServer.admins.kickedIPs.get(con.address, 0L), Time.millis() + PVars.clientRecentKickDuration));
       }
     });
   }

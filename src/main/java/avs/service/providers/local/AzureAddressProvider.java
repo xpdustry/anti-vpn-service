@@ -43,7 +43,7 @@ public class AzureAddressProvider extends avs.service.providers.types.CloudDownl
       }, failure -> error = failure.toString());
 
       if (foundUrl == null || foundUrl.isBlank()) {
-        logger.warn("Could not found @ download link at url '@'. Skipping...", displayName, url);
+        logger.warn("Unable to find @ download link at url '@'. Skipping...", displayName, url);
         logger.warn("Error: " + error);
         return;
       } else logger.debug("Downloading list at url '@'...", foundUrl);
