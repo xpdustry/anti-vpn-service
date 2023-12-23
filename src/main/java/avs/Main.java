@@ -34,7 +34,6 @@ import avs.config.PVars;
 import avs.service.AntiVpnService;
 import avs.service.ServiceManager;
 import avs.util.DynamicSettings;
-import avs.util.Strings;
 import avs.util.network.AwaitHttp;
 
 
@@ -93,17 +92,10 @@ public class Main extends mindustry.mod.Plugin {
       arc.util.serialization.JsonValue json = new arc.util.serialization.JsonReader().parse(result), tag_name = json.get("tag_name");
       if (tag_name == null) throw new Exception("Unable to find 'tag_name'");
       
-      // Extract the version
-      String version = tag_name.asString();
-      if (version.startsWith("v")) version = version.substring(1);
-      int dot = version.indexOf('.');
-      int major = Strings.parseInt(dot == -1 ? version : version.substring(0, dot), 0);
-      int minor = dot == -1 ? 0 : Strings.parseInt(version.substring(dot + 1), 0);
-
-      if (mindustry.core.Version.isAtLeast(major, minor, currentVersion)) {
-        Log.info("New version found: @", version);
+      if (avs.util.Strings.isVersionAtLeast(currentVersion, tag_name.asString())) {
+        Log.info("New version found: @. Current version: @", tag_name.asString(), currentVersion);
         Log.info("Check out this link to upgrade it: @", repo0);
-      }
+      } else Log.info("Already up-to-date, no need to update.");
       
     }, failure -> Log.err("Unable to check for updates: " + failure.getLocalizedMessage()));
   }

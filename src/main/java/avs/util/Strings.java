@@ -115,7 +115,6 @@ public class Strings extends arc.util.Strings {
     return out;
   }
   
-  
   public static boolean isTrue(String str) {
     switch (str.toLowerCase()) {
       case "1": case "true": case "on": 
@@ -132,5 +131,19 @@ public class Strings extends arc.util.Strings {
                return true;
       default: return false;
     }
+  }
+  
+  public static boolean isVersionAtLeast(String currentVersion, String newVersion) {
+    if (currentVersion.startsWith("v")) currentVersion = currentVersion.substring(1);
+    if (newVersion.startsWith("v")) newVersion = newVersion.substring(1);
+    
+    int dot = currentVersion.indexOf('.');
+    int major1 = parseInt(dot == -1 ? currentVersion : currentVersion.substring(0, dot), 0);
+    int minor1 = dot == -1 ? 0 : parseInt(currentVersion.substring(dot + 1), 0);
+    dot = newVersion.indexOf('.');
+    int major2 = parseInt(dot == -1 ? newVersion : newVersion.substring(0, dot), 0);
+    int minor2 = dot == -1 ? 0 : parseInt(newVersion.substring(dot + 1), 0);
+    
+    return major2 > major1 || (major2 == major1 && minor2 > minor1);
   }
 }
