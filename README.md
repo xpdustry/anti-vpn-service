@@ -2,7 +2,7 @@
 A powerful anti vpn service, using multiple types of providers, like downloaded address ranges or online services,
 to protect your Mindustry server against players using VPNs (also useful against classic DDoS attacks). <br>
 Custom whitelist and blacklist are given to allow or block specific addresses. <br>
-And there are many settings to configure the plugin to your needs. 
+And there are many settings, to configure the plugin to your needs. 
 
 
 
@@ -11,17 +11,16 @@ And there are many settings to configure the plugin to your needs.
 
 
 ### Requirements
-**Java 14 or newer is required to run this plugin.** <br>
-Mindustry server, v146 or newer.
+ * **Java 14 or newer is required to run this plugin.** <br>
+ * Mindustry server, v146 or newer.
 
 
 ### Commands
-**Server commands:**
-  * `avs-config [name] [value...]` Anti VPN Service's configuration
-  * `anti-vpn [provider] [args...]` Providers' configuration of Anti VPN Service
+**Server command:**
+  * `avs [command] [args...]` Anti VPN Service command line manager
 
-**Admin commands:**
-  * `/avs [help|arg0] [args...]` Configuration of some settings and providers for admins
+**Admin command:**
+  * `/avs [command] [args...]` Restricted Anti VPN Service manager for admins
 
 
 ### Releases
