@@ -27,6 +27,7 @@
 package com.xpdustry.avs.service;
 
 import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.service.providers.custom.*;
 import com.xpdustry.avs.service.providers.local.*;
@@ -34,6 +35,7 @@ import com.xpdustry.avs.service.providers.online.*;
 import com.xpdustry.avs.service.providers.type.*;
 import com.xpdustry.avs.util.Logger;
 
+import arc.Events;
 import arc.struct.Seq;
 
 
@@ -80,19 +82,19 @@ public class AntiVpnService {
   );
   
   /** Logger without a topic is by default the main plugin topic. */
-  public static final Logger logger = new Logger();
+  private static final Logger logger = new Logger();
   private static boolean operational = false, loaded = false;
 
-  public static AddressProviderReply checkAddress(String ip) {
+  
+  public static AddressProviderReply checkAddress(String address) {
     if (!isOperational()) return null;
     
-    AddressValidity.checkIP(ip);
+    AddressValidity.checkIP(address);
     AddressProviderReply result;
-
-    //TODO: fire an event
+    Events.fire(new AVSEvents.AddressCheckStartedEvent(address));
     
     for (AddressProvider p : reversedProviders) {
-      result = p.checkAddress(ip);
+      result = p.checkAddress(address);
       if (result.resultFound()) {
         result.type = AddressProviderReply.ReplyType.NOT_FOUND;
         return result;
@@ -101,21 +103,20 @@ public class AntiVpnService {
 
     //TODO: make an option to check providers until one say it's not valid
     
-    result = checkAddressImpl(ip, customProviders);
+    result = checkAddressImpl(address, customProviders);
     if (result != null && result.resultFound()) return result;
-    result = checkAddressImpl(ip, localProviders);
+    result = checkAddressImpl(address, localProviders);
     if (result != null && result.resultFound()) return result;
     Seq<OnlineServiceProvider> p = onlineProviders;
     if (AVSConfig.randomOnlineProviders.getBool()&& 
         onlineProviders.size > 1)
       p = onlineProviders.copy().shuffle();
-    result = checkAddressImpl(ip, p);
+    result = checkAddressImpl(address, p);
     
     // Prevents all online services from being unavailable
     
     
-    //TODO: fire an event
-    
+    Events.fire(new AVSEvents.AddressCheckFinishedEvent(address, result));
     return result;
   }
   
@@ -149,7 +150,7 @@ public class AntiVpnService {
     
     logger.info("avs.service.loading");
     allProviders.each(p -> p.load());
-    //TODO: fire an event
+    Events.fire(new AVSEvents.ProvidersLoadedEvent());
 
     // Count the total
     int loadedRanges = 0, localProviders = 0, loadedTokens = 0, onlineProviders = 0;
@@ -177,14 +178,12 @@ public class AntiVpnService {
     
     loaded = true;
     operational = true;
-    
-    //TODO: fire an event
   }
   
   public static void save() {
     if (loaded) {
       allProviders.each(p -> p.save());
-      //TODO: fire an event
+      Events.fire(new AVSEvents.ProvidersSavedEvent());
     } else logger.err("avs.service.cannot-save");
   }
 }

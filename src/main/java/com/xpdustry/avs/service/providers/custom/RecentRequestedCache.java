@@ -30,6 +30,8 @@ import com.xpdustry.avs.misc.address.AddressValidity;
 
 
 public class RecentRequestedCache extends com.xpdustry.avs.service.providers.type.EditableAddressProvider {
+  //TODO: implement a timer to clear the cache frequently
+  
   public RecentRequestedCache() {
     super("Recent Requested Cache", "recent-cache");
     // This provider is a cache for online services, so it's stored in the cache folder

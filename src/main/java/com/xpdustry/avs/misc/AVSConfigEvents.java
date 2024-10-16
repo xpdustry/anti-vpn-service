@@ -63,8 +63,7 @@ public class AVSConfigEvents {
   }
   
   public static boolean onConnectLimitChanged(Object v, Logger l) {
-    ServiceManager.setPoolSize();
-    return true;
+    return ServiceManager.setPoolSize();
   }
   
   public static boolean onAutosaveSpacingChanged(Object v, Logger l) {

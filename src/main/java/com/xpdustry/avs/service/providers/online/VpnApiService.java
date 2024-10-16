@@ -34,9 +34,9 @@ import arc.util.serialization.JsonValue;
 
 public class VpnApiService extends com.xpdustry.avs.service.providers.type.OnlineServiceProvider {
   public VpnApiService() {
-    super("VpnAPI.io", "vpnapi", "https://vpnapi.io/api/{0}?key={1}");
+    super("VpnAPI.io", "vpnapi", "https://vpnapi.io/api/{0}");
     canUseTokens = true;
-    urlWithoutToken = "https://vpnapi.io/api/{0}";
+    urlWithToken = "https://vpnapi.io/api/{0}?key={1}";
     isTrusted = true;
   }
 
@@ -75,7 +75,8 @@ public class VpnApiService extends com.xpdustry.avs.service.providers.type.Onlin
   
     // Fill informations about address
     result.result.infos.network = network.getString("network");
-    String city = location.getString("city");
+    JsonValue c = location.get("city");
+    String city = c == null ? "" : c.asString();
     result.result.infos.location = location.getString("country") + (city.isBlank() ? "" : ", " + city);
     result.result.infos.ISP = network.getString("autonomous_system_organization");
     result.result.infos.ASN = network.getString("autonomous_system_number");

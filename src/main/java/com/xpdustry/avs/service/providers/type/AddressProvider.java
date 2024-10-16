@@ -27,8 +27,10 @@
 package com.xpdustry.avs.service.providers.type;
 
 import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.util.Logger;
 
+import arc.Events;
 import arc.files.Fi;
 
 
@@ -40,9 +42,9 @@ public abstract class AddressProvider {
   protected String fileExt;
   
   public final String name, displayName;
-  public final Logger logger;
+  protected final Logger logger;
   
-  public boolean enabled = true;
+  protected boolean enabled = true;
   /** Must be manually set to {@code true} by the inherited class, when overriding {@link #load()} */
   protected boolean loaded = false;
   
@@ -78,16 +80,17 @@ public abstract class AddressProvider {
       return reply;
     }
     
-    logger.debug("avs.provider.checking", address);
-    
     try {
+      Events.fire(new AVSEvents.ProviderCheckingAddressEvent(this, address));
+      logger.debug("avs.provider.checking", address);
       checkAddressImpl(reply);
-      // TODO: fire an event
+      Events.fire(new AVSEvents.ProviderCheckedAddressEvent(this, address, reply));
+      
       if (reply.validity != null) 
         logger.debug("avs.provider.check." + (reply.validity.type.isNotValid() ? "invalid" : "valid"));
 
     } catch (Exception e) {
-      // TODO: fire an event
+      Events.fire(new AVSEvents.ProviderCheckingAddressFailedEvent(this, address, e));
       logger.debug("avs.provider.check.failed", address);
       logger.debug("avs.general-error", e.toString()); 
       reply.type = AddressProviderReply.ReplyType.ERROR;
@@ -100,6 +103,18 @@ public abstract class AddressProvider {
   
   public boolean isLoaded() {
     return loaded;
+  }
+  
+  public void enable() {
+    if (enabled) return;
+    Events.fire(new AVSEvents.ProviderEnabledEvent(this));
+    enabled = true;
+  }
+  
+  public void disable() {
+    if (!enabled) return;
+    Events.fire(new AVSEvents.ProviderDisabledEvent(this));
+    enabled = false;
   }
   
   public boolean isEnabled() {

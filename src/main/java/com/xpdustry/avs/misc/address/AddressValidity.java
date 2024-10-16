@@ -54,6 +54,7 @@ public class AddressValidity {
     try {
       // single machine mask is allowed
       int index = ip.indexOf('/');
+      if (index == -1) index = ip.indexOf('%');
       if (index != -1) {
         int mask = arc.util.Strings.parseInt(ip.substring(index+1), 0);
         ip = ip.substring(0, index);

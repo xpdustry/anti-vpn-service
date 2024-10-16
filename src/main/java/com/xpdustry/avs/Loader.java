@@ -27,6 +27,7 @@
 package com.xpdustry.avs;
 
 import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.ServiceManager;
 import com.xpdustry.avs.util.DynamicSettings;
@@ -34,6 +35,7 @@ import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.VersionChecker;
 import com.xpdustry.avs.util.bundle.L10NBundle;
 
+import arc.Events;
 import arc.files.Fi;
 
 import mindustry.Vars;
@@ -48,6 +50,8 @@ public class Loader {
   public static void load(Class<? extends mindustry.mod.Mod> modClass) {
     if (loaded) throw new IllegalStateException("already loaded");
     
+    Events.fire(new AVSEvents.AVSLoadingEvent());
+    
     mod = Vars.mods.getMod(modClass);
     if (mod == null) throw new IllegalArgumentException("the specified mod is not loaded");
     
@@ -58,6 +62,8 @@ public class Loader {
     initPlugin(); // And init the plugin
     
     loaded = true;
+    
+    Events.fire(new AVSEvents.AVSLoadedEvent());
   }
   
   public static boolean done() {

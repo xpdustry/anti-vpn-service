@@ -29,15 +29,17 @@ package com.xpdustry.avs.service.providers.type;
 import java.net.InetAddress;
 
 import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.misc.JsonSerializer;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.util.DynamicSettings;
 
+import arc.Events;
 import arc.struct.Seq;
 import arc.util.serialization.Json;
 
 
-public class CachedAddressProvider extends AddressProvider {
+public class CachedAddressProvider extends AddressProvider {  
   protected Seq<AddressValidity> cache = new Seq<>(false);
   protected DynamicSettings cacheFile = null;
   protected String cacheKey = "cache";
@@ -55,6 +57,7 @@ public class CachedAddressProvider extends AddressProvider {
   @Override
   public boolean load() {
     loaded = false;
+    Events.fire(new AVSEvents.ProviderLoadingEvent(this));
     loaded = loadCache();
     return loaded;
   }
@@ -62,6 +65,7 @@ public class CachedAddressProvider extends AddressProvider {
   @Override
   public boolean reload() {
     loaded = false;
+    Events.fire(new AVSEvents.ProviderReloadingEvent(this));
     logger.info("avs.provider.cached.reload");
     cache.clear();
     getCacheFile().clear();
@@ -70,6 +74,7 @@ public class CachedAddressProvider extends AddressProvider {
   
   @Override
   public boolean save() {
+    Events.fire(new AVSEvents.ProviderSavingEvent(this));
     return saveCache();
   }
   

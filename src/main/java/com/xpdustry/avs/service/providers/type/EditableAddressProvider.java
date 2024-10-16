@@ -27,7 +27,10 @@
 package com.xpdustry.avs.service.providers.type;
 
 import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.misc.address.AddressValidity;
+
+import arc.Events;
 
 
 public abstract class EditableAddressProvider extends CachedAddressProvider {
@@ -45,9 +48,9 @@ public abstract class EditableAddressProvider extends CachedAddressProvider {
   public boolean add(AddressValidity address) {
     if (address == null) throw new NullPointerException("null address not allowed");
 
-    // TODO: fire an event.
     boolean added = cache.addUnique(address);
     if (added) save();
+    Events.fire(new AVSEvents.EditableProviderAddedAddressEvent(this, address, added));
     return added;
   }
 
@@ -55,11 +58,12 @@ public abstract class EditableAddressProvider extends CachedAddressProvider {
     // TODO: fire an event.
     boolean removed = cache.remove(address);
     if (removed) save();
+    Events.fire(new AVSEvents.EditableProviderRemovedAddressEvent(this, address, removed));
     return removed;
   }
   
   public void clear() {
-    // TODO: fire an event.
+    Events.fire(new AVSEvents.EditableProviderCleaningAddressesEvent(this));
     cache.clear();
     save();
     logger.info("avs.provider.custom.cleaned");

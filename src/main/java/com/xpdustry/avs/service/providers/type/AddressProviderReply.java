@@ -5,7 +5,7 @@ import com.xpdustry.avs.misc.address.AddressValidity;
 
 public class AddressProviderReply {
   public final String address;
-  public AddressValidity validity;
+  public @arc.util.Nullable AddressValidity validity;
   public ReplyType type = ReplyType.NOT_FOUND;
   
   public AddressProviderReply(String address) {

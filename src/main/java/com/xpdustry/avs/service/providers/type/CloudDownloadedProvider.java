@@ -27,17 +27,21 @@
 package com.xpdustry.avs.service.providers.type;
 
 import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.misc.address.AddressType;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 import com.xpdustry.avs.util.network.Subnet;
 
+import arc.Events;
 import arc.struct.Seq;
 import arc.util.serialization.JsonReader;
 import arc.util.serialization.JsonValue;
 
 
 public abstract class CloudDownloadedProvider extends CachedAddressProvider {
+  //TODO: implement an auto refresh
+  
   public final String url;
   /* Define the type of provider, used for statistics. Default is VPN */
   protected ProviderType providerType = ProviderType.vpn;
@@ -60,6 +64,8 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider {
   
   public boolean refresh() {
     loaded = false;
+    Events.fire(new AVSEvents.CloudProviderRefreshingEvent(this));
+    
     Seq<Subnet> list = new Seq<>();
     JsonValue fetched = null;
 
@@ -111,18 +117,24 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider {
 
   @Override
   public boolean load() {
+    loaded = false;
+    Events.fire(new AVSEvents.ProviderLoadingEvent(this));
+    
     if (!AVSConfig.startupDownload.getBool()) {
       logger.warn("avs.provider.cloud.fetch.disabled");
-      return reload();
+      return reload0(false);
     }
       
     return refresh();
   }
   
-  // Reload only cache. To reload the all, call .load()
+  /** Reload only the cache. To re-fetch the lists, use {@link #refresh()} */
   @Override
-  public boolean reload() {
+  public boolean reload() { return reload0(true); }
+  
+  private boolean reload0(boolean fireEvent) {
     loaded = false;
+    if (fireEvent) Events.fire(new AVSEvents.ProviderReloadingEvent(this));
     cache.clear();
     getCacheFile().clear();
     getCacheFile().load();

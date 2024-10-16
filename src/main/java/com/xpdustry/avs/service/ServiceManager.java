@@ -29,6 +29,7 @@ package com.xpdustry.avs.service;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.service.providers.type.AddressProviderReply;
 import com.xpdustry.avs.util.DynamicSettings;
 import com.xpdustry.avs.util.Logger;
@@ -36,6 +37,7 @@ import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.bundle.L10NBundlePlayer;
 
 import arc.Core;
+import arc.Events;
 import arc.func.Cons2;
 import arc.util.Threads;
 
@@ -55,15 +57,14 @@ public class ServiceManager {
   
   public static boolean registerListeners() {
     if (ready) return ready;
-    setPoolSize();
+    
+    if (setPoolSize()) return ready;
     
     try { registerIpValidatorListener(); } 
     catch (RuntimeException err) {
       logger.err("avs.manager.security.error1");
-      logger.err(err);
-      logger.warnNormal("");
+      logger.err("avs.general-error", err.toString());
       logger.warn("avs.manager.security.error2");
-      logger.info("avs.manager.security.error3");
       Threads.await(threadPool);
       DynamicSettings.autosaveThread.interrupt();
       return ready;
@@ -85,12 +86,18 @@ public class ServiceManager {
   }
   
   /** Set size of thread pool */
-  public static void setPoolSize() {
+  public static boolean setPoolSize() {
     // This is intended to limit the number of connections at the same time, 
     // It gives a little protection against ddos attacks
     try { threadPool.setMaximumPoolSize(AVSConfig.connectLimit.getInt()); }
     // avoid the case of the value has been manually modified in server settings
-    catch (IllegalArgumentException e) {}; 
+    catch (IllegalArgumentException e) { 
+      logger.err("avs.manager.invalid-pool-size", AVSConfig.connectLimit.getInt(), 
+                                                  threadPool.getCorePoolSize());
+      return false;
+    }; 
+    
+    return true;
   }
   
   /** 
@@ -105,7 +112,10 @@ public class ServiceManager {
 
     // Wrap the original listener
     Vars.net.handleServer(ConnectPacket.class, (con, packet) -> {
-      if (packet.locale == null) packet.locale = "en"; // Possible?
+      // Just in case
+      if (packet.locale == null) packet.locale = "en";
+      // For visual in console
+      con.uuid = packet.uuid;
       
       if (!AntiVpnService.isOperational()) {
         logger.warn("avs.validator.not-operational", con.address);
@@ -113,8 +123,7 @@ public class ServiceManager {
         return;
       }
       
-      // For visual in console
-      con.uuid = packet.uuid;
+      Events.fire(new AVSEvents.ClientConnectEvent(con, packet));
       
       // Handle case of multiple connections
       if (con.hasBegunConnecting) {
@@ -153,11 +162,14 @@ public class ServiceManager {
       try {
         threadPool.submit(() -> {
           try {
+            Events.fire(new AVSEvents.ClientCheckEvent(con, packet));
+            
             // Check the IP
             AddressProviderReply reply = AntiVpnService.checkAddress(con.address);
       
-            if (reply.resultFound()) {
+            if (reply != null && reply.resultFound()) {
               if (reply.validity.type.isNotValid()) {
+                Events.fire(new AVSEvents.ClientRejectedEvent(con, packet, false, reply));
                 logger.info("avs.validator.ip.blacklisted", con.address, con.uuid);
                 // Kick the client without duration to avoid creating an empty account, but still register an kick duration
                 kickClient(con, packet, infos == null ? 0 : AVSConfig.clientKickDuration.getInt(), false);
@@ -165,7 +177,9 @@ public class ServiceManager {
               }
                 
             } else if (AVSConfig.resultRequired.getBool()) {
+              Events.fire(new AVSEvents.ClientRejectedEvent(con, packet, false, reply));
               logger.warn("avs.validator." + (
+                  reply == null ? "failed" :
                   reply.type == AddressProviderReply.ReplyType.UNAVAILABLE ? "no-available" : 
                   reply.type == AddressProviderReply.ReplyType.NOT_FOUND ? "not-found" :
                   "failed"), 
@@ -177,12 +191,14 @@ public class ServiceManager {
               return;
             }
             
+            Events.fire(new AVSEvents.ClientAcceptedEvent(con, packet, reply));
             logger.info("avs.validator.ip.validated", con.address, con.uuid);
             // Now run the original listener on the main thread
             if (connectPacketServerListener != null) 
               Core.app.post(() -> connectPacketServerListener.get(con, packet));             
          
           } catch (Throwable e) {
+            Events.fire(new AVSEvents.ClientCheckFailedEvent(con, packet, e));
             logger.warn("avs.validator.failed", con.address, con.uuid);
             logger.err("avs.general-error", e);
             String message = AVSConfig.errorMessage.get();
@@ -193,10 +209,12 @@ public class ServiceManager {
         
       } catch (java.util.concurrent.RejectedExecutionException e) {
         // To many connection at same time, kick the player and invite it to retry connection
+        Events.fire(new AVSEvents.ClientRejectedEvent(con, packet, true, null));
         logger.warn("avs.validator.busy", con.address, con.uuid);
         kickClient(con, packet, infos == null ? 0 : AVSConfig.clientKickDuration.getInt(), true);
         
       } catch (Throwable e) {
+        Events.fire(new AVSEvents.ClientCheckFailedEvent(con, packet, e));
         logger.warn("avs.validator.failed", con.address, con.uuid);
         logger.err("avs.general-error", e);
         kickClient(con, packet, infos == null ? 0 : AVSConfig.clientKickDuration.getInt(), true);
@@ -228,7 +246,7 @@ public class ServiceManager {
   }
   
   protected static void registerResetEvent() {
-    arc.Events.on(com.xpdustry.avs.misc.AVSEvents.AVSResetEvent.class, e -> {
+    Events.on(AVSEvents.AVSResetEvent.class, e -> {
       // Only the reset command have the right
       if (!com.xpdustry.avs.command.list.ResetCommand.isResetConfirmed()) return;
       

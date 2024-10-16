@@ -29,13 +29,16 @@ package com.xpdustry.avs.service.providers.type;
 import java.text.MessageFormat;
 
 import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.misc.address.AddressInfos;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 
+import arc.Events;
 import arc.files.Fi;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
+import arc.struct.StringMap;
 
 
 public abstract class OnlineServiceProvider extends AddressProvider {
@@ -44,14 +47,23 @@ public abstract class OnlineServiceProvider extends AddressProvider {
       new com.xpdustry.avs.service.providers.custom.RecentRequestedCache();
 
   /**
-   * The URL of service to use. 
-   * Don't forgot to add '{0}' = the ip, '{1}' = the token (optional), in the URL.
+   * URL format to use. <br>
+   * <code>{0}</code> will be replaced by the address
    */
   public final String url;
-  /** The url of service, to use when 'needTokens' is false and no tokens in list. */
-  public String urlWithoutToken = "";
   /** The headers to use to make the request. */
-  protected arc.struct.StringMap headers;
+  public final StringMap headers = new StringMap();
+  
+  /**
+   * URL format to use with a token. <br>
+   * <code>{0}</code> will be replaced by the address, <code>{1}</code> replaced by the token.
+   */
+  protected String urlWithToken;
+  /** 
+   * Can be defined to use a header for the token instead of {@link #urlWithToken}. <br>
+   * Can be used with {@link #urlWithToken}.
+   */
+  protected String tokenHeaderName;
  
   protected ObjectMap<String, Integer> tokens = new ObjectMap<>();
   protected boolean canUseTokens = false;
@@ -82,14 +94,14 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   @Override
   public boolean load() {
     loaded = false;
+    Events.fire(new AVSEvents.ProviderLoadingEvent(this));
+
     // No tokens needed. skip tokens loading
     if (!canUseTokens()) {
-      if (urlWithoutToken.isBlank()) urlWithoutToken = url;
       logger.info("avs.provider.online.loaded");
       loaded = true;
       return loaded;
-    
-    } else if (!tokensNeeded() && urlWithoutToken.isBlank()) urlWithoutToken = url;
+    }
     
     loaded = loadTokens();
     return loaded;
@@ -98,6 +110,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   @Override
   public boolean reload() {
     loaded = false;
+    Events.fire(new AVSEvents.ProviderReloadingEvent(this));
     logger.info("avs.provider.online.reload" + (canUseTokens() ? "-with-tokens" : ""));
     tokens.clear();
     return load();
@@ -105,6 +118,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   
   @Override
   public boolean save() {
+    Events.fire(new AVSEvents.ProviderSavingEvent(this));
     return saveTokens();
   }
   
@@ -211,6 +225,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     token = token.strip();
     if (!canUseTokens() || tokens.containsKey(token)) return false;
     tokens.put(token, 0);
+    Events.fire(new AVSEvents.OnlineProviderAddedTokenEvent(this, token));
     save();
     return true;
   }
@@ -220,6 +235,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     token = token.strip();
     if (!canUseTokens() || !tokens.containsKey(token)) return false;
     tokens.remove(token);
+    Events.fire(new AVSEvents.OnlineProviderRemovedTokenEvent(this, token));
     save();
     return true;
   }
@@ -251,7 +267,8 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     
     ServiceResult result = request(reply.address, null);
     
-    if (result.isError()) reply.type = AddressProviderReply.ReplyType.ERROR;
+    if (result == null || result.isError()) 
+      reply.type = AddressProviderReply.ReplyType.ERROR;
     else {
       cacheProvider.add(result.result);
       reply.setResult(result.result);
@@ -267,10 +284,11 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     } else {
       ServiceResult result = request(reply.address, token);
       
-      if (result.isError()) {
+      if (result == null || result.isError()) {
         reply.type = AddressProviderReply.ReplyType.ERROR;
-        if (result.reply.status != AdvancedHttp.Status.INVALID_TOKEN &&
-            result.reply.status != AdvancedHttp.Status.QUOTA_LIMIT) 
+        if (result == null ||
+            (result.reply.status != AdvancedHttp.Status.INVALID_TOKEN &&
+             result.reply.status != AdvancedHttp.Status.QUOTA_LIMIT)) 
           return false;
         
       } else {
@@ -284,9 +302,22 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   }
 
   protected ServiceResult request(String ip, @arc.util.Nullable String token) {
-    String formattedUrl = token == null ? MessageFormat.format(urlWithoutToken, ip) : 
-                                          MessageFormat.format(url, ip, token);
-    AdvancedHttp.Reply reply = AdvancedHttp.get(formattedUrl);
+    if (tokenHeaderName == null && urlWithToken == null) {
+      logger.err("avs.provider.online.missing.msg1");
+      logger.err("avs.provider.online.missing.msg2");
+      return null;
+    }
+    
+    if (tokenHeaderName != null) {
+      if (token == null) {
+        if (headers.containsKey(tokenHeaderName)) headers.remove(tokenHeaderName);
+      } else headers.put(tokenHeaderName, token);   
+    }
+    
+    String formattedUrl = token == null ? MessageFormat.format(url, ip) : 
+                                          MessageFormat.format(urlWithToken, ip, token);
+ 
+    AdvancedHttp.Reply reply = AdvancedHttp.get(formattedUrl, headers);
     ServiceResult result = new ServiceResult(reply, ip);
     
     if (!reply.isError()) {
@@ -331,7 +362,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   public abstract void handleReply(ServiceResult result);
   
   
-  public class ServiceResult {
+  public static class ServiceResult {
     public final AddressValidity result;
     public final AdvancedHttp.Reply reply;
     public final String ip;
