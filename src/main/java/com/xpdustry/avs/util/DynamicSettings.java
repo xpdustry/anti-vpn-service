@@ -57,18 +57,7 @@ public class DynamicSettings {
   
   public static Fi logFile = mindustry.Vars.modDirectory.child("settings.log");
   public static int autosaveSpacing = 360; // in seconds
-  public static Thread autosaveThread = arc.util.Threads.daemon("AVS-Autosave", () -> {
-    while (true) {
-      try { Thread.sleep(autosaveSpacing * 1000); } 
-      catch (InterruptedException e) { 
-        writeLogStatic("Autosave thread stopped!");
-        logger.debug("avs.settings.autosave.stopped");
-        return; 
-      };
-      
-      globalAutosave();      
-    }
-  });
+  public static Thread autosaveThread;
   
   protected final Fi file;
   
@@ -162,6 +151,8 @@ public class DynamicSettings {
       if(modified && shouldAutosave) save();
   }
   
+  /** Static part, for autosave **/
+  
   public synchronized static boolean needGlobalSave() {
     return files.contains(f -> f.modified);
   }
@@ -175,6 +166,44 @@ public class DynamicSettings {
       logger.info("avs.settings.autosave.finished");      
     }
   }
+  
+  public static void stopAutosave() {
+    if (autosaveThread != null) {
+      autosaveThread.interrupt();
+      try { autosaveThread.join(1000);  } 
+      catch (InterruptedException ignored) {}
+      autosaveThread = null;
+    }
+  }
+  
+  public static void startAutosave() { startAutosave("Settings-Autosave"); }
+  public static void startAutosave(String threadName) {
+    if (autosaveThread == null) {
+      autosaveThread = arc.util.Threads.daemon(threadName, () -> {
+        while (true) {
+          globalAutosave();   
+          
+          try { Thread.sleep(autosaveSpacing * 1000); } 
+          catch (InterruptedException e) { 
+            writeLogStatic("Autosave thread stopped!");
+            logger.debug("avs.settings.autosave.stopped");
+            return; 
+          };  
+        }
+      });
+    }
+  }
+  
+  /** block until an autosave is performed (until all files are saved) */
+  public static void waitForAutosave() {
+    if (autosaveThread != null && autosaveThread.isAlive()) {
+      try {
+        while (needGlobalSave()) Thread.sleep(10);
+      } catch (InterruptedException ignored) {}      
+    }
+  }
+  
+  /**********************/
 
   public synchronized void loadValues(Fi file) throws IOException{
       try(DataInputStream stream = new DataInputStream(file.read(8192))){

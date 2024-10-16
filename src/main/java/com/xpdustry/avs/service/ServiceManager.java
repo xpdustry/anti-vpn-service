@@ -53,21 +53,17 @@ public class ServiceManager {
       (ThreadPoolExecutor) Threads.boundedExecutor("ClientValidator", AVSConfig.connectLimit.getInt());
   private static Logger logger = new Logger();
   private static Cons2<NetConnection, Object> connectPacketServerListener;
-  private static boolean isShutdown = false, ready = false;
+  private static boolean ready = false;
   
   public static boolean registerListeners() {
     if (ready) return ready;
-    
-    if (setPoolSize()) return ready;
+
+    if (!setPoolSize()) return ready;
     
     try { registerIpValidatorListener(); } 
     catch (RuntimeException err) {
-      logger.err("avs.manager.security.error1");
-      logger.err("avs.general-error", err.toString());
-      logger.warn("avs.manager.security.error2");
       Threads.await(threadPool);
-      DynamicSettings.autosaveThread.interrupt();
-      return ready;
+      throw new SecurityException(err.getLocalizedMessage(), err);
     }
     
     registerServerExitListener();
@@ -76,12 +72,8 @@ public class ServiceManager {
     ready = true;
     return ready;
   }
-  
-  public boolean isShutdown() {
-    return isShutdown;
-  }
-  
-  public boolean isReady() {
+
+  public static  boolean isReady() {
     return ready;
   }
   
@@ -261,12 +253,12 @@ public class ServiceManager {
   }
   
   public static void shutdownPlugin() {
-    if (isShutdown) return; // do nothing if already shutdown
-    isShutdown = true;
+    if (!isReady()) return; // do nothing if already shutdown
+    ready = false;
     AntiVpnService.stop();
     logger.info("avs.manager.dispose.waiting-for");
     Threads.await(threadPool);
-    DynamicSettings.autosaveThread.interrupt();
+    DynamicSettings.stopAutosave();
     logger.info("avs.manager.dispose.saving");
     AntiVpnService.save();
     DynamicSettings.globalAutosave();
@@ -278,7 +270,7 @@ public class ServiceManager {
     shutdownPlugin();
     logger.infoNormal("");
     logger.info("avs.manager.reset.progress");
-    DynamicSettings.autosaveThread.interrupt();
+    DynamicSettings.stopAutosave();
     SettingsCleaner.clearFiles();
     AVSConfig.Field[] folders = {
         AVSConfig.cloudDirectory, AVSConfig.tokensDirectory,

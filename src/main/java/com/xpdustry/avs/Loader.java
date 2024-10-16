@@ -39,43 +39,84 @@ import arc.Events;
 import arc.files.Fi;
 
 import mindustry.Vars;
-import mindustry.mod.Mods.LoadedMod;;
+import mindustry.mod.Mods;
 
 
 public class Loader {
   private static final Logger logger = new Logger();
   private static boolean loaded = false;
-  private static LoadedMod mod;
+  private static Mods.LoadedMod mod;
   
   public static void load(Class<? extends mindustry.mod.Mod> modClass) {
-    if (loaded) throw new IllegalStateException("already loaded");
+    if (loaded) throw new Mods.ModLoadException("already loaded");
     
     Events.fire(new AVSEvents.AVSLoadingEvent());
     
     mod = Vars.mods.getMod(modClass);
-    if (mod == null) throw new IllegalArgumentException("the specified mod is not loaded");
+    if (mod == null) throw new Mods.ModLoadException("the specified mod is not loaded");
     
-    loadSettings(Vars.modDirectory.child(mod.meta.name)); // First, load settings
-    loadBundles(); // After, the bundles
-    finishSettingsLoading(); // Complete the settings loading
-    VersionChecker.checkAndPromptToUpgrade(mod.meta.repo, mod.meta.version); // Check the version
-    initPlugin(); // And init the plugin
+    // First, load settings
+    if (loadCheck(() -> loadSettings(Vars.modDirectory.child(mod.meta.name)))) return; 
+    // After, the bundles
+    if (loadCheck(Loader::loadBundles)) return; 
+    // Complete the settings loading
+    finishSettingsLoading(); 
+    // Check the version
+    VersionChecker.checkAndPromptToUpgrade(mod.meta.repo, mod.meta.version); 
+    // And init the plugin
+    if (loadCheck(Loader::initPlugin)) return; 
     
     loaded = true;
     
     Events.fire(new AVSEvents.AVSLoadedEvent());
   }
   
+  /** @return {@code true} if error */
+  private static boolean loadCheck(arc.func.Boolp run) {
+    boolean isSecurityError = false;
+    Throwable error = null;
+    try {
+      if (run.get()) return false;
+      
+    } catch (SecurityException e) {
+      error = e;
+      isSecurityError = true;
+    } catch (Throwable e) {
+      error = e;
+    }
+    
+    Events.fire(new AVSEvents.AVSLoadingFailedEvent());
+    logger.errNormal("");
+    logger.errNormal("##################################################");
+    if (isSecurityError) {
+      logger.err("avs.manager.security-error");
+      if (error != null) logger.err("avs.general-error", error.toString());
+      
+    } else {
+      logger.err("avs.loading.failed");
+      if (error != null) {
+        logger.errNormal("");
+        logger.err("avs.general-error", error);
+      }
+    }
+    logger.warnNormal("");
+    logger.warn("avs.loading.error");
+    logger.errNormal("##################################################");
+    logger.errNormal("");
+    return true;
+  }
+  
   public static boolean done() {
     return loaded;
   }
   
-  public static void loadSettings(Fi workingDirectory) {
+  public static boolean loadSettings(Fi workingDirectory) {
     AVSConfig.setWorkingDirectory(workingDirectory);
     AVSConfig.load();
     DynamicSettings.logFile = AVSConfig.subDir(AVSConfig.settingsDirectory.getString())
                                        .child(workingDirectory.name() + ".log");
     DynamicSettings.autosaveSpacing = AVSConfig.autosaveSpacing.getInt();
+    return AVSConfig.isLoaded();
   }
   
   /** Because we need to load the bundles before trigger the initial value change listener */
@@ -83,19 +124,33 @@ public class Loader {
     AVSConfig.notifyAllValueChanged();
   }
   
-  public static void initPlugin() {
+  public static boolean initPlugin() {
     if (ServiceManager.registerListeners()) {
       AntiVpnService.load(); 
-      DynamicSettings.globalAutosave();
+      DynamicSettings.startAutosave("AVS-Autosave");
+      DynamicSettings.waitForAutosave();
+      return AntiVpnService.isOperational();
     }
+    return false;
   }
   
-  public static void loadBundles() {
+  public static boolean loadBundles() {
     L10NBundle.load(mod.root.child("bundles"), AVSConfig.defaultLocale.getString());
     logger.debug("avs.loading.custom-bundles");
     Fi bundles = AVSConfig.subDir(AVSConfig.bundlesDirectory.getString());
     bundles.mkdirs();
     L10NBundle.appendBundles(bundles);
     logger.info("avs.loading.bundle-loaded", L10NBundle.bundles.size, L10NBundle.defaultLocale);
+    return L10NBundle.isLoaded();
+  }
+  
+  /** Will check the state of plugin's components */
+  public static boolean isAllOk() {
+    return done() && 
+           AVSConfig.isLoaded() &&
+           L10NBundle.isLoaded() &&
+           ServiceManager.isReady() &&
+           AntiVpnService.isOperational() && 
+           AntiVpnService.allProviders.allMatch(p -> p.isLoaded()); // <- this one can be unsafe
   }
 }

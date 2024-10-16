@@ -168,13 +168,12 @@ public class Logger{
     log(LogLevel.err, key, args);
   }
   
-  // Special case for this method, we getting the key before logging
   public void err(String key, Throwable th) {
-    logNormal(LogLevel.err, getKey(key) + ": " + Strings.getStackTrace(th));
+    log(LogLevel.err, key, Strings.getStackTrace(th));
   }
   
   public void err(String key, Throwable th, Object... args) {
-    logNormal(LogLevel.err, formatKey(key, args) + ": " + Strings.getStackTrace(th));
+    log(LogLevel.err, key, arc.util.Structs.add(args, Strings.getStackTrace(th)));
   }
   
   // endregion

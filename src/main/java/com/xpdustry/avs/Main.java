@@ -40,15 +40,17 @@ public class Main extends mindustry.mod.Plugin {
     logger.infoNormal("");
     logger.infoNormal("&lg----------------------------------------------------------------");
     // For the first message, no bundle key is used.
-    logger.infoNormal("Anti Vpn Service (AVS) is loading..."/*"avs.loading.started"*/);
+    logger.infoNormal("Anti VPN Service (AVS) is loading..."/*"avs.loading.started"*/);
     logger.infoNormal("");
 
     Loader.load(getClass());
 
-    logger.infoNormal("");
-    logger.info("avs.loading.finished", Math.max(1, (System.currentTimeMillis()-start)/1000));
-    logger.infoNormal("&lg----------------------------------------------------------------");
-    logger.infoNormal("");
+    if (Loader.done()) {
+      logger.infoNormal("");
+      logger.info("avs.loading.finished", Math.max(1, (System.currentTimeMillis()-start)/1000));
+      logger.infoNormal("&lg----------------------------------------------------------------");
+      logger.infoNormal("");      
+    }
   }
 
   /** Register any commands to be used on the server side, e.g. from the console. */

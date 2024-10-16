@@ -41,6 +41,7 @@ public class AVSEvents {
   public static class AVSResetEvent {}
   
   public static class AVSLoadingEvent {}
+  public static class AVSLoadingFailedEvent {}
   public static class AVSLoadedEvent {}
   
   public static class ProvidersLoadedEvent {}

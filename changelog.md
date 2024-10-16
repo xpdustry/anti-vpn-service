@@ -11,7 +11,7 @@
  - added commands
  - added events
  - made the plugin api usable for other plugins
- 
+ - improved plugin loading 
 
 1.0:
  - first realease
