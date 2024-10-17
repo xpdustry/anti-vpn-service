@@ -88,7 +88,7 @@ public class L10NBundle {
   
   /** See {@link #loadBundles(Fi)} for file naming */
   public static void appendBundles(Fi directory) {
-    StaticLogger.logdebug(1, directory.toString());
+    logger.debug("avs.bundle.loading.started", directory.toString());
     appendBundles(loadBundles(directory));
   }
   
@@ -97,11 +97,11 @@ public class L10NBundle {
    * If a locale is the same as an existing one, they will be merged. 
    * 
    * 
-   * @apiNote For bundles loading, normal logging messages are used, 
-   *          in case of English bundle isn't loaded yet.
+   * @apiNote For bundles loading, normal logging messages can be used, 
+   *          in case of default bundle isn't loaded yet.
    */
   public static void appendBundles(Seq<Bundle> list) {
-    StaticLogger.logdebug(2, list.size);
+    logger.debug("avs.bundle.loading.list", list.size);
     
     // Clear the cache before, to avoid bundle confusions
     clearCache();
@@ -123,17 +123,17 @@ public class L10NBundle {
     if (defaultBundle == null || !defaultBundle.locale.equals(defaultLocale)) 
       defaultBundle = findBundle(bundles, defaultLocale);
     if (defaultBundle == null) {
-      StaticLogger.logwarn(10, Strings.locale2String(defaultLocale));
+      logger.warn("avs.bundle.default-not-found", Strings.locale2String(defaultLocale));
       defaultLocale = Locale.getDefault();
       defaultBundle = findBundle(bundles, defaultLocale);
       if (defaultBundle == null) defaultBundle = new Bundle(defaultLocale);
     }
     
     // Set hierarchy
-    StaticLogger.logdebug(5);
+    logger.debug("avs.bundle.loading.hierarchy.aplying");
     setBundleHierarchy(bundles, defaultBundle);
     
-    StaticLogger.logdebug(6);
+    logger.debug("avs.bundle.loading.done");
   }
   
   /**
@@ -161,8 +161,8 @@ public class L10NBundle {
         
         // Check if language is empty, to ignore and warn
         if (locale.getLanguage().isEmpty()) {
-          StaticLogger.logwarn(7);
-          StaticLogger.logwarn(8);
+          logger.warn("avs.bundle.warn.bundle-locale.msg1");
+          logger.warn("avs.bundle.warn.bundle-locale.msg2");
           return;
         }
         
@@ -170,12 +170,12 @@ public class L10NBundle {
         bundle.load(fi);
         loaded.add(bundle);
         
-        if (bundle.isEmpty()) StaticLogger.logwarn(12, Strings.locale2String(locale));
-        StaticLogger.logdebug(3, Strings.locale2String(locale));
+        if (bundle.isEmpty()) logger.warn("avs.bundle.warn.empty", Strings.locale2String(locale));
+        logger.debug("avs.bundle.loading.file.loaded", Strings.locale2String(locale));
       
       } catch (arc.util.ArcRuntimeException e) {
-        StaticLogger.logerr(4, fi.toString());
-        StaticLogger.logerr(0, e.toString());
+        logger.err("avs.bundle.loading.file.error", fi.toString());
+        logger.err("avs.general-error", e.toString());
       }
     });
 
@@ -206,8 +206,8 @@ public class L10NBundle {
       });
       
     } catch (IllegalStateException e) {
-      StaticLogger.logerr(11);
-      StaticLogger.logerr(0, e.toString());
+      logger.err("avs.bundle.loading.hierarchy.error");
+      logger.err("avs.general-error", e.toString());
     }
   }
   
@@ -235,7 +235,7 @@ public class L10NBundle {
       
     bundle = findBundle(bundles, locale);
     if (bundle == null) {
-      StaticLogger.logdebug(9, Strings.locale2String(locale));
+      logger.debug("avs.bundle.not-found", Strings.locale2String(locale));
       bundle = def.get();
     }
     
@@ -412,44 +412,4 @@ public class L10NBundle {
   }
   
   // endregion
-  
-  
-  /** private logging. Use static messages, in case of default bundle isn't loaded, else use the bundle key */
-  private static final class StaticLogger {
-    private static final String[][] placeholdersLoggingKeys = {
-        {"avs.general-error", "Error: @"},
-        {"avs.bundle.loading.started", "Loading bundles in directory: @"},
-        {"avs.bundle.loading.list", "Appending @ bundles."},
-        {"avs.bundle.loading.file.loaded", "Bundle loaded for locale @."},
-        {"avs.bundle.loading.file.error", "Error while loading bundle file: @"},
-        {"avs.bundle.loading.hierarchy.aplying", "Applying bundles hierarchy..."},
-        {"avs.bundle.loading.done", "Loading done"},
-        {"avs.bundle.warn.bundle-locale.msg1", "Bundles files with no language, in locale code, are not allowed."},
-        {"avs.bundle.warn.bundle-locale.msg2", "The file name should be: prefix_xx_XX.properties. Where xx and XX are the language and country."},
-        {"avs.bundle.not-found", "Unable to find a bundle for locale @. Using default one..."},
-        {"avs.bundle.default-not-found", "Unable to find a bundle for the default locale '@'. Using machine local..."},
-        {"avs.bundle.loading.hierarchy.error", "Error while applying bundles hierarchy!"},
-        {"avs.bundle.warn.empty", "The bundle for locale '@' is empty."},
-    };
-    
-    private static void log(int msgIndex, arc.func.Cons<String> log, arc.func.Cons<String> fallLog) {
-      if (has(placeholdersLoggingKeys[msgIndex][1])) 
-        log.get(placeholdersLoggingKeys[msgIndex][0]);
-      else fallLog.get(placeholdersLoggingKeys[msgIndex][1]);
-    }
-    private static void log(int msgIndex, Object[] args, arc.func.Cons2<String, Object[]> log, arc.func.Cons2<String, Object[]> fallLog) {
-      if (has(placeholdersLoggingKeys[msgIndex][1])) 
-        log.get(placeholdersLoggingKeys[msgIndex][0], args);
-      else fallLog.get(placeholdersLoggingKeys[msgIndex][1], args);
-    }
-    
-    private static void logdebug(int msgIndex) { log(msgIndex, logger::debug, logger::debugNormal); }
-    private static void logdebug(int msgIndex, Object... args) { log(msgIndex, args, logger::debug, logger::debugNormal); }
-    
-    private static void logerr(int msgIndex) { log(msgIndex, logger::err, logger::errNormal); }
-    private static void logerr(int msgIndex, Object... args) { log(msgIndex, args, logger::err, logger::errNormal); }
-    
-    private static void logwarn(int msgIndex) { log(msgIndex, logger::warn, logger::warnNormal); }
-    private static void logwarn(int msgIndex, Object... args) { log(msgIndex, args, logger::warn, logger::warnNormal); } 
-  }
 }

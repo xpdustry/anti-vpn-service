@@ -26,6 +26,7 @@
 
 package com.xpdustry.avs.command;
 
+import com.xpdustry.avs.Loader;
 import com.xpdustry.avs.command.list.*;
 import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.PlayerLogger;
@@ -52,7 +53,10 @@ public class AVSCommandManager {
   
   public static void registerServer(CommandHandler handler) {
     handler.register("avs", "[command] [args...]", "Anti VPN Service command line manager", args -> {
-      if (args.length == 0) {
+      if (!Loader.done()) {
+        logger.err("avs.command.error-detected");
+        return;
+      } else if (args.length == 0) {
         logger.err("avs.command.invalid-usage");
         return;
       }
@@ -74,7 +78,10 @@ public class AVSCommandManager {
     handler.<Player>register("avs", "[command] [args...]", "Restricted Anti VPN Service manager for admins", (args, player) -> {
       PlayerLogger plogger = new PlayerLogger(player);
       
-      if (!player.admin) {
+      if (!Loader.done()) {
+        plogger.err("avs.command.error-detected");
+        return;
+      } else if (!player.admin) {
         plogger.err("avs.command.admin-required");
         return;
       } else if (args.length == 0) {

@@ -89,7 +89,7 @@ public class Loader {
     logger.errNormal("");
     logger.errNormal("##################################################");
     if (isSecurityError) {
-      logger.err("avs.manager.security-error");
+      logger.err("avs.loading.security-error");
       if (error != null) logger.err("avs.general-error", error.toString());
       
     } else {
@@ -99,8 +99,9 @@ public class Loader {
         logger.err("avs.general-error", error);
       }
     }
-    logger.warnNormal("");
-    logger.warn("avs.loading.error");
+    logger.infoNormal("");
+    logger.info("avs.loading.error");
+    logger.info("avs.loading.report");
     logger.errNormal("##################################################");
     logger.errNormal("");
     return true;

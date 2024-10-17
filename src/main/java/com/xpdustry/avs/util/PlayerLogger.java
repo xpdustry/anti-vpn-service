@@ -26,6 +26,8 @@
 
 package com.xpdustry.avs.util;
 
+import java.text.MessageFormat;
+
 import com.xpdustry.avs.util.bundle.L10NBundlePlayer;
 
 import arc.util.Log.LogLevel;
@@ -36,9 +38,11 @@ import mindustry.gen.Player;
 /** Class to redirect logging messages to a player, with the same usage as {@link Logger} */
 public class PlayerLogger extends Logger {
   public final Player player;
+  public final MessageFormat formatter;
   
   public PlayerLogger(Player player) {
     this.player = player;
+    this.formatter = new MessageFormat("", Strings.string2Locale(player.locale));
   }
   
   /** Send a message to the player */
@@ -58,12 +62,22 @@ public class PlayerLogger extends Logger {
   }
 
   @Override
-  public String getKey(String key) {
+  protected String getKey0(String key) {
     return L10NBundlePlayer.get(key, player);
   }
   
   @Override
-  public String formatKey(String key, Object... args) {
-    return L10NBundlePlayer.formatColor(key, player, args);
+  protected String formatKeyBundle0(com.xpdustry.avs.util.bundle.Bundle bundle, String key, Object... args) {
+    return bundle.formatColor(formatter, key, "[blue]", "[]", args);
+  }
+  
+  @Override
+  protected String formatKey0(String key, Object... args) {
+    return formatKeyBundle0(L10NBundlePlayer.getBundle(player), key, args);
+  }
+
+  @Override
+  protected boolean hasKey0(String key) {
+    return L10NBundlePlayer.has(key, player);
   }
 }

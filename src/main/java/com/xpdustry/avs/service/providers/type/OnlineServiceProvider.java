@@ -173,9 +173,13 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     if(!super.isProviderAvailable()) 
       return false;
     
-    else if (--unavailableTimeout > 0) {
-      logger.debug("avs.provider.online.unavailable", unavailableTimeout());
-      return false;
+    else if (unavailableTimeout() > 0) {
+      if (--unavailableTimeout <= 0) 
+        Events.fire(new AVSEvents.OnlineProviderServiceNowAvailable(this));
+      else {
+        logger.debug("avs.provider.online.unavailable", unavailableTimeout());
+        return false;
+      }
       
     } else if (tokensNeeded() && tokens.isEmpty()) {
       logger.debug("avs.provider.online.tokens.empty-but-needed");
@@ -218,6 +222,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   
   public void makeAvailable() {
     unavailableTimeout = 0;
+    Events.fire(new AVSEvents.OnlineProviderServiceNowAvailable(this));
   }
   
   /** @return whether the token has been added */
@@ -245,7 +250,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     token = token.strip();
     if (!canUseTokens() || !tokens.containsKey(token)) return false;
     tokens.put(token, 0);
-    save();
+    Events.fire(new AVSEvents.OnlineProviderTokenNowAvailable(this, token));
     return true;
   }
   
@@ -263,15 +268,18 @@ public abstract class OnlineServiceProvider extends AddressProvider {
 
       // No valid token
       logger.warn("avs.provider.online.tokens.all-skipped");
+      if (!tokensNeeded()) logger.warn("avs.provider.online.tokens.without");
     }
     
-    ServiceResult result = request(reply.address, null);
-    
-    if (result == null || result.isError()) 
-      reply.type = AddressProviderReply.ReplyType.ERROR;
-    else {
-      cacheProvider.add(result.result);
-      reply.setResult(result.result);
+    if (!tokensNeeded()) {
+      ServiceResult result = request(reply.address, null);
+      
+      if (result == null || result.isError()) 
+        reply.type = AddressProviderReply.ReplyType.ERROR;
+      else {
+        cacheProvider.add(result.result);
+        reply.setResult(result.result);
+      }      
     }
   }
   
@@ -279,43 +287,42 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   protected boolean checkAddressWithToken(AddressProviderReply reply, String token, int tokenTimeout) {
     if (tokenTimeout > 0) {
       tokens.put(token, tokenTimeout-1);
-      logger.debug("avs.provider.online.token.unavailable", tokenTimeout-1);
-      
-    } else {
-      ServiceResult result = request(reply.address, token);
-      
-      if (result == null || result.isError()) {
-        reply.type = AddressProviderReply.ReplyType.ERROR;
-        if (result == null ||
-            (result.reply.status != AdvancedHttp.Status.INVALID_TOKEN &&
-             result.reply.status != AdvancedHttp.Status.QUOTA_LIMIT)) 
-          return false;
-        
-      } else {
-        cacheProvider.add(result.result);
-        reply.setResult(result.result);
-        return false;
+      if (tokenTimeout-1 <= 0) Events.fire(new AVSEvents.OnlineProviderTokenNowAvailable(this, token));
+      else {
+        logger.debug("avs.provider.online.token.unavailable", tokenTimeout-1);
+        return true;
       }
     }
     
-    return true;
+    ServiceResult result = request(reply.address, token);
+    
+    if (result == null || result.isError()) {
+      reply.type = AddressProviderReply.ReplyType.ERROR;
+      return (result != null &&
+              result.reply.status == AdvancedHttp.Status.INVALID_TOKEN &&
+              result.reply.status == AdvancedHttp.Status.QUOTA_LIMIT);
+    }
+    
+    cacheProvider.add(result.result);
+    reply.setResult(result.result);
+    return false;
   }
 
   protected ServiceResult request(String ip, @arc.util.Nullable String token) {
-    if (tokenHeaderName == null && urlWithToken == null) {
+    if (token != null && tokenHeaderName == null && urlWithToken == null) {
       logger.err("avs.provider.online.missing.msg1");
       logger.err("avs.provider.online.missing.msg2");
       return null;
     }
     
     if (tokenHeaderName != null) {
-      if (token == null) {
-        if (headers.containsKey(tokenHeaderName)) headers.remove(tokenHeaderName);
-      } else headers.put(tokenHeaderName, token);   
+      if (token == null) headers.remove(tokenHeaderName);
+      else headers.put(tokenHeaderName, token);   
     }
     
-    String formattedUrl = token == null ? MessageFormat.format(url, ip) : 
-                                          MessageFormat.format(urlWithToken, ip, token);
+    String formattedUrl = token != null && urlWithToken != null ? 
+        MessageFormat.format(urlWithToken, ip, token) :
+        MessageFormat.format(url, ip);
  
     AdvancedHttp.Reply reply = AdvancedHttp.get(formattedUrl, headers);
     ServiceResult result = new ServiceResult(reply, ip);
@@ -327,6 +334,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
         unavailableTimeout = AVSConfig.serviceCheckTimeout.getInt();
         logger.warn("avs.provider.online.in-waiting-list", unavailableTimeout);
         result.setError();
+        Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this));
         return result;
       }
     }
@@ -340,7 +348,8 @@ public abstract class OnlineServiceProvider extends AddressProvider {
       tokens.put(token, AVSConfig.tokenCheckTimeout.get());
       logger.warn("avs.provider.online.token.in-waiting-list", AVSConfig.tokenCheckTimeout.get());
       result.setError();
-     
+      Events.fire(new AVSEvents.OnlineProviderTokenNowUnavailable(this, token));
+      
     // General case
     } else if (reply.error != null || reply.status == AdvancedHttp.Status.ERROR) {
       logger.err("avs.provider.online.error", ip, reply.message);
@@ -354,6 +363,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
       unavailableTimeout = AVSConfig.serviceCheckTimeout.get();
       logger.warn("avs.provider.online.in-waiting-list", unavailableTimeout);
       result.setError();
+      Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this));
     }
     
     return result;

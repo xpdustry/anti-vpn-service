@@ -50,6 +50,10 @@ public class L10NBundlePlayer extends L10NBundle {
   public static String get(String key, Player player) {
     return getBundle(player).get(key);
   }
+  
+  public static String getOrNull(String key, Player player) {
+    return getBundle(player).getOrNull(key);
+  }
 
   public static String format(String key, Player player, Object... values) {
     return getBundle(player).format(key, values);

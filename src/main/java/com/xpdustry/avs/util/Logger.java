@@ -26,8 +26,10 @@
 
 package com.xpdustry.avs.util;
 
+import com.xpdustry.avs.util.bundle.Bundle;
 import com.xpdustry.avs.util.bundle.L10NBundle;
 
+import arc.struct.StringMap;
 import arc.util.Log;
 import arc.util.Log.LogLevel;
 
@@ -116,13 +118,67 @@ public class Logger{
   
   // endregion
   // region bundle
+ 
+  /** Some keys, with important messages, are static, in case of default bundle is not loaded yet */
+  private static final StringMap staticKeys = StringMap.of(
+      "avs.general-error", "Error: {0}",
+      "avs.loading.started", "Anti VPN Service (AVS) is loading...",
+      "avs.loading.custom-bundles", "Loading custom bundles...",
+      "avs.loading.bundle-loaded", "Loaded {0} locales, default is {1}.",
+      "avs.loading.finished", "Loading finished in {0} seconds.",
+      "avs.loading.failed", "An error occurred while loading the Anti VPN Service!",
+      "avs.loading.security-error", "A security manager is present! Unable to take control of the 'ConnectPacket' listener.",
+      "avs.loading.error", "Anti VPN service has been stopped and will not be used due to previous error!",
+      "avs.loading.report", "You can report this error at: https://github.com/xpdustry/Anti-VPN-Service/issues/new",
+      "avs.bundle.loading.started", "Loading bundles in directory: {0}",
+      "avs.bundle.loading.list", "Appending {0} bundles.",
+      "avs.bundle.loading.file.loaded", "Bundle loaded for locale {0}.",
+      "avs.bundle.loading.file.error", "Error while loading bundle file: {0}",
+      "avs.bundle.loading.hierarchy.aplying", "Applying bundles hierarchy...",
+      "avs.bundle.loading.hierarchy.error", "Error while applying bundles hierarchy!",
+      "avs.bundle.loading.done", "Loading done",
+      "avs.bundle.warn.bundle-locale.msg1", "Bundles files with no language, in locale code, are not allowed.",
+      "avs.bundle.warn.bundle-locale.msg2", "The file name should be: prefix_xx_XX.properties. Where xx and XX are the language and country.",
+      "avs.bundle.warn.empty", "The bundle for locale '{0}' is empty.",
+      "avs.bundle.not-found", "Unable to find a bundle for locale {0}. Using default one...",
+      "avs.bundle.default-not-found", "Unable to a find bundle for the default locale '{0}'. Using machine local...",
+      "avs.command.error-detected", "An error was detected during the Anti VPN service startup. Commands have been disabled."
+  );
+  private static final Bundle staticBundle = new Bundle(java.util.Locale.ENGLISH);
   
-  public String getKey(String key) {
+  static { 
+    staticBundle.properties.putAll(staticKeys);
+  }
+  
+  protected String getKey0(String key) {
     return L10NBundle.get(key);
   }
   
+  protected String formatKeyBundle0(Bundle bundle, String key, Object... args) {
+    return bundle.formatColor(L10NBundle.getDefaultFormatter(), key, "&fb&lb", "&fr", args);
+  }
+  
+  protected String formatKey0(String key, Object... args) {
+    return formatKeyBundle0(L10NBundle.getDefaultBundle(), key, args);
+  }
+
+  protected boolean hasKey0(String key) {
+    return L10NBundle.has(key);
+  }
+  
+  
+  public String getKey(String key) {
+    if (hasKey0(key)) return getKey0(key);
+    else return staticBundle.get(key);
+  }
+  
   public String formatKey(String key, Object... args) {
-    return L10NBundle.formatColor(key, args);
+    if (hasKey0(key)) return formatKey0(key, args);
+    else return formatKeyBundle0(staticBundle, key, args);
+  }
+  
+  public boolean hasKey(String key) {
+    return hasKey0(key);
   }
   
   public void log(LogLevel level, String key) {

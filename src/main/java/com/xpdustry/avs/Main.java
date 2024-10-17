@@ -39,8 +39,7 @@ public class Main extends mindustry.mod.Plugin {
     long start = System.currentTimeMillis();
     logger.infoNormal("");
     logger.infoNormal("&lg----------------------------------------------------------------");
-    // For the first message, no bundle key is used.
-    logger.infoNormal("Anti VPN Service (AVS) is loading..."/*"avs.loading.started"*/);
+    logger.info("avs.loading.started");
     logger.infoNormal("");
 
     Loader.load(getClass());

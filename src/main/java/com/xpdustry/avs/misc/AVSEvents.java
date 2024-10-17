@@ -143,7 +143,39 @@ public class AVSEvents {
     }
   }
   
-  //.....
+  public static class OnlineProviderTokenNowUnavailable {
+    public final OnlineServiceProvider provider;
+    public final String token;
+    
+    public OnlineProviderTokenNowUnavailable(OnlineServiceProvider provider, String token) {
+      this.provider = provider;
+      this.token = token;
+    }
+  }
+  public static class OnlineProviderTokenNowAvailable {
+    public final OnlineServiceProvider provider;
+    public final String token;
+    
+    public OnlineProviderTokenNowAvailable(OnlineServiceProvider provider, String token) {
+      this.provider = provider;
+      this.token = token;
+    }
+  }
+  
+  public static class OnlineProviderServiceNowUnavailable {
+    public final OnlineServiceProvider provider;
+    
+    public OnlineProviderServiceNowUnavailable(OnlineServiceProvider provider) {
+      this.provider = provider;
+    }
+  }
+  public static class OnlineProviderServiceNowAvailable {
+    public final OnlineServiceProvider provider;
+    
+    public OnlineProviderServiceNowAvailable(OnlineServiceProvider provider) {
+      this.provider = provider;
+    }
+  }
   
   public static class ClientCheckEvent {
     public final NetConnection con;
