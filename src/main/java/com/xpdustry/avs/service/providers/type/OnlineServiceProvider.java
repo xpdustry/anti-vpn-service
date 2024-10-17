@@ -168,6 +168,16 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     return tokens.size;
   }
   
+  public Seq<String> getTokens() {
+    return tokens.keys().toSeq();
+  }
+  
+  public ObjectMap<String, Integer> waitingTokens() {
+    ObjectMap<String, Integer> tmp = new ObjectMap<>();
+    tokens.each((k, v) -> {if (v > 0) tmp.put(k, v);});
+    return tmp;
+  }
+  
   @Override
   public boolean isProviderAvailable() {
     if(!super.isProviderAvailable()) 
@@ -187,11 +197,11 @@ public abstract class OnlineServiceProvider extends AddressProvider {
    
     } else if (tokensNeeded() && !willUseTokens()) {
       logger.debug("avs.provider.online.tokens.no-availables-but-needed");
-      // and remove one to all tokens
-      tokens.each((k, v) -> tokens.put(k, v-1));
+      refreshTokens();
       return false;
     }
 
+    refreshTokens();
     return true;
   }
   
@@ -214,6 +224,15 @@ public abstract class OnlineServiceProvider extends AddressProvider {
       }
     }
     return false;
+  }
+  
+  protected void refreshTokens() {
+    tokens.each((k, v) -> {
+      if (v > 0) {
+        tokens.put(k, v-1);
+        if (v-1 <= 0) Events.fire(new AVSEvents.OnlineProviderTokenNowAvailable(this, k));
+      }
+    });
   }
   
   public int unavailableTimeout() {
@@ -286,12 +305,8 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   /** @return whether to continue the iteration or not */
   protected boolean checkAddressWithToken(AddressProviderReply reply, String token, int tokenTimeout) {
     if (tokenTimeout > 0) {
-      tokens.put(token, tokenTimeout-1);
-      if (tokenTimeout-1 <= 0) Events.fire(new AVSEvents.OnlineProviderTokenNowAvailable(this, token));
-      else {
-        logger.debug("avs.provider.online.token.unavailable", tokenTimeout-1);
-        return true;
-      }
+      logger.debug("avs.provider.online.token.unavailable", tokenTimeout);
+      return true;
     }
     
     ServiceResult result = request(reply.address, token);
@@ -325,6 +340,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
         MessageFormat.format(url, ip);
  
     AdvancedHttp.Reply reply = AdvancedHttp.get(formattedUrl, headers);
+    Events.fire(new AVSEvents.OnlineProviderServiceRequest(this, reply));
     ServiceResult result = new ServiceResult(reply, ip);
     
     if (!reply.isError()) {
@@ -337,7 +353,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
         Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this));
         return result;
       }
-    }
+    } else handleError(reply);
     
     // Token specific
     if ((reply.status == AdvancedHttp.Status.INVALID_TOKEN ||
@@ -356,7 +372,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
       if (token != null) logger.warn("avs.provider.online.token.skipped");
       result.setError();
     
-    // Server specific
+    // Service specific
     } else if (reply.status.isFatalError()) {
       logger.err("avs.provider.online.service-error", ip);
       logger.err("avs.http-status", reply.httpStatus.code, reply.message);
@@ -371,6 +387,9 @@ public abstract class OnlineServiceProvider extends AddressProvider {
 
   public abstract void handleReply(ServiceResult result);
   
+  /** Can be overrides to handle errors, like to change the status on a specific http code */
+  public void handleError(AdvancedHttp.Reply reply) {
+  }
   
   public static class ServiceResult {
     public final AddressValidity result;

@@ -32,6 +32,7 @@ import com.xpdustry.avs.service.providers.type.AddressProviderReply;
 import com.xpdustry.avs.service.providers.type.CloudDownloadedProvider;
 import com.xpdustry.avs.service.providers.type.EditableAddressProvider;
 import com.xpdustry.avs.service.providers.type.OnlineServiceProvider;
+import com.xpdustry.avs.util.network.AdvancedHttp;
 
 import mindustry.net.NetConnection;
 import mindustry.net.Packets.ConnectPacket;
@@ -142,41 +143,7 @@ public class AVSEvents {
       this.token = token;
     }
   }
-  
-  public static class OnlineProviderTokenNowUnavailable {
-    public final OnlineServiceProvider provider;
-    public final String token;
-    
-    public OnlineProviderTokenNowUnavailable(OnlineServiceProvider provider, String token) {
-      this.provider = provider;
-      this.token = token;
-    }
-  }
-  public static class OnlineProviderTokenNowAvailable {
-    public final OnlineServiceProvider provider;
-    public final String token;
-    
-    public OnlineProviderTokenNowAvailable(OnlineServiceProvider provider, String token) {
-      this.provider = provider;
-      this.token = token;
-    }
-  }
-  
-  public static class OnlineProviderServiceNowUnavailable {
-    public final OnlineServiceProvider provider;
-    
-    public OnlineProviderServiceNowUnavailable(OnlineServiceProvider provider) {
-      this.provider = provider;
-    }
-  }
-  public static class OnlineProviderServiceNowAvailable {
-    public final OnlineServiceProvider provider;
-    
-    public OnlineProviderServiceNowAvailable(OnlineServiceProvider provider) {
-      this.provider = provider;
-    }
-  }
-  
+
   public static class ClientCheckEvent {
     public final NetConnection con;
     public final ConnectPacket packet;
@@ -281,6 +248,50 @@ public class AVSEvents {
       this.provider = provider;
       this.address = address;
       this.error = error;
+    }
+  }
+  
+  public static class OnlineProviderServiceRequest {
+    public final OnlineServiceProvider provider;
+    public final AdvancedHttp.Reply reply;
+    
+    public OnlineProviderServiceRequest(OnlineServiceProvider provider, AdvancedHttp.Reply reply) {
+      this.provider = provider;
+      this.reply = reply;
+    }
+  }
+  
+  public static class OnlineProviderTokenNowUnavailable {
+    public final OnlineServiceProvider provider;
+    public final String token;
+    
+    public OnlineProviderTokenNowUnavailable(OnlineServiceProvider provider, String token) {
+      this.provider = provider;
+      this.token = token;
+    }
+  }
+  public static class OnlineProviderTokenNowAvailable {
+    public final OnlineServiceProvider provider;
+    public final String token;
+    
+    public OnlineProviderTokenNowAvailable(OnlineServiceProvider provider, String token) {
+      this.provider = provider;
+      this.token = token;
+    }
+  }
+  
+  public static class OnlineProviderServiceNowUnavailable {
+    public final OnlineServiceProvider provider;
+    
+    public OnlineProviderServiceNowUnavailable(OnlineServiceProvider provider) {
+      this.provider = provider;
+    }
+  }
+  public static class OnlineProviderServiceNowAvailable {
+    public final OnlineServiceProvider provider;
+    
+    public OnlineProviderServiceNowAvailable(OnlineServiceProvider provider) {
+      this.provider = provider;
     }
   }
   

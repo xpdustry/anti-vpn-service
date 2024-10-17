@@ -31,7 +31,7 @@ import com.xpdustry.avs.util.network.AdvancedHttp;
 
 import arc.util.serialization.JsonValue;
 
-
+// Others service idea: https://github.com/xpdustry/nucleus/issues/10
 public class VpnApiService extends com.xpdustry.avs.service.providers.type.OnlineServiceProvider {
   public VpnApiService() {
     super("VpnAPI.io", "vpnapi", "https://vpnapi.io/api/{0}");
@@ -44,7 +44,7 @@ public class VpnApiService extends com.xpdustry.avs.service.providers.type.Onlin
   public void handleReply(ServiceResult result) {
     JsonValue soup = new arc.util.serialization.JsonReader().parse(result.reply.result);
     
-    if (soup.size == 0) {
+    if (soup.child == null) {
       result.reply.status = AdvancedHttp.Status.EMPTY_CONTENT;
       return;
       
@@ -89,5 +89,11 @@ public class VpnApiService extends com.xpdustry.avs.service.providers.type.Onlin
     result.result.type.proxy = security.getBoolean("proxy");
     result.result.type.tor= security.getBoolean("tor");
     result.result.type.relay = security.getBoolean("relay");
+  }
+  
+  @Override
+  public void handleError(AdvancedHttp.Reply reply) {
+    if (reply.httpStatus.code == 403) 
+      reply.status = AdvancedHttp.Status.QUOTA_LIMIT;
   }
 }

@@ -68,8 +68,9 @@ public class AdvancedHttp {
   
   private static void handleSuccess(Reply toProvide, HttpResponse response) {
     toProvide.httpStatus = response.getStatus();
-    toProvide.status = Status.getByHttpCode(toProvide.httpStatus.code);
     toProvide.result = response.getResultAsString().strip();
+    if (toProvide.result.isEmpty()) toProvide.status = Status.EMPTY_CONTENT;
+    else toProvide.status = Status.getByHttpCode(toProvide.httpStatus.code);
     toProvide.setMessage(response);
   }
   
