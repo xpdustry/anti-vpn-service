@@ -156,7 +156,7 @@ public class L10NBundle {
       
       try {
         int cindex = fi.name().replace("-", "_").indexOf('_');
-        String code = cindex == -1 ? "" : fi.name().substring(cindex+1);
+        String code = cindex == -1 ? "" : fi.nameWithoutExtension().substring(cindex+1);
         Locale locale = Strings.string2Locale(code);
         
         // Check if language is empty, to ignore and warn
