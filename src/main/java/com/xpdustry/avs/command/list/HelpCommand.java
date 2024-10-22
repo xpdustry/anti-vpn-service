@@ -28,42 +28,58 @@ package com.xpdustry.avs.command.list;
 
 import com.xpdustry.avs.command.AVSCommandManager;
 import com.xpdustry.avs.command.Command;
+import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
+
+import arc.struct.Seq;
 
 
 public class HelpCommand extends com.xpdustry.avs.command.Command {
   public HelpCommand() { super("help"); }
 
   @Override
-  public void run(String[] args, com.xpdustry.avs.util.Logger logger, boolean restrictedMode) {
+  public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
-      String format = logger.getKey("avs.command.help.format." + (restrictedMode ? "player" : "server"));
-      
-      if (restrictedMode) {
-        StringBuilder builder = new StringBuilder(logger.getKey("avs.command.help.list") + "\n");
-        for (Command c : AVSCommandManager.subCommands) {
-          String params = " "+c.getArgs(logger);
-          builder.append(Strings.format(format, c.name, params.isBlank() ? "" : params, c.getDesc(logger)) + "\n");
-        } 
-        logger.infoNormal(builder.toString());
-        
-      } else {
-        logger.info("avs.command.help.list");
-        for (Command c : AVSCommandManager.subCommands) {
-          String params = " "+c.getArgs(logger);
-          logger.infoNormal(Strings.format(format, c.name, params.isBlank() ? "" : params, c.getDesc(logger)));
-        }      
-      }
+      printCommands(restrictedMode ? AVSCommandManager.restrictedCommands : AVSCommandManager.subCommands, 
+                    logger, restrictedMode);
+      return;
+    }
+    
+    Command command = AVSCommandManager.subCommands.find(c -> c.name.equals(args[0]));
+    
+    if (command == null) {
+      logger.err("avs.command.not-found", args[0]);
+      return;
+    } else if (restrictedMode && !AVSCommandManager.restrictedCommands.contains(command)) {
+      logger.err("avs.command.restricted");
+      return;
+    }
+    
+    command.printHelp(logger);
+  }
+  
+  private static void printCommands(Seq<Command> list, Logger logger, boolean forPlayer) {
+    if (list.isEmpty()) {
+      logger.warn("avs.command.nothing");
+      return;
+    }
+    
+    String format = logger.getKey("avs.command.help.format." + (forPlayer ? "player" : "server"));
+    
+    if (forPlayer) {
+      StringBuilder builder = new StringBuilder(logger.getKey("avs.command.help.list") + "\n");
+      list.each(c -> {
+        String params = c.getArgs(logger);
+        builder.append(Strings.format(format, c.name, params.isEmpty() ? "" : " "+params, c.getDesc(logger)) + "\n");
+      });
+      logger.infoNormal(builder.toString());
       
     } else {
-      for (Command c : AVSCommandManager.subCommands) {
-        if (args[0].equals(c.name)) {
-          c.printHelp(logger);
-          return;
-        }
-      }
-      
-      logger.err("avs.command.not-found", args[0]);      
+      logger.info("avs.command.help.list");
+      list.each(c -> {
+        String params = c.getArgs(logger);
+        logger.infoNormal(Strings.format(format, c.name, params.isEmpty() ? "" : " "+params, c.getDesc(logger)));
+      });
     }
   }
 }

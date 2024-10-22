@@ -26,7 +26,7 @@
 
 package com.xpdustry.avs.service.providers.type;
 
-import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.misc.address.AddressType;
 import com.xpdustry.avs.misc.address.AddressValidity;

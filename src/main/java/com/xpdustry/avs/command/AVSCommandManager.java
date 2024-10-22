@@ -31,6 +31,7 @@ import com.xpdustry.avs.command.list.*;
 import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.PlayerLogger;
 
+import arc.struct.Seq;
 import arc.util.CommandHandler;
 
 import mindustry.gen.Player;
@@ -42,14 +43,16 @@ public class AVSCommandManager {
    * Sub commands of the "avs" command, or "/avs". <br>
    * It's better to do like that, to be able to use bundles,
    * because {@link CommandHandler} doesn't allow to modify the parameters or description. <br>
-   * So the main command have static parameters and description in english.
+   * So the main command have static parameters and description in English.
    */
-  public static final Command[] subCommands = {
+  public static final Seq<Command> subCommands = Seq.with(
     new ConfigCommand(),
     new ProviderCommand(),
+    new InfoCommand(),
     new ResetCommand(),
-    new HelpCommand(),
-  };
+    new HelpCommand()
+  );
+  public static final Seq<Command> restrictedCommands = new Seq<>();
   
   public static void registerServer(CommandHandler handler) {
     handler.register("avs", "[command] [args...]", "Anti VPN Service command line manager", args -> {
@@ -61,16 +64,13 @@ public class AVSCommandManager {
         return;
       }
       
-      for (Command c : subCommands) {
-        if (args[0].equals(c.name)) {
-          String[] newArgs = args.length > 1 ? args[1].strip().split("\\s+") : new String[0];
-          try { c.run(newArgs); }
-          catch (Exception e) { logger.err(e); }
-          return;
-        }
-      }
+      Command command = subCommands.find(c -> c.name.equals(args[0]));
       
-      logger.err("avs.command.not-found", args[0]);
+      if (command != null) {
+        String[] newArgs = args.length > 1 ? args[1].strip().split("\\s+") : new String[0];
+        try { command.run(newArgs); }
+        catch (Exception e) { logger.err(e); }        
+      } else logger.err("avs.command.not-found", args[0]);
     });
   }
   
@@ -89,18 +89,19 @@ public class AVSCommandManager {
         return;
       }
       
-      for (Command c : subCommands) {
-        if (args[0].equals(c.name)) {
-          String[] newArgs = args.length > 1 ? args[1].strip().split("\\s+") : new String[0];
-          try { c.run(newArgs, plogger, true); }
-          catch (Exception e) { plogger.err("avs.general-error", e.toString()); }
-          return;
-        }
+      Command command = subCommands.find(c -> c.name.equals(args[0]));
+      
+      if (command == null) {
+        plogger.err("avs.command.not-found", args[0]);
+        return;
+      } else if (!restrictedCommands.contains(command)) {
+        plogger.err("avs.command.restricted");
+        return;
       }
       
-      plogger.err("avs.command.not-found", args[0]);
+      String[] newArgs = args.length > 1 ? args[1].strip().split("\\s+") : new String[0];
+      try { command.run(newArgs, plogger, true); }
+      catch (Exception e) { plogger.err("avs.general-error", e.toString()); }
     });
-  }
-  
-  
+  } 
 }

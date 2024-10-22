@@ -28,11 +28,12 @@ package com.xpdustry.avs.service.providers.type;
 
 import java.net.InetAddress;
 
-import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.misc.JsonSerializer;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.util.DynamicSettings;
+import com.xpdustry.avs.util.network.Subnet;
 
 import arc.Events;
 import arc.struct.Seq;
@@ -41,7 +42,7 @@ import arc.util.serialization.Json;
 
 public class CachedAddressProvider extends AddressProvider {  
   protected Seq<AddressValidity> cache = new Seq<>(false);
-  protected DynamicSettings cacheFile = null;
+  private DynamicSettings cacheFile = null;
   protected String cacheKey = "cache";
 
   public CachedAddressProvider(String displayName) { 
@@ -54,6 +55,22 @@ public class CachedAddressProvider extends AddressProvider {
     folder = AVSConfig.cacheDirectory.get();
   }
 
+  public AddressValidity get(Subnet subnet) {
+    return cache.find(a -> a.subnet.equals(subnet));
+  }
+  
+  public Seq<AddressValidity> matches(String address) {
+    return cache.select(s -> s.subnet.isInNet(address));
+  }
+  
+  public Seq<AddressValidity> getCache() {
+    return cache.copy();
+  }
+  
+  public Seq<Subnet> list() {
+    return cache.map(a -> a.subnet);
+  }
+  
   @Override
   public boolean load() {
     loaded = false;

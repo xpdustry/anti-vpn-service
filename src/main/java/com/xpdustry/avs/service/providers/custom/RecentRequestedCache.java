@@ -35,7 +35,7 @@ public class RecentRequestedCache extends com.xpdustry.avs.service.providers.typ
   public RecentRequestedCache() {
     super("Recent Requested Cache", "recent-cache");
     // This provider is a cache for online services, so it's stored in the cache folder
-    folder = com.xpdustry.avs.misc.AVSConfig.cacheDirectory.get();
+    folder = com.xpdustry.avs.config.AVSConfig.cacheDirectory.get();
   }
 
   @Override

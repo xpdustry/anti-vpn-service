@@ -26,7 +26,7 @@
 
 package com.xpdustry.avs.service.providers.type;
 
-import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.util.Logger;
 
@@ -70,7 +70,8 @@ public abstract class AddressProvider {
   /**
    * Check if address is blacklisted.
    * 
-   * @apiNote the result is never {@code null}.
+   * @apiNote the address should be validated before.
+   * @return the provider reply (nerver {@code null})
    */
   public AddressProviderReply checkAddress(String address) {
     AddressProviderReply reply = new AddressProviderReply(address);

@@ -30,11 +30,11 @@ package com.xpdustry.avs.misc.address;
 public class AddressInfos {
   public final String ip;
   // placeholders
-  public String network = "0.0.0.0/0", 
-      location = "<unknown>",
+  public String network = "", 
+      location = "",
       ISP = "",
-      ASN = "ASN00000",
-      locale = "en";
+      ASN = "",
+      locale = "";
   public float longitude = 0, latitude = 0;
   
   public AddressInfos(String ip) {

@@ -28,7 +28,7 @@ package com.xpdustry.avs.service.providers.type;
 
 import java.text.MessageFormat;
 
-import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.misc.address.AddressInfos;
 import com.xpdustry.avs.misc.address.AddressValidity;

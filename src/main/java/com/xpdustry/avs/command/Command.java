@@ -47,4 +47,12 @@ public abstract class Command {
   public void run(String[] args) { run(args, defaultLogger, false); };
   public void run(String[] args, Logger logger) { run(args, logger, false); };
   public abstract void run(String[] args, Logger logger, boolean restrictedMode);
+  
+  
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) return true;
+    if (o == null || !(o instanceof Command)) return false;
+    return ((Command) o).name.equals(name);
+  }
 }

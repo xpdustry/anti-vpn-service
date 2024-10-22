@@ -116,13 +116,21 @@ public class Subnet
     @Override
     final public int hashCode()
     {
-        return this.bytesSubnetCount;
+        return this.bigSubnetMasked.hashCode();
     }
 
     @Override
-    public String toString()
-    {
-        return address + "/" + this.bitsMaskCount;
+    public String toString() {
+      return toString(false);
+    }
+    
+    public String toString(boolean alwaysWithMask) {
+      if (alwaysWithMask) return address + "/" + this.bitsMaskCount;
+      else {
+        String result = address;
+        if (this.bitsMaskCount != this.bytesSubnetCount*8) result += "/" + this.bitsMaskCount;
+        return result;        
+      }
     }
 
     

@@ -26,7 +26,8 @@
 
 package com.xpdustry.avs.command.list;
 
-import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.config.AVSConfig;
+import com.xpdustry.avs.config.ConfigField;
 import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
 
@@ -34,7 +35,7 @@ import arc.struct.Seq;
 
 
 public class ConfigCommand extends com.xpdustry.avs.command.Command {
-  public static final Seq<AVSConfig.Field> restrictedSettings = new Seq<>();
+  public static final Seq<ConfigField> restrictedSettings = new Seq<>();
   
   public ConfigCommand() { super("config"); }
 
@@ -51,7 +52,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
       return;
     }
     
-    AVSConfig.Field field = AVSConfig.get(args[0]);
+    ConfigField field = AVSConfig.get(args[0]);
     
     if (field == null) {
       logger.err("avs.command.config.field.not-found", args[0]);
@@ -68,7 +69,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
       return;
     }
     
-    String value = Strings.join(" ", arc.util.Structs.remove(args, 0));
+    String value = String.join(" ", arc.util.Structs.remove(args, 0));
     Object v = null;
     
     if (field.isBool()) {
@@ -95,7 +96,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     if (field.set(v, logger)) logger.info("avs.command.config.field.value.set", field.name, v);
   }
   
-  private static void printSettings(Seq<AVSConfig.Field> list, Logger logger, boolean forPlayer) {
+  private static void printSettings(Seq<ConfigField> list, Logger logger, boolean forPlayer) {
     if (list.isEmpty()) {
       logger.warn("avs.command.config.nothing");
       return;
@@ -105,12 +106,12 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     String descFormat =  logger.getKey("avs.command.config." + (forPlayer ? "player" : "server") + ".desc");
     String next = logger.getKey("avs.command.config." + (forPlayer ? "player" : "server") + ".next");
     
-    Seq<AVSConfig.Field> dev = list.select(f -> f.isDev);
+    Seq<ConfigField> dev = list.select(f -> f.isDev);
     list = list.select(f -> !f.isDev);
     
     if (forPlayer) {
       StringBuilder builder;
-      arc.func.Cons2<StringBuilder, Seq<AVSConfig.Field>> printer = (b, l) -> {
+      arc.func.Cons2<StringBuilder, Seq<ConfigField>> printer = (b, l) -> {
         l.each(f -> {
           /*b.append(Strings.format(valueFormat, f.name, Strings.objToStr(f.get())) + "\n");
           for (String line : f.getDescription(logger).split("\n"))
@@ -137,7 +138,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
       }
        
     } else {
-      arc.func.Cons<Seq<AVSConfig.Field>> printer = l -> {
+      arc.func.Cons<Seq<ConfigField>> printer = l -> {
         l.each(f -> {
           logger.infoNormal(Strings.format(valueFormat, f.name, Strings.objToStr(f.get())));
           for (String line : f.getDescription().split("\n"))

@@ -26,7 +26,7 @@
 
 package com.xpdustry.avs;
 
-import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.ServiceManager;
@@ -60,9 +60,9 @@ public class Loader {
     // After, the bundles
     if (loadCheck(Loader::loadBundles)) return; 
     // Complete the settings loading
-    finishSettingsLoading(); 
+    if (loadCheck(Loader::finishSettingsLoading)) return; 
     // Check the version
-    VersionChecker.checkAndPromptToUpgrade(mod.meta.repo, mod.meta.version); 
+    if (loadCheck(Loader::checkUpdates)) return; 
     // And init the plugin
     if (loadCheck(Loader::initPlugin)) return; 
     
@@ -121,13 +121,20 @@ public class Loader {
   }
   
   /** Because we need to load the bundles before trigger the initial value change listener */
-  public static void finishSettingsLoading() {
+  public static boolean finishSettingsLoading() {
     AVSConfig.notifyAllValueChanged();
+    return true;
+  }
+  
+  public static boolean checkUpdates() {
+    VersionChecker.checkAndPromptToUpgrade(mod.meta.repo, mod.meta.version);
+    return true;
   }
   
   public static boolean initPlugin() {
     if (ServiceManager.registerListeners()) {
       AntiVpnService.load(); 
+      AntiVpnService.save();
       DynamicSettings.startAutosave("AVS-Autosave");
       DynamicSettings.waitForAutosave();
       return AntiVpnService.isOperational();

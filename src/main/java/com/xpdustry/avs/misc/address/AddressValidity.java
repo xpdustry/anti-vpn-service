@@ -44,34 +44,24 @@ public class AddressValidity {
   }
   
   @Override
-  public final boolean equals(Object obj) {
-    if (!(obj instanceof AddressValidity)) return false;
-    final AddressValidity other = (AddressValidity) obj;
-    return subnet.equals(other.subnet);
+  public boolean equals(Object obj) {
+    if (obj == this) return true;
+    if (obj == null || !(obj instanceof AddressValidity)) return false;
+    return subnet.equals(((AddressValidity) obj).subnet);
   }
 
-  public static void checkIP(String ip) {
-    try {
-      // single machine mask is allowed
-      int index = ip.indexOf('/');
-      if (index == -1) index = ip.indexOf('%');
-      if (index != -1) {
-        int mask = arc.util.Strings.parseInt(ip.substring(index+1), 0);
-        ip = ip.substring(0, index);
-        if (mask != 0 && mask != 32)
-          throw new IllegalArgumentException("IP address must not have a mask, only subnet addresses can. (ip: " + ip + ")");
-      }
-        
-      // Convert the ip to InetAddress, to check its validity.
-      // Because we cannot access the class InetAddressUtil class,
-      // used to check formatting of address
-      
-      if (java.net.InetAddress.getByName(ip).isLoopbackAddress()) {
-        throw new IllegalArgumentException("Loopback address is not allowed. (ip: " + ip + ")");
-      }
-      
-    } catch (java.net.UnknownHostException e) { 
-      throw new IllegalArgumentException(e.getLocalizedMessage() + ". (ip: " + ip + ")"); 
+  public static void checkIP(String ip) throws IllegalArgumentException {
+    // single machine mask (or 0) is allowed
+    int index = ip.indexOf('/');
+    if (index == -1) index = ip.indexOf('%');
+    if (index != -1) {
+      int mask = arc.util.Strings.parseInt(ip.substring(index+1), 0);
+      ip = ip.substring(0, index);
+      if (mask != 0 && mask != 32 && mask != 128)
+        throw new IllegalArgumentException("Address must not have a mask, only subnet addresses can.");
     }
+    
+    if (!com.xpdustry.avs.util.network.InetAddressValidator.getInstance().isValid(ip)) 
+      throw new IllegalArgumentException("Invalid or malformed address");
   }
 }

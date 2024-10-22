@@ -376,7 +376,7 @@ public class DynamicSettings {
   public synchronized boolean has(String name){
       return values.containsKey(name);
   }
-
+  
   public synchronized Object get(String name, Object def){
       return values.containsKey(name) ? values.get(name) : def;
   }

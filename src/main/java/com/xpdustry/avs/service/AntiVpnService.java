@@ -26,7 +26,7 @@
 
 package com.xpdustry.avs.service;
 
-import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.service.providers.custom.*;
@@ -107,33 +107,53 @@ public class AntiVpnService {
     if (result != null && result.resultFound()) return result;
     result = checkAddressImpl(address, localProviders);
     if (result != null && result.resultFound()) return result;
-    Seq<OnlineServiceProvider> p = onlineProviders;
-    if (AVSConfig.randomOnlineProviders.getBool()&& 
-        onlineProviders.size > 1)
-      p = onlineProviders.copy().shuffle();
-    result = checkAddressImpl(address, p);
-    
-    // Prevents all online services from being unavailable
-    
-    
+    result = checkAddressOnline(address);
+
     Events.fire(new AVSEvents.AddressCheckFinishedEvent(address, result));
     return result;
   }
   
-  protected static AddressProviderReply checkAddressImpl(String ip, Seq<? extends AddressProvider> providers) {
-    for (AddressProvider p : providers) {
+  public static AddressProviderReply checkAddressOnline(String address) {
+    if (!isOperational()) return null;
+    AddressValidity.checkIP(address);
+    AddressProviderReply result = null;
+
+    Seq<OnlineServiceProvider> onlines = onlineProviders;
+    if (AVSConfig.randomOnlineProviders.getBool()&& 
+        onlineProviders.size > 1)
+      onlines = onlineProviders.copy().shuffle();
+    
+    for (AddressProvider p : onlines) {
       if (!isOperational()) return null;
-      AddressProviderReply result = p.checkAddress(ip);
+      result = p.checkAddress(address);
       
       if (result.resultFound()) {
         if (!result.validity.type.isNotValid() && p instanceof OnlineServiceProvider && 
             !((OnlineServiceProvider) p).isTrusted())
           continue;
         return result;
+      }   
+    }
+    
+    //TODO: Prevents all online services from being unavailable
+
+    return result;
+  }
+  
+  protected static AddressProviderReply checkAddressImpl(String ip, Seq<? extends AddressProvider> providers) {
+    AddressProviderReply result = null;
+    for (AddressProvider p : providers) {
+      if (!isOperational()) return null;
+      result = p.checkAddress(ip);
+      
+      if (result.resultFound()) {
+        if (!result.validity.type.isNotValid())
+          continue;
+        return result;
       }
     }      
 
-    return null;
+    return result;
   }
   
   public static boolean isOperational() {

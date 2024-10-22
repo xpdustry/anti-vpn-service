@@ -17,7 +17,7 @@ And there are many settings, to configure the plugin to your needs.
 
 
 ### Commands
-**Server command:** `avs [command] [args...]` Anti VPN Service command line manager
+**Server command:** `avs [command] [args...]` Anti VPN Service command line manager <br>
 **Admin command:** `/avs [command] [args...]` Restricted Anti VPN Service manager for admins
 
 

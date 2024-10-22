@@ -24,9 +24,11 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.misc;
+package com.xpdustry.avs.config;
 
 import com.xpdustry.avs.Loader;
+import com.xpdustry.avs.command.AVSCommandManager;
+import com.xpdustry.avs.command.Command;
 import com.xpdustry.avs.command.list.ConfigCommand;
 import com.xpdustry.avs.command.list.ProviderCommand;
 import com.xpdustry.avs.service.AntiVpnService;
@@ -44,7 +46,11 @@ import arc.struct.Seq;
 
 
 /** Used by {@link AVSConfig} to notify a changed value */
-public class AVSConfigEvents {
+public class ConfigEvents {
+  public static interface Callback {
+    boolean run(Object value, Logger logger);
+  }
+
   public static boolean onDefaultLocaleChanged(Object v, Logger logger) {
     if (!Loader.done()) return false;
       
@@ -73,7 +79,7 @@ public class AVSConfigEvents {
   
   public static boolean onRestrictedSettingsChanged(Object v, Logger logger) {
     String value = (String) v;
-    Seq<AVSConfig.Field> list = new Seq<>();
+    Seq<ConfigField> list = new Seq<>();
     
     if (value.equals("all")) {
       ConfigCommand.restrictedSettings.set(AVSConfig.all);
@@ -83,9 +89,10 @@ public class AVSConfigEvents {
     
     if (!value.equals("\"\"") && !value.isBlank()) {
       for (String s : value.split(",")) {
-        AVSConfig.Field config = AVSConfig.all.find(c -> c.name.equals(s));
+        final String s0 = s.strip();
+        ConfigField config = AVSConfig.all.find(c -> c.name.equals(s0));
         if (config == null) {
-          logger.err("avs.command.config.field.not-found", s);
+          logger.err("avs.command.config.field.not-found", s0);
           return false;
         }
         list.add(config);
@@ -108,9 +115,10 @@ public class AVSConfigEvents {
     
     if (!value.equals("\"\"") && !value.isBlank()) {
       for (String p : value.split(",")) {
-        AddressProvider provider = AntiVpnService.allProviders.find(c -> c.name.equals(p) || c.displayName.equals(p));
+        final String p0 = p.strip();
+        AddressProvider provider = AntiVpnService.allProviders.find(c -> c.name.equals(p0) || c.displayName.equals(p0));
         if (provider == null) {
-          logger.err("avs.command.provider.not-found", p);
+          logger.err("avs.command.provider.not-found", p0);
           return false;
         }
         list.add(provider);
@@ -121,6 +129,31 @@ public class AVSConfigEvents {
     return true;
   }
 
+  public static boolean onRestrictedCommandsChanged(Object v, Logger logger) {
+    String value = (String) v;
+    Seq<Command> list = new Seq<>();
+    
+    if (value.equals("all")) {
+      AVSCommandManager.restrictedCommands.set(AVSCommandManager.subCommands);
+      logger.info("avs.command.allowed-all");
+      return true;
+    }
+    
+    if (!value.equals("\"\"") && !value.isBlank()) {
+      for (String c : value.split(",")) {
+        final String c0 = c.strip();
+        Command command = AVSCommandManager.subCommands.find(a -> a.name.equals(c0));
+        if (command == null) {
+          logger.err("avs.command.not-found2", c0);
+          return false;
+        }
+        list.add(command);
+      }
+    }
+    
+    AVSCommandManager.restrictedCommands.set(list);
+    return true;
+  }
   
   // dev settings callbacks
   

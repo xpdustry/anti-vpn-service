@@ -67,6 +67,7 @@ public class AdvancedHttp {
   }
   
   private static void handleSuccess(Reply toProvide, HttpResponse response) {
+    toProvide.error = null;
     toProvide.httpStatus = response.getStatus();
     toProvide.result = response.getResultAsString().strip();
     if (toProvide.result.isEmpty()) toProvide.status = Status.EMPTY_CONTENT;
@@ -77,6 +78,7 @@ public class AdvancedHttp {
   private static void handleFailure(Reply toProvide, Throwable error) {
     if (error instanceof AwaitHttp.HttpStatusException) {
       AwaitHttp.HttpStatusException status = (AwaitHttp.HttpStatusException) error;
+      toProvide.error = null;
       toProvide.httpStatus = status.status;
       toProvide.status = Status.getByHttpCode(toProvide.httpStatus.code);
       
@@ -87,6 +89,7 @@ public class AdvancedHttp {
       
     } else {
       toProvide.error = error;
+      toProvide.httpStatus = HttpStatus.UNKNOWN_STATUS;
       toProvide.status = Status.ERROR;
       toProvide.setMessage(error.toString());
     }

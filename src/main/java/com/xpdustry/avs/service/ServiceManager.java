@@ -28,7 +28,8 @@ package com.xpdustry.avs.service;
 
 import java.util.concurrent.ThreadPoolExecutor;
 
-import com.xpdustry.avs.misc.AVSConfig;
+import com.xpdustry.avs.config.AVSConfig;
+import com.xpdustry.avs.config.ConfigField;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.service.providers.type.AddressProviderReply;
 import com.xpdustry.avs.util.DynamicSettings;
@@ -272,12 +273,12 @@ public class ServiceManager {
     logger.info("avs.manager.reset.progress");
     DynamicSettings.stopAutosave();
     SettingsCleaner.clearFiles();
-    AVSConfig.Field[] folders = {
+    ConfigField[] folders = {
         AVSConfig.cloudDirectory, AVSConfig.tokensDirectory,
         AVSConfig.cacheDirectory, AVSConfig.settingsDirectory,
         AVSConfig.bundlesDirectory, AVSConfig.pluginDirectory
     };
-    for (AVSConfig.Field d : folders) AVSConfig.subDir(d.getString()).delete();
+    for (ConfigField d : folders) AVSConfig.subDir(d.getString()).delete();
     logger.info("avs.manager.reset.done");
   }
   
