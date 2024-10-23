@@ -106,13 +106,21 @@ public class ServiceManager {
     // Wrap the original listener
     Vars.net.handleServer(ConnectPacket.class, (con, packet) -> {
       // Just in case
-      if (packet.locale == null) packet.locale = "en";
+      if (packet.locale == null || packet.locale.isBlank()) 
+        packet.locale = "en";
       // For visual in console
       con.uuid = packet.uuid;
       
       if (!AntiVpnService.isOperational()) {
         logger.warn("avs.validator.not-operational", con.address);
         kickClient(con, packet, 0, true);
+        return;
+      }
+      
+      if (!AVSConfig.enabled.getBool()) {
+        logger.warn("avs.validator.disabled", con.address, con.uuid);
+        if (connectPacketServerListener != null) 
+          Core.app.post(() -> connectPacketServerListener.get(con, packet));   
         return;
       }
       
@@ -161,7 +169,8 @@ public class ServiceManager {
             AddressProviderReply reply = AntiVpnService.checkAddress(con.address);
       
             if (reply != null && reply.resultFound()) {
-              if (reply.validity.type.isNotValid()) {
+              if (reply.type != AddressProviderReply.ReplyType.ALLOWED && 
+                  reply.validity.type.isNotValid()) {
                 Events.fire(new AVSEvents.ClientRejectedEvent(con, packet, false, reply));
                 logger.info("avs.validator.ip.blacklisted", con.address, con.uuid);
                 // Kick the client without duration to avoid creating an empty account, but still register an kick duration

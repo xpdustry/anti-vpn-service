@@ -61,7 +61,7 @@ public class AVSConfig {
     useDefaultBundle = new ConfigField("bundle-default", com.xpdustry.avs.util.bundle.L10NBundle.useDefaultWhenKeyNotFound, ConfigEvents::onUseDefaultBundleChanged),
     randomOnlineProviders = new ConfigField("random-online", false),
     randomTokens = new ConfigField("random-tokens", false),
-  //  xxx = new ConfigField("???", true),
+    preventUnavailable = new ConfigField("prevent-unavailable", true),
     resultRequired = new ConfigField("result-required", true),
     
     // For devs, better to keep that as default

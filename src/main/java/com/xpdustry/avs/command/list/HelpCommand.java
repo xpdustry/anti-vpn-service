@@ -64,7 +64,7 @@ public class HelpCommand extends com.xpdustry.avs.command.Command {
       return;
     }
     
-    String format = logger.getKey("avs.command.help.format." + (forPlayer ? "player" : "server"));
+    String format = logger.getKey("avs.command.help.format");
     
     if (forPlayer) {
       StringBuilder builder = new StringBuilder(logger.getKey("avs.command.help.list") + "\n");

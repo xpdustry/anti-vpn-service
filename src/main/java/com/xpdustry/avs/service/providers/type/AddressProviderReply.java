@@ -13,7 +13,7 @@ public class AddressProviderReply {
   }
   
   public boolean resultFound() {
-    return type == ReplyType.FOUND;
+    return type == ReplyType.FOUND || type == ReplyType.ALLOWED;
   }
   
   public boolean hasResult() {
@@ -27,6 +27,6 @@ public class AddressProviderReply {
   
   
   public static enum ReplyType {
-    FOUND, NOT_FOUND, ERROR, UNAVAILABLE;
+    FOUND, NOT_FOUND, ALLOWED, ERROR, UNAVAILABLE;
   }
 }

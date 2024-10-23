@@ -18,11 +18,15 @@ And there are many settings, to configure the plugin to your needs.
 
 ### Commands
 **Server command:** `avs [command] [args...]` Anti VPN Service command line manager <br>
-**Admin command:** `/avs [command] [args...]` Restricted Anti VPN Service manager for admins
+**Admin command:**  `/avs [command] [args...]` Restricted Anti VPN Service manager for admins
 
 
 ### Releases
 Prebuild releases can be found [here](https://github.com/Xpdustry/anti-vpn-service/releases)
+
+
+### Feedback
+Free to you to [open an issue](https://github.com/xpdustry/Anti-VPN-Service/issues/new) and write a suggestion, a bug report, or just a question.
 
 
 ### Building a Jar

@@ -30,6 +30,7 @@ import java.text.MessageFormat;
 
 import com.xpdustry.avs.util.bundle.L10NBundlePlayer;
 
+import arc.util.Log;
 import arc.util.Log.LogLevel;
 
 import mindustry.gen.Player;
@@ -47,16 +48,17 @@ public class PlayerLogger extends Logger {
   
   /** Send a message to the player */
   public void send(String text, Object... args) {
-    player.sendMessage(Strings.format(text.replace("@", "[blue]@[]"), args));
+    text = Strings.format(text.replace("@", "&lb@&fr"), args);
+    player.sendMessage(PlayerColorCodes.apply(text, Log.useColors));
   }  
   
   @Override
   public void logNormal(LogLevel level, String text, Object... args) {
-    if (level == LogLevel.none) return;
-    String prefix = level == LogLevel.debug ? "[cyan]" :
+    if(Log.level.ordinal() > level.ordinal()) return;
+    String prefix = level == LogLevel.debug ? "&lc" :
                     level == LogLevel.info ? "" :
-                    level == LogLevel.warn ? "[orange]" :
-                    level == LogLevel.err ? "[scarlet]":
+                    level == LogLevel.warn ? "&ly" :
+                    level == LogLevel.err ? "&lr":
                     "";
     send(prefix + text, args);
   }
@@ -68,7 +70,7 @@ public class PlayerLogger extends Logger {
   
   @Override
   protected String formatKeyBundle0(com.xpdustry.avs.util.bundle.Bundle bundle, String key, Object... args) {
-    return bundle.formatColor(formatter, key, "[blue]", "[]", args);
+    return bundle.formatColor(formatter, key, "&lb", "&fr", args);
   }
   
   @Override

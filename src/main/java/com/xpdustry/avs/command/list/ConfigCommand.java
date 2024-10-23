@@ -102,9 +102,9 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
       return;
     }
     
-    String valueFormat = logger.getKey("avs.command.config." + (forPlayer ? "player" : "server") + ".value");
-    String descFormat =  logger.getKey("avs.command.config." + (forPlayer ? "player" : "server") + ".desc");
-    String next = logger.getKey("avs.command.config." + (forPlayer ? "player" : "server") + ".next");
+    String valueF = logger.getKey("avs.command.config.value");
+    String descF =  logger.getKey("avs.command.config.desc");
+    String nextF = logger.getKey("avs.command.config.next");
     
     Seq<ConfigField> dev = list.select(f -> f.isDev);
     list = list.select(f -> !f.isDev);
@@ -117,10 +117,10 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
           for (String line : f.getDescription(logger).split("\n"))
             b.append(Strings.format(descFormat, line) + "\n");
           b.append(next + "\n");*/
-          b.append(Strings.format(valueFormat, f.name, Strings.objToStr(f.get())) + "\n");
+          b.append(Strings.format(valueF, f.name, Strings.objToStr(f.get())) + "\n");
           for (String line : f.getDescription(logger).split("\n"))
-            b.append(Strings.format(descFormat, line) + "\n");
-          logger.infoNormal(b.toString() + next);
+            b.append(Strings.format(descF, line) + "\n");
+          logger.infoNormal(b.toString() + nextF);
           b.setLength(0);
         });
       };
@@ -140,10 +140,10 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     } else {
       arc.func.Cons<Seq<ConfigField>> printer = l -> {
         l.each(f -> {
-          logger.infoNormal(Strings.format(valueFormat, f.name, Strings.objToStr(f.get())));
+          logger.infoNormal(Strings.format(valueF, f.name, Strings.objToStr(f.get())));
           for (String line : f.getDescription().split("\n"))
-            logger.infoNormal(Strings.format(descFormat, line));
-          logger.infoNormal(next);
+            logger.infoNormal(Strings.format(descF, line));
+          logger.infoNormal(nextF);
         });        
       };
       

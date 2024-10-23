@@ -96,7 +96,7 @@ public class AntiVpnService {
     for (AddressProvider p : reversedProviders) {
       result = p.checkAddress(address);
       if (result.resultFound()) {
-        result.type = AddressProviderReply.ReplyType.NOT_FOUND;
+        result.type = AddressProviderReply.ReplyType.ALLOWED;
         return result;
       }
     }
@@ -123,20 +123,23 @@ public class AntiVpnService {
         onlineProviders.size > 1)
       onlines = onlineProviders.copy().shuffle();
     
-    for (AddressProvider p : onlines) {
+    for (OnlineServiceProvider p : onlines) {
       if (!isOperational()) return null;
       result = p.checkAddress(address);
       
       if (result.resultFound()) {
-        if (!result.validity.type.isNotValid() && p instanceof OnlineServiceProvider && 
-            !((OnlineServiceProvider) p).isTrusted())
+        if (!result.validity.type.isNotValid() && !p.isTrusted())
           continue;
         return result;
       }   
     }
     
-    //TODO: Prevents all online services from being unavailable
-
+    if (onlineProviders.allMatch(p -> p.unavailableTimeout() > 0) && 
+        AVSConfig.preventUnavailable.getBool()) {
+      logger.warn("avs.service.prevent-unavailable");
+      onlineProviders.each(p -> p.makeAvailable());
+    }
+    
     return result;
   }
   
@@ -144,13 +147,9 @@ public class AntiVpnService {
     AddressProviderReply result = null;
     for (AddressProvider p : providers) {
       if (!isOperational()) return null;
-      result = p.checkAddress(ip);
       
-      if (result.resultFound()) {
-        if (!result.validity.type.isNotValid())
-          continue;
-        return result;
-      }
+      result = p.checkAddress(ip);
+      if (result.resultFound()) return result;
     }      
 
     return result;
