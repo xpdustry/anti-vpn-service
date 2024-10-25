@@ -26,6 +26,7 @@
 
 package com.xpdustry.avs.service.providers.custom;
 
+import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.address.AddressValidity;
 
 
@@ -37,20 +38,28 @@ public class RecentRequestedCache extends com.xpdustry.avs.service.providers.typ
     // This provider is a cache for online services, so it's stored in the cache folder
     folder = com.xpdustry.avs.config.AVSConfig.cacheDirectory.get();
   }
+  
+  @Override
+  public boolean load() {
+    if (!super.load()) return false;
+    if (AVSConfig.cleanupRecents.getBool()) clear();
+    return true;
+  }
 
   @Override
   protected boolean loadCache() {
     if (!super.loadCache()) return false;
-
+    
     for (AddressValidity v : cache) {
       try { AddressValidity.checkIP(v.subnet.toString()); }
       catch (IllegalArgumentException e) { 
-        logger.err("avs.provider.custom.recent-cache.load-failed", v.subnet);
+        logger.err("avs.provider.editable.recent-cache.load-failed", v.subnet);
         logger.err("avs.general-error", e.toString());
         cache.clear(); 
         return false;
       }
-    } 
+    }      
+ 
     return true;
   }
 }

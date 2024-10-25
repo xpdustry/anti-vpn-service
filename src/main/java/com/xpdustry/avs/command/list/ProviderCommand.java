@@ -27,8 +27,10 @@
 package com.xpdustry.avs.command.list;
 
 import com.xpdustry.avs.service.AntiVpnService;
+import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.service.providers.type.AddressProvider;
 import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.util.Strings;
 
 import arc.struct.Seq;
 
@@ -40,21 +42,90 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
 
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
-    logger.warnNormal("coming soon!");
-    
     if (args.length == 0) {
-      printProviders(restrictedMode ? restrictedProviders : AntiVpnService.allProviders, logger, restrictedMode);
+      Seq<AddressProvider> list = restrictedMode ? restrictedProviders : AntiVpnService.allProviders;
+      
+      if (list.isEmpty()) {
+        logger.warn("avs.command.provider.nothing");
+        return;
+      }
+      
+      String format = logger.getKey("avs.command.provider.format");
+      StringBuilder builder = new StringBuilder();
+      
+      builder.append(logger.getKey("avs.command.provider.availables")).append('\n');
+      list.each(p -> 
+          builder.append(Strings.format(format, p.name, p.displayName)).append('\n'));
+      logger.infoNormal(builder.toString());
       return;
     }
+    
+    if (args[0].equals("actions")) {
+      String format = logger.getKey("avs.command.provider.action.format");
+      StringBuilder builder = new StringBuilder();
+      
+      ProviderAction.Category.all.each(c -> {
+        builder.append(c.getDesc(logger)).append('\n');
+        addProviderActions(builder, format, c, logger, 0);
+        logger.infoNormal(builder.append(' ').toString());
+        builder.setLength(0);
+      });      
+      return;
+    }
+    
+    AddressProvider provider = AntiVpnService.allProviders.find(c -> c.name.equals(args[0]));
+    
+    if (provider == null) {
+      logger.err("avs.command.provider.not-found", args[0]);
+      return;
+    } else if (restrictedMode && !restrictedProviders.contains(provider)) {
+      logger.err("avs.command.provider.restricted");
+      return;
+    } else if (args.length == 1) {
+      String format = logger.getKey("avs.command.provider.action.format");
+      StringBuilder builder = new StringBuilder();
+      Seq<ProviderAction.Category> cat = ProviderAction.Category.getAll(provider);
+      int best = Strings.best(cat, c -> Strings.best(ProviderAction.getAll(c), a -> a.name.length()));
+      
+      builder.append(logger.getKey("avs.command.provider.action.availables")).append('\n');
+      cat.each(c -> addProviderActions(builder, format, c, logger, best));
+      logger.infoNormal(builder.toString());
+      return;
+    }
+    
+    ProviderAction action = ProviderAction.get(args[1]);
+    
+    if (action == null) {
+      logger.err("avs.command.provider.action.not-found", args[1]);
+      return;
+    } else if (!ProviderAction.Category.getAll(provider).contains(c -> c == action.category)) {
+      logger.err("avs.command.provider.action.not-compatible");
+      return;
+    }
+    
+    if (action.argRequired()) {
+      if (args.length < 3) {
+        logger.err("avs.command.provider.action.arg-required");
+        return;
+      }
+      
+      String[] rest = new String[args.length-2];
+      System.arraycopy(args, 2, rest, 0, rest.length);
+      String value = String.join(" ", rest);
+      
+      action.run(provider, value, logger);
+    } else action.run(provider, logger);
   }
-  
-  
-  private static void printProviders(Seq<AddressProvider> list, Logger logger, boolean forPlayer) {
-    if (list.isEmpty()) {
-      logger.warn("avs.command.provider.nothing");
-      return;
-    }
-    
-    
+
+  private static void addProviderActions(StringBuilder builder, String format,
+                                         ProviderAction.Category category,  Logger logger,
+                                         int best) {
+    Seq<ProviderAction> actions = ProviderAction.getAll(category);
+    if (best < 1) best = Strings.bestLength(actions.map(a -> a.name));
+
+    for (int i=0; i<actions.size; i++) 
+      builder.append(Strings.format(format, Strings.lJust(actions.get(i).name, best), 
+                                            actions.get(i).getDesc(logger)))
+             .append('\n');
   }
 }

@@ -56,8 +56,9 @@ public class DynamicSettings {
   protected static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
   
   public static Fi logFile = mindustry.Vars.modDirectory.child("settings.log");
-  public static int autosaveSpacing = 360; // in seconds
-  public static Thread autosaveThread;
+  protected static int autosaveSpacing = 360; // in seconds
+  protected static Thread autosaveThread;
+  protected static String threadName = "Settings-Autosave";
   
   protected final Fi file;
   
@@ -167,40 +168,51 @@ public class DynamicSettings {
     }
   }
   
-  public static void stopAutosave() {
+  public static boolean stopAutosave() {
     if (autosaveThread != null) {
       autosaveThread.interrupt();
       try { autosaveThread.join(1000);  } 
       catch (InterruptedException ignored) {}
       autosaveThread = null;
+      return true;
     }
+    return false;
   }
   
-  public static void startAutosave() { startAutosave("Settings-Autosave"); }
-  public static void startAutosave(String threadName) {
+  public static boolean startAutosave() { return startAutosave(null); }
+  public static boolean startAutosave(String threadName) {
     if (autosaveThread == null) {
+      if (threadName == null || threadName.isBlank())
+           threadName = DynamicSettings.threadName;
+      else DynamicSettings.threadName = threadName;
+        
       autosaveThread = arc.util.Threads.daemon(threadName, () -> {
+        writeLogStatic("Autosave thread started!");
+        logger.info("avs.settings.autosave.thread.started");
+        
         while (true) {
-          globalAutosave();   
-          
           try { Thread.sleep(autosaveSpacing * 1000); } 
           catch (InterruptedException e) { 
             writeLogStatic("Autosave thread stopped!");
-            logger.debug("avs.settings.autosave.stopped");
+            logger.info("avs.settings.autosave.thread.stopped");
             return; 
-          };  
+          }; 
+          
+          globalAutosave(); 
         }
       });
+      return true;
     }
+    return false;
   }
   
-  /** block until an autosave is performed (until all files are saved) */
-  public static void waitForAutosave() {
-    if (autosaveThread != null && autosaveThread.isAlive()) {
-      try {
-        while (needGlobalSave()) Thread.sleep(10);
-      } catch (InterruptedException ignored) {}      
-    }
+  public static boolean isAutosaveRunning() {
+    return autosaveThread != null && autosaveThread.isAlive();
+  }
+  
+  public static void setAutosaveSpacing(int spacing) {
+    if (spacing < 1) throw new IllegalArgumentException("spacing must be greater than 1 second");
+    autosaveSpacing = spacing;
   }
   
   /**********************/
@@ -378,14 +390,23 @@ public class DynamicSettings {
   }
   
   public synchronized Object get(String name, Object def){
-      return values.containsKey(name) ? values.get(name) : def;
+      if (!values.containsKey(name)) return def;
+      Object o = values.get(name);
+      
+      // Because simple json only store long and double.
+      if (simpleJson) {
+        if (o instanceof Double) o = (float) ((double) o);
+        else if (o instanceof Long) o = (int) ((long) o);
+      }
+      
+      return o;
   }
   
   /** Same as {@link #get(String, Object)}, but put {@code def} if the key is not found */
   public synchronized Object getOrPut(String name, Object def){
-      if (values.containsKey(name)) return values.get(name);
-      put(name, def);
-      return def;
+      Object o = get(name, def);
+      if (o == def) put(name, def);
+      return o;
   }
 
 
@@ -458,21 +479,11 @@ public class DynamicSettings {
   }
 
   public float getFloat(String name, float def){
-      // Because simple json only store long and double.
-      Object o = getOrPut(name, def);
-      if (simpleJson && o instanceof Double) return (float) ((double) o);
-      return (float) o;
-  }
-
-  public long getLong(String name, long def){
-      return (long)getOrPut(name, def);
+      return (float)getOrPut(name, def);
   }
 
   public int getInt(String name, int def){
-      Object o = getOrPut(name, def);
-      // Because simple json only store long and double.
-      if (simpleJson && o instanceof Long) return (int) ((long) o);
-      return (int) o;
+      return (int)getOrPut(name, def);
   }
 
   public boolean getBool(String name, boolean def){
@@ -532,8 +543,8 @@ public class DynamicSettings {
 
   /** Stores an object in the preference map. */
   public synchronized void put(String name, Object object){
-      if(object instanceof Float || object instanceof Integer || object instanceof Boolean || object instanceof Long
-      || object instanceof String || object instanceof byte[] || (simpleJson && object instanceof JsonValue)){
+      if(object instanceof Float || object instanceof Integer || object instanceof Boolean ||
+         object instanceof String || object instanceof byte[] || (simpleJson && object instanceof JsonValue)){
           values.put(name, object);
           modified = true;
       }else{

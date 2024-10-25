@@ -73,7 +73,9 @@ public class Logger{
   }
   
   public void logNormal(LogLevel level, String text, Object... args) {
-    Log.log(level, (disableTopic ? "" : pluginTopic + " " + tag) + text, args);
+    String t = disableTopic ? "" : pluginTopic + " " + tag;
+    for (String line : text.split("\n"))
+      Log.log(level, t + line, args);
   }
 
   public void debugNormal(String text, Object... args) {

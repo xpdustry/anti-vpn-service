@@ -33,16 +33,6 @@ public abstract class Command {
   public String getHelp(Logger logger) {
     return logger.getKey(keyPrefix + name + helpKeySuffix);
   }
-  
-  public void printHelp(Logger logger) {
-    if (logger instanceof com.xpdustry.avs.util.PlayerLogger) 
-      logger.info(keyPrefix + name + helpKeySuffix);
-    
-    else {
-      for (String line : getHelp(logger).split("\n"))
-        logger.infoNormal(line);
-    }
-  }
  
   public void run(String[] args) { run(args, defaultLogger, false); };
   public void run(String[] args, Logger logger) { run(args, logger, false); };

@@ -42,7 +42,9 @@ public abstract class AddressProvider {
   protected String fileExt;
   
   public final String name, displayName;
-  protected final Logger logger;
+  /** This will only be used by {@link #exec(Runnable, Logger)} */
+  private final Logger defaultLogger; 
+  protected Logger logger;
   
   protected boolean enabled = true;
   /** Must be manually set to {@code true} by the inherited class, when overriding {@link #load()} */
@@ -58,7 +60,15 @@ public abstract class AddressProvider {
       
     this.name = name;
     this.displayName = displayName;
-    this.logger = new Logger(displayName);
+    this.defaultLogger = new Logger(displayName);
+    this.logger = this.defaultLogger;
+  }
+  
+  /** Will temporary replace the provider's logger by the given one, while running the function */
+  public void exec(Runnable run, Logger logger) {
+    if (logger != null) this.logger = logger;
+    try { run.run(); }
+    finally { this.logger = this.defaultLogger; }
   }
   
   public abstract boolean load();
@@ -66,6 +76,42 @@ public abstract class AddressProvider {
   public abstract boolean reload();
   
   public abstract boolean save();
+  
+  public boolean isLoaded() {
+    return loaded;
+  }
+  
+  public void enable() {
+    if (enabled) return;
+    logger.info("avs.provider.enabled");
+    Events.fire(new AVSEvents.ProviderEnabledEvent(this));
+    enabled = true;
+  }
+  
+  public void disable() {
+    if (!enabled) return;
+    logger.info("avs.provider.disabled");
+    Events.fire(new AVSEvents.ProviderDisabledEvent(this));
+    enabled = false;
+  }
+  
+  public boolean isEnabled() {
+    return enabled;
+  }
+  
+  public boolean isProviderAvailable() {
+    if (!isEnabled()) {
+      logger.debug("avs.provider.disabled");
+      return false;
+    }
+    
+    if (!isLoaded()) {
+      logger.err("avs.provider.not-ready");
+      return false;
+    }
+    
+    return true;
+  }
   
   /**
    * Check if address is blacklisted.
@@ -101,40 +147,6 @@ public abstract class AddressProvider {
   }
   
   protected abstract void checkAddressImpl(AddressProviderReply reply);
-  
-  public boolean isLoaded() {
-    return loaded;
-  }
-  
-  public void enable() {
-    if (enabled) return;
-    Events.fire(new AVSEvents.ProviderEnabledEvent(this));
-    enabled = true;
-  }
-  
-  public void disable() {
-    if (!enabled) return;
-    Events.fire(new AVSEvents.ProviderDisabledEvent(this));
-    enabled = false;
-  }
-  
-  public boolean isEnabled() {
-    return enabled;
-  }
-  
-  public boolean isProviderAvailable() {
-    if (!isEnabled()) {
-      logger.debug("avs.provider.disabled");
-      return false;
-    }
-    
-    if (!isLoaded()) {
-      logger.err("avs.provider.not-ready");
-      return false;
-    }
-    
-    return true;
-  }
 
   protected Fi getFile() {
     if (fileExt == null) fileExt = AVSConfig.defaultCacheFileExt.get();

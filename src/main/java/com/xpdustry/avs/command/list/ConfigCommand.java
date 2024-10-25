@@ -42,7 +42,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
-      printSettings(restrictedMode ? restrictedSettings : AVSConfig.all, logger, restrictedMode);
+      printSettings(restrictedMode ? restrictedSettings : AVSConfig.all, logger);
       return;
     }
     
@@ -71,16 +71,23 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     
     String value = String.join(" ", arc.util.Structs.remove(args, 0));
     Object v = null;
+    boolean positive = false; // in most cases, int and float value are always positives
     
     if (field.isBool()) {
       if (Strings.isTrue(value)) v = true;
       else if (Strings.isFalse(value)) v = false;
     } else if (field.isInt()) {
       int i = Strings.parseInt(value);
-      if (i != Integer.MIN_VALUE) v = i;
+      if (i != Integer.MIN_VALUE) {
+        if (i < 0) positive = true;
+        else v = i;
+      }
     } else if (field.isFloat()) {
       float d = Strings.parseFloat(value);
-      if (d != Float.MIN_VALUE) v = d;
+      if (d != Float.MIN_VALUE) {
+        if (d < 0) positive = true;
+        else v = d;
+      }
     } else if (field.isString()) {
       if (value.equals("\"\"")) v = "";
       else v = value;
@@ -88,7 +95,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     
     if (v == null) {
       logger.err("avs.command.config.field.value.invalid", value, field.name, 
-                 field.defaultValue.getClass().getSimpleName());
+                 (positive ? "Positive " : "") + field.defaultValue.getClass().getSimpleName());
       return;  
       
     }
@@ -96,7 +103,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     if (field.set(v, logger)) logger.info("avs.command.config.field.value.set", field.name, v);
   }
   
-  private static void printSettings(Seq<ConfigField> list, Logger logger, boolean forPlayer) {
+  private static void printSettings(Seq<ConfigField> list, Logger logger) {
     if (list.isEmpty()) {
       logger.warn("avs.command.config.nothing");
       return;
@@ -109,54 +116,25 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     Seq<ConfigField> dev = list.select(f -> f.isDev);
     list = list.select(f -> !f.isDev);
     
-    if (forPlayer) {
-      StringBuilder builder;
-      arc.func.Cons2<StringBuilder, Seq<ConfigField>> printer = (b, l) -> {
-        l.each(f -> {
-          /*b.append(Strings.format(valueFormat, f.name, Strings.objToStr(f.get())) + "\n");
-          for (String line : f.getDescription(logger).split("\n"))
-            b.append(Strings.format(descFormat, line) + "\n");
-          b.append(next + "\n");*/
-          b.append(Strings.format(valueF, f.name, Strings.objToStr(f.get())) + "\n");
-          for (String line : f.getDescription(logger).split("\n"))
-            b.append(Strings.format(descF, line) + "\n");
-          logger.infoNormal(b.toString() + nextF);
-          b.setLength(0);
-        });
-      };
-      
-      if (!list.isEmpty()) {
-        builder = new StringBuilder(logger.getKey("avs.command.config.normal-fields") + "\n");
-        printer.get(builder, list);
-        //logger.infoNormal(builder.toString());
-      }
-      
-      if (!dev.isEmpty()) {
-        builder = new StringBuilder("\n" + logger.getKey("avs.command.config.dev-fields") + "\n");
-        printer.get(builder, dev);
-        //logger.infoNormal(builder.toString());
-      }
-       
-    } else {
-      arc.func.Cons<Seq<ConfigField>> printer = l -> {
-        l.each(f -> {
-          logger.infoNormal(Strings.format(valueF, f.name, Strings.objToStr(f.get())));
-          for (String line : f.getDescription().split("\n"))
-            logger.infoNormal(Strings.format(descF, line));
-          logger.infoNormal(nextF);
-        });        
-      };
-      
-      if (!list.isEmpty()) {
-        logger.info("avs.command.config.normal-fields");
-        printer.get(list);
-      }
-      
-      if (!dev.isEmpty()) {
-        if (!list.isEmpty()) logger.infoNormal("");
-        logger.info("avs.command.config.dev-fields");
-        printer.get(dev);
-      }
+    StringBuilder builder = new StringBuilder();
+    arc.func.Cons<Seq<ConfigField>> printer = (l) -> {
+      l.each(f -> {
+        builder.append(Strings.format(valueF, f.name, Strings.objToStr(f.get()))).append('\n');
+        for (String line : f.getDescription(logger).split("\n"))
+          builder.append(Strings.format(descF, line)).append('\n');
+        logger.infoNormal(builder.toString() + nextF);
+        builder.setLength(0);
+      });
+    };    
+    
+    if (!list.isEmpty()) {
+      builder.append(logger.getKey("avs.command.config.normal-fields")).append('\n');
+      printer.get(list);
     }
+    
+    if (!dev.isEmpty()) {
+      builder.append('\n').append(logger.getKey("avs.command.config.dev-fields")).append('\n');
+      printer.get(dev);
+    }    
   }
 }

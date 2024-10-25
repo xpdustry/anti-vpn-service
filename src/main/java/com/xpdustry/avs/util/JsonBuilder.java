@@ -65,7 +65,7 @@ public class JsonBuilder implements BaseJsonWriter {
   public BaseJsonWriter value(Object object) throws IOException {
     requireName();
     if (current == null) throw new IllegalStateException("No current object/array.");
-    JsonValue jval = null;
+    JsonValue jval;
     
     if (object == null) jval = new JsonValue(ValueType.nullValue);
     else if (object instanceof Number) {
@@ -76,12 +76,12 @@ public class JsonBuilder implements BaseJsonWriter {
         else if (object instanceof Long) jval = new JsonValue(number.longValue());
         else if (object instanceof Float) jval = new JsonValue(number.floatValue());
         else if (object instanceof Double) jval = new JsonValue(number.doubleValue());
+        else throw new IOException("Unknown number object type.");
     } else if (object instanceof CharSequence || 
                object instanceof Character) jval = new JsonValue(object.toString());
     else if (object instanceof Boolean) jval = new JsonValue((boolean)object);
     else if (object instanceof JsonValue) jval = (JsonValue) object;
-    
-    if (jval == null) throw new IOException("Unknown object type.");
+    else throw new IOException("Unknown object type.");
     
     addValue(jval);
     return this;
@@ -99,7 +99,7 @@ public class JsonBuilder implements BaseJsonWriter {
   public BaseJsonWriter array() throws IOException {
     requireName();
     newChild(true);
-    return null;
+    return this;
   }
   
   private void addValue(JsonValue value) {
@@ -154,7 +154,8 @@ public class JsonBuilder implements BaseJsonWriter {
 
   @Override
   public BaseJsonWriter pop() throws IOException {
-    if (name != null) throw new IllegalStateException("Expected an object, array or value, since a name was set.");
+    if (name != null) 
+      throw new IllegalStateException("Expected an object, array or value, since a name was set.");
     last = current;
     if (last == null) return this;
     while (last.next != null) last = last.next;

@@ -103,14 +103,8 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
       logger.info("avs.command.info.wait");
       queries.each(h -> h.setReply(AntiVpnService.checkAddressOnline(h.address)));
       logger.infoNormal("");
-      for (int i=0; i<queries.size; i++) {
-        String text = "[" + i + "] " + queries.get(i).toString(logger);
-        if (restrictedMode) logger.infoNormal(text);
-        else {
-          for (String line : text.split("\n"))
-            logger.infoNormal(line);
-        }
-      }
+      for (int i=0; i<queries.size; i++) 
+        logger.infoNormal("[" + i + "] " + queries.get(i).toString(logger, !restrictedMode));
     }
   }
   
@@ -129,35 +123,23 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
       this.reply = reply;
     }
     
-    String toString(Logger logger) {
-      String text = "\n";
-      
+    String toString(Logger logger, boolean addLocation) {
+      StringBuilder builder = new StringBuilder();
+
       if (info != null) 
-        text = logger.formatKey("avs.command.info.print.head", info.plainLastName(), info.id) + "\n";
-      if (reply != null) {
-        text += logger.formatKey("avs.command.info.print.address", reply.validity.subnet) + "\n";
-        
-        if (reply.resultFound()) {
-          boolean[] types = Strings.integer2binary(reply.validity.type.toBinary(), 
-                                    com.xpdustry.avs.misc.address.AddressType.numberOfTypes);
-          Object[] args  = new Object[types.length];
-          for (int i=0; i<args.length; i++) args[i] = types[i];
-          text += logger.formatKey("avs.command.info.print.security", args) + "\n";
-          
-          if (reply.validity.infos != null) {
-            com.xpdustry.avs.misc.address.AddressInfos infos = reply.validity.infos;
-            /* // Avoid to tell the location of an ip, this can be used for tracking.
-            text += logger.formatKey("avs.command.info.print.location", infos.location, 
-                                     infos.latitude, infos.longitude, infos.locale) + "\n";
-            */
-            text += logger.formatKey("avs.command.info.print.network", 
-                                     infos.network, infos.ISP, infos.ASN) + "\n";
-          }
-        } else text += logger.formatKey("avs.command.info.print.error", reply.type.toString().toLowerCase().replace('_', ' ')) + "\n";
-      } else text += logger.formatKey("avs.command.info.print.address", address) + "\n"
-                   + logger.formatKey("avs.command.info.print.error", "no reply") + "\n";
+        builder.append(logger.formatKey("avs.command.info.print.head", 
+                                        Strings.normalise(info.lastName), info.id));
+      builder.append('\n');
       
-      return text;
+      if (reply == null || !reply.resultFound()) {
+       builder.append(logger.formatKey("avs.address-format.address", reply.validity.subnet)).append('\n');
+       builder.append(logger.formatKey("avs.address-format.error", 
+           reply != null ? reply.type.toString().toLowerCase().replace('_', ' ') : "no reply"))
+              .append('\n');
+        
+      } else reply.validity.toFormattedString(builder, logger, addLocation);
+
+      return builder.toString();
     }
   }
 }

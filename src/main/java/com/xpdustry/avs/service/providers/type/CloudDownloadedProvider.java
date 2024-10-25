@@ -40,8 +40,6 @@ import arc.util.serialization.JsonValue;
 
 
 public abstract class CloudDownloadedProvider extends CachedAddressProvider {
-  //TODO: implement an auto refresh
-  
   public final String url;
   /* Define the type of provider, used for statistics. Default is VPN */
   protected ProviderType providerType = ProviderType.vpn;
@@ -53,6 +51,7 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider {
     folder = AVSConfig.cloudDirectory.get();
     if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
     this.url = url.strip();
+    AutoRefresher.toRefresh.add(this);
   }
   
   public CloudDownloadedProvider(String displayName, String name, String url) { 
@@ -60,6 +59,7 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider {
     folder = AVSConfig.cloudDirectory.get();
     if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
     this.url = url.strip();
+    AutoRefresher.toRefresh.add(this);
   }
   
   public boolean refresh() {
@@ -80,25 +80,26 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider {
     
     if (fetched == null) {
       logger.warn("avs.provider.cloud.fetch.failed");
-      return reload();
+      return reload0();
     }
     
     // Extract content to a subnet list
     try {
       list = extractAddressRanges(fetched);
       if (list == null) list = new Seq<>();
-      else list.removeAll(v -> v == null);
-      
+      // Remove null and duplicate values
+      else list = arc.struct.ObjectSet.with(list).toSeq();
+     
     } catch (Exception e) {
       logger.err("avs.provider.cloud.extract-failed");
       logger.warn("avs.provider.cloud.using-cache");
-      return reload();
+      return reload0();
     }
 
     // If fetched list is empty, also use the cache.
     if (list.isEmpty()) {
       logger.warn("avs.provider.cloud.fetch.empty");
-      return reload();
+      return reload0();
     }
     
     // Now convert to an AddressValidity
@@ -122,22 +123,16 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider {
     
     if (!AVSConfig.startupDownload.getBool()) {
       logger.warn("avs.provider.cloud.fetch.disabled");
-      return reload0(false);
+      return reload0();
     }
       
     return refresh();
   }
   
-  /** Reload only the cache. To re-fetch the lists, use {@link #refresh()} */
-  @Override
-  public boolean reload() { return reload0(true); }
-  
-  private boolean reload0(boolean fireEvent) {
+  private boolean reload0() {
     loaded = false;
-    if (fireEvent) Events.fire(new AVSEvents.ProviderReloadingEvent(this));
     cache.clear();
     getCacheFile().clear();
-    getCacheFile().load();
     loaded = loadCache();
     return loaded;
   }
@@ -179,24 +174,31 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider {
   
   
   public static enum ProviderType {
-    other(0),
-    vpn(1),
-    proxy(2),
-    tor(3),
-    relay(4),
-    dataCenter(5);
+    other,
+    vpn,
+    proxy,
+    tor,
+    relay,
+    dataCenter;
     
     public final int val;
     
-    ProviderType(int i) {
-      this.val = 1 << (AddressType.numberOfTypes - i);
+    ProviderType() {
+      this.val = 1 << (AddressType.numberOfTypes - ordinal() - 1);
     }
     
-    public boolean isOther() { return this.val == other.val; }
-    public boolean isVPN() { return this.val == vpn.val; }
-    public boolean isProxy() { return this.val == proxy.val; }
-    public boolean isTOR() { return this.val == tor.val; }
-    public boolean isRelay() { return this.val == relay.val; }
-    public boolean isDataCenter() { return this.val == dataCenter.val; }
+    public boolean isOther() { return this == other; }
+    public boolean isVPN() { return this == vpn; }
+    public boolean isProxy() { return this == proxy; }
+    public boolean isTOR() { return this == tor; }
+    public boolean isRelay() { return this == relay; }
+    public boolean isDataCenter() { return this == dataCenter; }
+  }
+  
+  
+  /** TODO: make the auto refresher */
+  public static class AutoRefresher {
+    protected static Seq<CloudDownloadedProvider> toRefresh = new Seq<>();
+    
   }
 }

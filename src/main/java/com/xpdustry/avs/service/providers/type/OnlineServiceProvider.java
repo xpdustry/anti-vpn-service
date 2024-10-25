@@ -210,10 +210,14 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   }
   
   public boolean tokensNeeded() {
+    // little fix
+    if (needTokens && !canUseTokens) canUseTokens = true;
     return needTokens;
   }
   
   public boolean canUseTokens() {
+    // little fix
+    if (needTokens && !canUseTokens) canUseTokens = true;
     return canUseTokens;
   }
   
@@ -240,8 +244,10 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   }
   
   public void makeAvailable() {
-    unavailableTimeout = 0;
-    Events.fire(new AVSEvents.OnlineProviderServiceNowAvailable(this));
+    if (unavailableTimeout > 0) {
+      unavailableTimeout = 0;
+      Events.fire(new AVSEvents.OnlineProviderServiceNowAvailable(this));     
+    }
   }
   
   /** @return whether the token has been added */
@@ -268,8 +274,9 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   public boolean makeTokenAvailable(String token) {
     token = token.strip();
     if (!canUseTokens() || !tokens.containsKey(token)) return false;
-    tokens.put(token, 0);
-    Events.fire(new AVSEvents.OnlineProviderTokenNowAvailable(this, token));
+    Integer last = tokens.put(token, 0);
+    if (last == null || last > 0)
+      Events.fire(new AVSEvents.OnlineProviderTokenNowAvailable(this, token));
     return true;
   }
   
@@ -347,10 +354,13 @@ public abstract class OnlineServiceProvider extends AddressProvider {
       try { handleReply(result); }
       catch (Exception e) {
         logger.err("avs.provider.online.error", ip, e.toString());
-        unavailableTimeout = AVSConfig.serviceCheckTimeout.getInt();
-        logger.warn("avs.provider.online.in-waiting-list", unavailableTimeout);
-        result.setError();
-        Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this));
+        result.setError(); 
+        int v = AVSConfig.serviceCheckTimeout.getInt();
+        if (v > 0) {
+          unavailableTimeout = v;
+          logger.warn("avs.provider.online.in-waiting-list", unavailableTimeout);
+          Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this));        
+        }
         return result;
       }
     } else handleError(reply);
@@ -361,10 +371,13 @@ public abstract class OnlineServiceProvider extends AddressProvider {
       logger.err("avs.provider.online.token." + 
                 (reply.status == AdvancedHttp.Status.QUOTA_LIMIT ? "use-limit" : "invalid"), ip, token);
       logger.err("avs.http-status", reply.httpStatus.code, reply.message);
-      tokens.put(token, AVSConfig.tokenCheckTimeout.get());
-      logger.warn("avs.provider.online.token.in-waiting-list", AVSConfig.tokenCheckTimeout.get());
       result.setError();
-      Events.fire(new AVSEvents.OnlineProviderTokenNowUnavailable(this, token));
+      int v = AVSConfig.tokenCheckTimeout.getInt();
+      if (v > 0) {
+        tokens.put(token, v);
+        logger.warn("avs.provider.online.token.in-waiting-list", AVSConfig.tokenCheckTimeout.get());
+        Events.fire(new AVSEvents.OnlineProviderTokenNowUnavailable(this, token));        
+      }
       
     // General case
     } else if (reply.error != null || reply.status == AdvancedHttp.Status.ERROR) {
@@ -376,10 +389,13 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     } else if (reply.status.isFatalError()) {
       logger.err("avs.provider.online.service-error", ip);
       logger.err("avs.http-status", reply.httpStatus.code, reply.message);
-      unavailableTimeout = AVSConfig.serviceCheckTimeout.get();
-      logger.warn("avs.provider.online.in-waiting-list", unavailableTimeout);
       result.setError();
-      Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this));
+      int v = AVSConfig.serviceCheckTimeout.getInt();
+      if (v > 0) {
+        unavailableTimeout = v;
+        logger.warn("avs.provider.online.in-waiting-list", unavailableTimeout);
+        Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this));        
+      }
     }
     
     return result;

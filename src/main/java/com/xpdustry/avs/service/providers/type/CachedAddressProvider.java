@@ -54,6 +54,10 @@ public class CachedAddressProvider extends AddressProvider {
     super(displayName, name);
     folder = AVSConfig.cacheDirectory.get();
   }
+  
+  public AddressValidity get(String subnet) {
+    return cache.find(a -> a.subnet.toString().equals(subnet));
+  }
 
   public AddressValidity get(Subnet subnet) {
     return cache.find(a -> a.subnet.equals(subnet));
@@ -82,11 +86,12 @@ public class CachedAddressProvider extends AddressProvider {
   @Override
   public boolean reload() {
     loaded = false;
-    Events.fire(new AVSEvents.ProviderReloadingEvent(this));
     logger.info("avs.provider.cached.reload");
+    Events.fire(new AVSEvents.ProviderReloadingEvent(this));
     cache.clear();
     getCacheFile().clear();
-    return load();
+    loaded = loadCache();
+    return loaded;
   }
   
   @Override

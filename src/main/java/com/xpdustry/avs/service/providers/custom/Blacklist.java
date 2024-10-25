@@ -41,7 +41,7 @@ public class Blacklist extends com.xpdustry.avs.service.providers.type.EditableA
       // Copy the DOS blacklist from mindustry and empty it
       Vars.netServer.admins.dosBlacklist.each(a -> cache.add(new com.xpdustry.avs.misc.address.AddressValidity(a)));
       Vars.netServer.admins.dosBlacklist.clear();
-      logger.info("avs.provider.custom.custom-blacklist.dos-list-moved");      
+      logger.info("avs.provider.editable.blacklist.dos-list-moved");      
     }
     return loaded;
   }

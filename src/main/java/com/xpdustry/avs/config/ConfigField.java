@@ -71,16 +71,16 @@ public class ConfigField {
   protected void checkType(Object o) {
     if (o == null) throw new NullPointerException("value to check is null");
     if (o.getClass() != defaultValue.getClass())
-      throw new IllegalArgumentException("incompatible type " + o.getClass() + 
-                                         ". Must be a " + defaultValue.getClass());
+      throw new IllegalArgumentException("incompatible type " + o.getClass().getName() + 
+                                         ". Must be a " + defaultValue.getClass().getName());
   }
 
   public boolean isInt(){
-    return defaultValue instanceof Integer || defaultValue instanceof Long;
+    return defaultValue instanceof Integer;
   }
   
   public boolean isFloat(){
-    return defaultValue instanceof Float || defaultValue instanceof Double;
+    return defaultValue instanceof Float;
   }
   
   public boolean isBool(){
@@ -103,18 +103,13 @@ public class ConfigField {
     return value;
   }
   
+  
   public int getInt() {
-    Object o = get();
-    // Because simple json only store long and double.
-    if (o instanceof Long) return (int) ((long) o);
-    return (int) o;
+    return get();
   } 
   
   public float getFloat() {
-    Object o = get();
-    // Because simple json only store long and double.
-    if (o instanceof Double) return (float) ((double) o);
-    return (float) o;
+    return get();
   }
   
   public boolean getBool() {

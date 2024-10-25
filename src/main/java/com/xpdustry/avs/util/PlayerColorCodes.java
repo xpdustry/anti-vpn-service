@@ -35,7 +35,7 @@ public class PlayerColorCodes /*extends arc.util.ColorCodes*/ {
   
     // Some modifiers are empty because no color code (E.g. [blue]) are corresponding 
     flush = "[clear]", // just doesn't render the text until next color
-    reset = "[]",
+    reset = "[]", // "[white]", // force white color for the rest
     bold = "",
     italic = "",
     underline = "",
@@ -53,7 +53,7 @@ public class PlayerColorCodes /*extends arc.util.ColorCodes*/ {
     lightRed = "[scarlet]",
     lightGreen = "[green]",
     lightYellow = "[yellow]",
-    lightBlue = "[#4169E1]", //royal, //#1E90FF //dodger 
+    lightBlue = "[#1E90FF]", //dodger
     lightMagenta = "[magenta]",
     lightCyan = "[cyan]",
     lightWhite = "[white]",

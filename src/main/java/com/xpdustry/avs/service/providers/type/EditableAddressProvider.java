@@ -49,16 +49,20 @@ public abstract class EditableAddressProvider extends CachedAddressProvider {
     if (address == null) throw new NullPointerException("null address not allowed");
 
     boolean added = cache.addUnique(address);
-    if (added) save();
-    Events.fire(new AVSEvents.EditableProviderAddedAddressEvent(this, address, added));
+    if (added) {
+      save();
+      Events.fire(new AVSEvents.EditableProviderAddedAddressEvent(this, address, added));
+    }
     return added;
   }
 
   public boolean remove(AddressValidity address) {
     // TODO: fire an event.
     boolean removed = cache.remove(address);
-    if (removed) save();
-    Events.fire(new AVSEvents.EditableProviderRemovedAddressEvent(this, address, removed));
+    if (removed) {
+      save();
+      Events.fire(new AVSEvents.EditableProviderRemovedAddressEvent(this, address, removed));
+    }
     return removed;
   }
   
@@ -66,6 +70,6 @@ public abstract class EditableAddressProvider extends CachedAddressProvider {
     Events.fire(new AVSEvents.EditableProviderCleaningAddressesEvent(this));
     cache.clear();
     save();
-    logger.info("avs.provider.custom.cleaned");
+    logger.info("avs.provider.editable.cleaned");
   }
 }

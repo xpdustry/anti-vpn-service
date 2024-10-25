@@ -34,6 +34,7 @@ import arc.struct.Seq;
 public class GithubActions extends com.xpdustry.avs.service.providers.type.CloudDownloadedProvider {
   public GithubActions() {
     super("Github Actions", "github-actions", "https://api.github.com/meta");
+    providerType = ProviderType.dataCenter;
   }
 
   @Override

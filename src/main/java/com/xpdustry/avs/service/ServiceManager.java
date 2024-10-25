@@ -171,6 +171,7 @@ public class ServiceManager {
             if (reply != null && reply.resultFound()) {
               if (reply.type != AddressProviderReply.ReplyType.ALLOWED && 
                   reply.validity.type.isNotValid()) {
+                reply.validity.stats.kickNumber++;
                 Events.fire(new AVSEvents.ClientRejectedEvent(con, packet, false, reply));
                 logger.info("avs.validator.ip.blacklisted", con.address, con.uuid);
                 // Kick the client without duration to avoid creating an empty account, but still register an kick duration
@@ -180,12 +181,7 @@ public class ServiceManager {
                 
             } else if (AVSConfig.resultRequired.getBool()) {
               Events.fire(new AVSEvents.ClientRejectedEvent(con, packet, false, reply));
-              logger.warn("avs.validator." + (
-                  reply == null ? "failed" :
-                  reply.type == AddressProviderReply.ReplyType.UNAVAILABLE ? "no-available" : 
-                  reply.type == AddressProviderReply.ReplyType.NOT_FOUND ? "not-found" :
-                  "failed"), 
-                con.address, con.uuid);
+              logger.warn("avs.validator.not-found", con.address, con.uuid);
               
               String message = AVSConfig.errorMessage.get();
               if (!message.isBlank()) con.kick(message, 0L);

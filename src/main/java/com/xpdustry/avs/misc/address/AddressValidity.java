@@ -26,6 +26,8 @@
 
 package com.xpdustry.avs.misc.address;
 
+import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.network.Subnet;
 
 
@@ -48,6 +50,30 @@ public class AddressValidity {
     if (obj == this) return true;
     if (obj == null || !(obj instanceof AddressValidity)) return false;
     return subnet.equals(((AddressValidity) obj).subnet);
+  }
+  
+  public String toFormattedString(Logger logger, boolean addLocation) {
+    StringBuilder builder = new StringBuilder();
+    toFormattedString(builder, logger, addLocation);
+    return builder.toString();
+  }
+  
+  public void toFormattedString(StringBuilder builder, Logger logger, boolean addLocation) {
+    builder.append(logger.formatKey("avs.address-format.address", subnet)).append('\n');
+
+    boolean[] types = Strings.integer2binary(type.toBinary(), AddressType.numberOfTypes);
+    Object[] args  = new Object[types.length];
+    for (int i=0; i<args.length; i++) args[i] = types[i];
+    builder.append(logger.formatKey("avs.address-format.security", args)).append('\n');
+    
+    if (infos != null) {
+      if (addLocation) 
+        builder.append(logger.formatKey("avs.address-format.location", 
+            infos.location, infos.latitude, infos.longitude, infos.locale)).append('\n');
+      builder.append(logger.formatKey("avs.address-format.network", 
+         infos.network, infos.ISP, infos.ASN)).append('\n');
+    } else
+      builder.append(logger.getKey("avs.address-format.no-more")).append('\n');
   }
 
   public static void checkIP(String ip) throws IllegalArgumentException {

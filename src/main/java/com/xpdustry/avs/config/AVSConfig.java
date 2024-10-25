@@ -50,7 +50,7 @@ public class AVSConfig {
     errorMessage = new ConfigField("error-message", ""),
     clientKickDuration = new ConfigField("kick-duration", 30),
     connectLimit = new ConfigField("connect-limit", arc.util.OS.cores, ConfigEvents::onConnectLimitChanged),
-    tokenCheckTimeout = new ConfigField("token-timeout", 100),
+    tokenCheckTimeout = new ConfigField("token-timeout", 50),
     serviceCheckTimeout = new ConfigField("service-timeout", 30),
     startupDownload = new ConfigField("startup-download", true),
     autosaveSpacing = new ConfigField("autosave-spacing", 60 * 15, ConfigEvents::onAutosaveSpacingChanged),
@@ -63,6 +63,8 @@ public class AVSConfig {
     randomTokens = new ConfigField("random-tokens", false),
     preventUnavailable = new ConfigField("prevent-unavailable", true),
     resultRequired = new ConfigField("result-required", true),
+    cleanupRecents = new ConfigField("cleanup-recents", false),
+    cloudRefreshTimeout = new ConfigField("cloud-refresh", 720),
     
     // For devs, better to keep that as default
     pluginDirectory = new ConfigField("plugin-dir", "", ConfigEvents::onPluginDirectoryChanged, true),

@@ -40,8 +40,21 @@ public class HelpCommand extends com.xpdustry.avs.command.Command {
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
-      printCommands(restrictedMode ? AVSCommandManager.restrictedCommands : AVSCommandManager.subCommands, 
-                    logger, restrictedMode);
+      Seq<Command> list = restrictedMode ? AVSCommandManager.restrictedCommands : 
+                                           AVSCommandManager.subCommands;
+      
+      if (list.isEmpty()) {
+        logger.warn("avs.command.nothing");
+        return;
+      }
+      
+      String format = logger.getKey("avs.command.help.format");
+      StringBuilder builder = new StringBuilder(logger.getKey("avs.command.help.list") + "\n");
+      list.each(c -> {
+        String params = c.getArgs(logger);
+        builder.append(Strings.format(format, c.name, params.isEmpty() ? "" : " "+params, c.getDesc(logger)) + "\n");
+      });
+      logger.infoNormal(builder.toString());
       return;
     }
     
@@ -55,31 +68,6 @@ public class HelpCommand extends com.xpdustry.avs.command.Command {
       return;
     }
     
-    command.printHelp(logger);
-  }
-  
-  private static void printCommands(Seq<Command> list, Logger logger, boolean forPlayer) {
-    if (list.isEmpty()) {
-      logger.warn("avs.command.nothing");
-      return;
-    }
-    
-    String format = logger.getKey("avs.command.help.format");
-    
-    if (forPlayer) {
-      StringBuilder builder = new StringBuilder(logger.getKey("avs.command.help.list") + "\n");
-      list.each(c -> {
-        String params = c.getArgs(logger);
-        builder.append(Strings.format(format, c.name, params.isEmpty() ? "" : " "+params, c.getDesc(logger)) + "\n");
-      });
-      logger.infoNormal(builder.toString());
-      
-    } else {
-      logger.info("avs.command.help.list");
-      list.each(c -> {
-        String params = c.getArgs(logger);
-        logger.infoNormal(Strings.format(format, c.name, params.isEmpty() ? "" : " "+params, c.getDesc(logger)));
-      });
-    }
+    logger.infoNormal(command.getHelp(logger));
   }
 }

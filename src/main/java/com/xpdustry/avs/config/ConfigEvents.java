@@ -72,8 +72,15 @@ public class ConfigEvents {
     return ServiceManager.setPoolSize();
   }
   
-  public static boolean onAutosaveSpacingChanged(Object v, Logger l) {
-    DynamicSettings.autosaveSpacing = (int) v;
+  public static boolean onAutosaveSpacingChanged(Object v, Logger logger) {
+    int i = (int) v;
+    DynamicSettings.setAutosaveSpacing(Math.max(i, 1));
+    
+    if (!Loader.done()) return true;
+    
+    if (i == 0) DynamicSettings.stopAutosave();
+    else DynamicSettings.startAutosave("AVS-Autosave");
+    
     return true;
   }
   

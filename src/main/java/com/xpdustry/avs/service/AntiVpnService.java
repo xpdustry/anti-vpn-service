@@ -134,6 +134,7 @@ public class AntiVpnService {
       }   
     }
     
+    // Prevents all online services from being unavailable
     if (onlineProviders.allMatch(p -> p.unavailableTimeout() > 0) && 
         AVSConfig.preventUnavailable.getBool()) {
       logger.warn("avs.service.prevent-unavailable");
@@ -168,7 +169,12 @@ public class AntiVpnService {
     stop();
     
     logger.info("avs.service.loading");
-    allProviders.each(p -> p.load());
+    AddressProvider err = allProviders.find(p -> !p.load());
+    if (err != null) {
+      logger.err("avs.service.error", err.displayName, err.name);
+      return;
+    };
+    
     Events.fire(new AVSEvents.ProvidersLoadedEvent());
 
     // Count the total

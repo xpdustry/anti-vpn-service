@@ -86,8 +86,7 @@ public class Loader {
     }
     
     Events.fire(new AVSEvents.AVSLoadingFailedEvent());
-    logger.errNormal("");
-    logger.errNormal("##################################################");
+    logger.errNormal("\n##################################################");
     if (isSecurityError) {
       logger.err("avs.loading.security-error");
       if (error != null) logger.err("avs.general-error", error.toString());
@@ -102,8 +101,7 @@ public class Loader {
     logger.infoNormal("");
     logger.info("avs.loading.error");
     logger.info("avs.loading.report");
-    logger.errNormal("##################################################");
-    logger.errNormal("");
+    logger.errNormal("##################################################\n");
     return true;
   }
   
@@ -116,7 +114,6 @@ public class Loader {
     AVSConfig.load();
     DynamicSettings.logFile = AVSConfig.subDir(AVSConfig.settingsDirectory.getString())
                                        .child(workingDirectory.name() + ".log");
-    DynamicSettings.autosaveSpacing = AVSConfig.autosaveSpacing.getInt();
     return AVSConfig.isLoaded();
   }
   
@@ -133,10 +130,12 @@ public class Loader {
   
   public static boolean initPlugin() {
     if (ServiceManager.registerListeners()) {
-      AntiVpnService.load(); 
+      AntiVpnService.load();
+      if (!AntiVpnService.isOperational()) return false;
       AntiVpnService.save();
-      DynamicSettings.startAutosave("AVS-Autosave");
-      DynamicSettings.waitForAutosave();
+      if (AVSConfig.autosaveSpacing.getInt() > 0)
+        DynamicSettings.startAutosave("AVS-Autosave");
+      DynamicSettings.globalAutosave();
       return AntiVpnService.isOperational();
     }
     return false;
