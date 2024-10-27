@@ -130,6 +130,7 @@ public class Loader {
   
   public static boolean initPlugin() {
     if (ServiceManager.registerListeners()) {
+      logger.infoNormal("");
       AntiVpnService.load();
       if (!AntiVpnService.isOperational()) return false;
       AntiVpnService.save();

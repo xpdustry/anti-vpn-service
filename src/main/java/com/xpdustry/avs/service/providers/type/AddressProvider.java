@@ -29,6 +29,7 @@ package com.xpdustry.avs.service.providers.type;
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.util.PlayerLogger;
 
 import arc.Events;
 import arc.files.Fi;
@@ -66,10 +67,28 @@ public abstract class AddressProvider {
   
   /** Will temporary replace the provider's logger by the given one, while running the function */
   public void exec(Runnable run, Logger logger) {
+    // If it's a player logger, add the default logger as dual (for safety)
+    boolean isPlayer = logger instanceof PlayerLogger;
+    
+    if (logger != null) {
+      this.logger = logger;
+      if (isPlayer) ((PlayerLogger) logger).dualLogger = this.defaultLogger;
+    }
+    
+    try { run.run(); }
+    finally { 
+      if (isPlayer) ((PlayerLogger) logger).dualLogger = null;
+      this.logger = this.defaultLogger; 
+    }
+  }
+ 
+/* // Disabled until we introduce configurable provider actions
+  public void exec(Runnable run, Logger logger) {
     if (logger != null) this.logger = logger;
     try { run.run(); }
     finally { this.logger = this.defaultLogger; }
   }
+*/
   
   public abstract boolean load();
   

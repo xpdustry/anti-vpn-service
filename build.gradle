@@ -2,8 +2,8 @@ apply plugin: "java"
 
 version "1.0"
 
-sourceCompatibility = 14
-targetCompatibility = 14
+sourceCompatibility = 12
+targetCompatibility = 12
 
 repositories {
     mavenCentral()

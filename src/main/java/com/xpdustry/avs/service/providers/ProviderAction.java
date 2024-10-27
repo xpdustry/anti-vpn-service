@@ -35,17 +35,17 @@ import arc.func.Cons2;
 import arc.func.Cons3;
 import arc.struct.Seq;
 
-
+/** TODO: make action configurable per provider */
 public enum ProviderAction {
   reload(Category.common, (a, l) -> a.reload()),
-  enable(Category.common, (a, l) -> a.enable()),
-  disable(Category.common, (a, l) -> a.disable()),
+  enable(Category.common, CallbackKeper::commonEnableAction),
+  disable(Category.common, CallbackKeper::commonDisableAction),
   
   list(Category.cached, CallbackKeper::cachedListAction),
   search(Category.cached, CallbackKeper::cachedSearchAction),
   info(Category.cached, CallbackKeper::cachedInfoAction),
   
-  refresh(Category.cloud, (a, l) -> ((CloudDownloadedProvider) a).refresh()),
+  refresh(Category.cloud, CallbackKeper::cloudRefreshAction),
   
   add(Category.editable, CallbackKeper::editableAddAction),
   remove(Category.editable, CallbackKeper::editableRemoveAction),
@@ -184,6 +184,17 @@ public enum ProviderAction {
       return actionKeyPrefix + action.name + "." + key;
     }
     
+    
+    private static void commonEnableAction(AddressProvider provider, Logger logger) {
+      if (provider.isEnabled()) logger.err(key(enable, "already"));
+      else provider.enable();
+    }
+    
+    private static void commonDisableAction(AddressProvider provider, Logger logger) {
+      if (!provider.isEnabled()) logger.err(key(disable, "already"));
+      else provider.disable();
+    }
+    
     private static void cachedListAction(AddressProvider provider, Logger logger) {
       Seq<String> result = ((CachedAddressProvider) provider).list().map(s -> s.toString());
       
@@ -204,7 +215,7 @@ public enum ProviderAction {
           toolong = true;
         }
         
-        Seq<String> table = Strings.tableify(result, 3);
+        Seq<String> table = Strings.tableify(result, 3, false);
         if (toolong) table.add(logger.formatKey(key(list, "and-more"), rest));
         
         table.each(l -> builder.append("&lk|&fr ").append(l.strip()).append('\n'));
@@ -235,7 +246,7 @@ public enum ProviderAction {
           toolong = true;
         }
         
-        Seq<String> table = Strings.tableify(result.map(v -> v.subnet.toString()), 3);
+        Seq<String> table = Strings.tableify(result.map(v -> v.subnet.toString()), 3, false);
         if (toolong) table.add(logger.formatKey(key(list, "and-more"), rest));
         
         table.each(l -> builder.append("&lk|&fr ").append(l.strip()).append('\n'));
@@ -258,6 +269,11 @@ public enum ProviderAction {
       builder.append(logger.formatKey(key(info, "match"), arg)).append('\n');
       result.toFormattedString(builder, logger, false);
       logger.infoNormal(builder.toString());
+    }
+    
+    private static void cloudRefreshAction(AddressProvider provider, Logger logger) {
+      logger.info(key(refresh, "wait"));
+      ((CloudDownloadedProvider) provider).refresh();
     }
     
     private static void editableAddAction(AddressProvider provider, String arg, Logger logger) {
@@ -313,7 +329,7 @@ public enum ProviderAction {
         return;
       }
       
-      StringBuilder builder = new StringBuilder(logger.getKey(key(list, "head"))).append('\n');
+      StringBuilder builder = new StringBuilder(logger.getKey(key(listTokens, "head"))).append('\n');
       result.each(t -> builder.append("&lk|&fr ").append(t).append('\n'));
       
       logger.infoNormal(builder.toString());

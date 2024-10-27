@@ -119,6 +119,10 @@ public class CachedAddressProvider extends AddressProvider {
       cache = file.getJson(cacheKey, Seq.class, AddressValidity.class, Seq::new); 
       cache.removeAll(s -> s == null || s.subnet == null || s.type == null);
       
+      //TODO: temporary, make a config file for each provider
+      if (file.has("enabled"))
+        enabled = file.getBool("enabled", true);
+      
       if (cache.isEmpty()) logger.warn("avs.provider.cached.empty");
       else logger.info("avs.provider.cached.loaded" + (cache.size > 1 ? "-several" : ""), cache.size);
       
@@ -136,6 +140,7 @@ public class CachedAddressProvider extends AddressProvider {
     
     try { 
       file.putJson(cacheKey, AddressValidity.class, cache); 
+      file.put("enabled", enabled);
       logger.debug("avs.provider.cached." + (file.isModified() ? "saved" : "no-modifications"));
     } catch(Exception e) {
       logger.err("avs.provider.cached.save-failed", file.getFile().path());

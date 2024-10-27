@@ -34,6 +34,17 @@ public class Blacklist extends com.xpdustry.avs.service.providers.type.EditableA
     super("Blacklist", "blacklist");
   }
   
+  /** When adding a new address in blacklist, it's always to say it's a vpn or something like that */
+  @Override
+  public boolean add(com.xpdustry.avs.misc.address.AddressValidity address) {
+    if (address == null) throw new NullPointerException("null address not allowed");
+    
+    if (!address.type.isNotValid()) 
+      address.type.vpn = true; // Let's say, by default it's a vpn
+    
+    return super.add(address);
+  }
+  
   @Override
   protected boolean loadCache() {
     boolean loaded = super.loadCache();

@@ -34,6 +34,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import arc.files.Fi;
+import arc.func.Func2;
 import arc.func.Intf;
 import arc.struct.Seq;
 import arc.util.serialization.JsonValue;
@@ -110,11 +111,12 @@ public class Strings extends arc.util.Strings {
     return arr;
   }
   
-  public static Seq<String> tableify(Seq<String> lines, int columns) {
-    return tableify(lines, columns, Strings::lJust);
+  public static Seq<String> tableify(Seq<String> lines, int columns, boolean useTabs) {
+    return tableify(lines, columns, Strings::lJust, useTabs);
   }
+  /** TODO: change the tableify to use a max length instead of static columns */
   public static Seq<String> tableify(Seq<String> lines, int columns, 
-                                     arc.func.Func2<String, Integer, String> justifier) {
+                                     Func2<String, Integer, String> justifier, boolean useTabs) {
     Seq<String> result = new Seq<>(lines.size / columns);
     int[] bests = new int[columns];
     StringBuilder builder = new StringBuilder();
@@ -137,7 +139,7 @@ public class Strings extends arc.util.Strings {
     
     return result;
   }
-  
+
   public static <T> int best(Iterable<T> list, Intf<T> intifier) {
     int best = 0;
     
@@ -291,12 +293,12 @@ public class Strings extends arc.util.Strings {
   
   /** {@link sun.util.locale.BaseLocale#convertOldISOCodes(String)} */
   public static String convertOldISOCodes(String language) {
-    return switch (language) {
-      case "iw" -> "he";
-      case "in" -> "id";
-      case "ji" -> "yi";
-      default -> language;
-    };
+    switch (language) {
+      case "iw": return "he";
+      case "in": return "id";
+      case "ji": return "yi";
+      default: return language;
+    }
   }
   
   public static String jsonPrettyPrint(JsonValue object, OutputType outputType) {

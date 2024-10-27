@@ -57,7 +57,6 @@ public abstract class EditableAddressProvider extends CachedAddressProvider {
   }
 
   public boolean remove(AddressValidity address) {
-    // TODO: fire an event.
     boolean removed = cache.remove(address);
     if (removed) {
       save();
