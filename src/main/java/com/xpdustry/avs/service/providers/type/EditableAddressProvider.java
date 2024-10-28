@@ -33,7 +33,8 @@ import com.xpdustry.avs.misc.address.AddressValidity;
 import arc.Events;
 
 
-public abstract class EditableAddressProvider extends CachedAddressProvider {
+public abstract class EditableAddressProvider extends CachedAddressProvider 
+                                              implements ProviderCategories.Editable {
   public EditableAddressProvider(String displayName) { 
     super(displayName); 
     // Custom providers are saved in the settings directory
@@ -45,6 +46,7 @@ public abstract class EditableAddressProvider extends CachedAddressProvider {
     folder = AVSConfig.settingsDirectory.get();
   }
 
+  @Override
   public boolean add(AddressValidity address) {
     if (address == null) throw new NullPointerException("null address not allowed");
 
@@ -56,6 +58,7 @@ public abstract class EditableAddressProvider extends CachedAddressProvider {
     return added;
   }
 
+  @Override
   public boolean remove(AddressValidity address) {
     boolean removed = cache.remove(address);
     if (removed) {
@@ -65,6 +68,7 @@ public abstract class EditableAddressProvider extends CachedAddressProvider {
     return removed;
   }
   
+  @Override
   public void clear() {
     Events.fire(new AVSEvents.EditableProviderCleaningAddressesEvent(this));
     cache.clear();

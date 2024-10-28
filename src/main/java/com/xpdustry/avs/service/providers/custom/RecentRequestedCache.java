@@ -26,24 +26,27 @@
 
 package com.xpdustry.avs.service.providers.custom;
 
-import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.address.AddressValidity;
 
+import arc.util.Timer;
 
-public class RecentRequestedCache extends com.xpdustry.avs.service.providers.type.EditableAddressProvider {
-  //TODO: implement a timer to clear the cache frequently
+
+public class RecentRequestedCache extends com.xpdustry.avs.service.providers.type.EditableAddressProvider 
+       implements com.xpdustry.avs.service.providers.type.ProviderCategories.Cleanable {
+  private final Timer.Task cleanupTimer = new Timer.Task() {
+      @Override
+      public void run() {
+        if (cacheSize() > 0) {
+          logger.info("avs.provider.editable.recent-cache.cleanup");
+          clear();
+        }
+      }
+    };;
   
   public RecentRequestedCache() {
     super("Recent Requested Cache", "recent-cache");
     // This provider is a cache for online services, so it's stored in the cache folder
     folder = com.xpdustry.avs.config.AVSConfig.cacheDirectory.get();
-  }
-  
-  @Override
-  public boolean load() {
-    if (!super.load()) return false;
-    if (AVSConfig.cleanupRecents.getBool()) clear();
-    return true;
   }
 
   @Override
@@ -61,5 +64,18 @@ public class RecentRequestedCache extends com.xpdustry.avs.service.providers.typ
     }      
  
     return true;
+  }
+  
+  @Override
+  public void scheduleCleanup(float spacing) {
+    if (spacing < 0) throw new IllegalArgumentException("invalid spacing. must be 0 or greater");
+    else if (spacing == 0) {
+      logger.info("avs.provider.editable.recent-cache.cleanup.disabled");
+      cleanupTimer.cancel();
+    } else {
+      logger.info("avs.provider.editable.recent-cache.cleanup.scheduled", spacing);
+      if (cleanupTimer.isScheduled()) cleanupTimer.cancel();
+      Timer.schedule(cleanupTimer, spacing * 60, spacing * 60);
+    }
   }
 }

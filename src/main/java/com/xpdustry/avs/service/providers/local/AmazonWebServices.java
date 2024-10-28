@@ -38,7 +38,7 @@ public class AmazonWebServices extends com.xpdustry.avs.service.providers.type.C
   }
 
   @Override
-  public Seq<Subnet> extractAddressRanges(JsonValue downloaded) {
+  protected Seq<Subnet> extractAddressRanges(JsonValue downloaded) {
     Seq<Subnet> list = new Seq<>();
     
     for (JsonValue values=downloaded.get("prefixes").child; values!=null; values=values.next)

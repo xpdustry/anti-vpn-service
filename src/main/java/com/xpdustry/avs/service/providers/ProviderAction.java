@@ -27,7 +27,8 @@
 package com.xpdustry.avs.service.providers;
 
 import com.xpdustry.avs.misc.address.AddressValidity;
-import com.xpdustry.avs.service.providers.type.*;
+import com.xpdustry.avs.service.providers.type.AddressProvider;
+import com.xpdustry.avs.service.providers.type.ProviderCategories;
 import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
 
@@ -35,11 +36,12 @@ import arc.func.Cons2;
 import arc.func.Cons3;
 import arc.struct.Seq;
 
+
 /** TODO: make action configurable per provider */
 public enum ProviderAction {
-  reload(Category.common, (a, l) -> a.reload()),
   enable(Category.common, CallbackKeper::commonEnableAction),
   disable(Category.common, CallbackKeper::commonDisableAction),
+  reload(Category.common, (a, l) -> a.reload()),
   
   list(Category.cached, CallbackKeper::cachedListAction),
   search(Category.cached, CallbackKeper::cachedSearchAction),
@@ -49,8 +51,8 @@ public enum ProviderAction {
   
   add(Category.editable, CallbackKeper::editableAddAction),
   remove(Category.editable, CallbackKeper::editableRemoveAction),
-  clear(Category.editable, (a, l) -> ((EditableAddressProvider) a).clear()),
-  
+  clear(Category.editable, (a, l) -> ((ProviderCategories.Editable) a).clear()),
+
   //check(Category.online, CallbackKeper::onlineCheckAction),
   addToken(Category.online, CallbackKeper::onlineAddTokenAction),
   delToken(Category.online, CallbackKeper::onlineDelTokenAction),
@@ -58,26 +60,41 @@ public enum ProviderAction {
   ;
   
   public static final Seq<ProviderAction> all = Seq.with(values());
-  public static final String actionKeyPrefix = "avs.provider.action.";
+  public static final String actionKeyFormat = "avs.provider.action.@.@";
   
   public final String name;
   public final Category category;
-  private final Cons2<AddressProvider, Logger> run;
-  private final Cons3<AddressProvider, String, Logger> run2;
+  private final Cons2<ProviderCategories.Basic, Logger> run;
+  private final Cons3<ProviderCategories.Basic, String, Logger> run2;
   
-  ProviderAction(Category category, Cons2<AddressProvider, Logger> run) {
+  ProviderAction(Category category, Cons2<ProviderCategories.Basic, Logger> run) {
     this.name = Strings.camelToKebab(name());
     this.category = category;
     this.run = run;
     this.run2 = null;
   }
   
-  ProviderAction(Category category, Cons3<AddressProvider, String, Logger> run) {
+  ProviderAction(String name, Category category, Cons2<ProviderCategories.Basic, Logger> run) {
+    this.name = name;
+    this.category = category;
+    this.run = run;
+    this.run2 = null;
+  }
+  
+  ProviderAction(Category category, Cons3<ProviderCategories.Basic, String, Logger> run) {
     this.name = Strings.camelToKebab(name());
     this.category = category;
     this.run = null;
     this.run2 = run;
   }
+  
+  ProviderAction(String name, Category category, Cons3<ProviderCategories.Basic, String, Logger> run) {
+    this.name = name;
+    this.category = category;
+    this.run = null;
+    this.run2 = run;
+  }
+
 
   public boolean argRequired() {
     return run2 != null && run == null;
@@ -92,7 +109,7 @@ public enum ProviderAction {
                                        + "Use the other .exec() method instead");
     else if (!category.clazz.isInstance(provider))
       throw new IllegalArgumentException("incompatible provider type " + provider.getClass().getName()
-                                       + ". Must be an instance of " + category.clazz.getName());
+                                       + ". Must implement " + category.clazz.getName());
   }
   
   public void run(AddressProvider provider, String arg, Logger logger) {
@@ -106,7 +123,7 @@ public enum ProviderAction {
   }
   
   public String getDesc(Logger logger) {
-    return logger.getKey(actionKeyPrefix + name);
+    return logger.getKey(Strings.format(actionKeyFormat, category.name, name));
   }
   
   
@@ -120,30 +137,38 @@ public enum ProviderAction {
 
   
   public static enum Category {
-    common(AddressProvider.class),
-    cached(CachedAddressProvider.class),
-    cloud(CloudDownloadedProvider.class),
-    editable(EditableAddressProvider.class),
-    online(OnlineServiceProvider.class);
+    common(ProviderCategories.Basic.class),
+    cached(ProviderCategories.Cacheable.class),
+    cloud(ProviderCategories.Cloudable.class),
+    editable(ProviderCategories.Editable.class),
+    online(ProviderCategories.Onlinable.class);
     
     public static final Seq<Category> all = Seq.with(values()); 
-    public static final String categoryKeyPrefix = "avs.provider.category.";
+    public static final String categoryKeyFormat = "avs.provider.category.@";
     
     public final String name;
-    public final Class<? extends AddressProvider> clazz;
+    public final Class<? extends ProviderCategories.Basic> clazz;
     
-    Category(Class<? extends AddressProvider> clazz) { 
-      this.name = name();
+    Category(Class<? extends ProviderCategories.Basic> clazz) { 
+      this.name = Strings.camelToKebab(name());
+      if (clazz != ProviderCategories.Basic.class && (!clazz.isInterface() || 
+          !Seq.with(clazz.getInterfaces()).contains(ProviderCategories.Basic.class))) 
+        throw new IllegalArgumentException(name + ": the class category must be an interface "
+                                         + "inherited from ProviderCategories.Basic");
       this.clazz = clazz;
     }
     
-    Category(String name, Class<? extends AddressProvider> clazz) {
+    Category(String name, Class<? extends ProviderCategories.Basic> clazz) {
       this.name = name;
+      if (!clazz.isInterface() || 
+          !Seq.with(clazz.getInterfaces()).contains(ProviderCategories.Basic.class)) 
+        throw new IllegalArgumentException(name + ": the class category must be an interface "
+                                         + "inherited from ProviderCategories.Basic");
       this.clazz = clazz;
     }
     
     public String getDesc(Logger logger) {
-      return logger.getKey(categoryKeyPrefix + name);
+      return logger.getKey(Strings.format(categoryKeyFormat, name));
     }
     
     
@@ -151,26 +176,27 @@ public enum ProviderAction {
       return all.find(c -> c.name.equals(name));
     }
     
-    public static Category get(AddressProvider provider) {
-      for (int i=all.size-1; i>=0; i--) {
-        if (all.get(i).clazz.isInstance(provider))
-          return all.get(i);
-      }
-      return null;
-    }
-    
     public static Seq<Category> getAll(AddressProvider provider) {
       Seq<Category> result = new Seq<>();
+      Seq<Class<?>> interfaces = new Seq<>();
       Class<?> look = provider.getClass();
-      
+
       while (look != null && look != Object.class) {
-        for (int i=all.size-1; i>=0; i--) {
-          if (look == all.get(i).clazz) {
-            result.add(all.get(i));
-            look = look.getSuperclass();
-          }
+        for (Class<?> c : look.getInterfaces()) {
+          if (ProviderCategories.Basic.class.isAssignableFrom(c) && !interfaces.contains(c))
+            interfaces.add(c);
         }
-        if (look != null) look = look.getSuperclass();
+        look = look.getSuperclass();
+      }
+
+      int i, c;
+      for (i=interfaces.size-1; i>=0; i--) {
+        for (c=all.size-1; c>=0; c--) {
+          if (interfaces.get(i) == all.get(c).clazz) {
+            result.add(all.get(c));
+            break;
+          }
+        }  
       }
 
       return result;
@@ -178,25 +204,28 @@ public enum ProviderAction {
   }
 
   
-  /** Private class to store multi-lines callbacks, for a better visual in action definition */
+  /** 
+   * Private class to store {@link ProviderAction} callbacks, 
+   * for a better visual in action definition 
+   */
   private static class CallbackKeper {
     private static String key(ProviderAction action, String key) {
-      return actionKeyPrefix + action.name + "." + key;
+      return Strings.format(actionKeyFormat + ".@", action.category.name, action.name, key);
     }
     
     
-    private static void commonEnableAction(AddressProvider provider, Logger logger) {
+    private static void commonEnableAction(ProviderCategories.Basic provider, Logger logger) {
       if (provider.isEnabled()) logger.err(key(enable, "already"));
       else provider.enable();
     }
     
-    private static void commonDisableAction(AddressProvider provider, Logger logger) {
+    private static void commonDisableAction(ProviderCategories.Basic provider, Logger logger) {
       if (!provider.isEnabled()) logger.err(key(disable, "already"));
       else provider.disable();
     }
     
-    private static void cachedListAction(AddressProvider provider, Logger logger) {
-      Seq<String> result = ((CachedAddressProvider) provider).list().map(s -> s.toString());
+    private static void cachedListAction(ProviderCategories.Basic provider, Logger logger) {
+      Seq<String> result = ((ProviderCategories.Cacheable) provider).list().map(s -> s.toString());
       
       if (result.isEmpty()) {
         logger.warn(key(list, "empty"));
@@ -225,8 +254,8 @@ public enum ProviderAction {
       logger.infoNormal(builder.toString());
     }
     
-    private static void cachedSearchAction(AddressProvider provider, String arg, Logger logger) {
-      Seq<AddressValidity> result = ((CachedAddressProvider) provider).matches(arg);
+    private static void cachedSearchAction(ProviderCategories.Basic provider, String arg, Logger logger) {
+      Seq<AddressValidity> result = ((ProviderCategories.Cacheable) provider).matches(arg);
       
       if (result.isEmpty()) {
         logger.err(key(search, "not-found"), arg);
@@ -256,8 +285,8 @@ public enum ProviderAction {
       logger.infoNormal(builder.toString());
     }
     
-    private static void cachedInfoAction(AddressProvider provider, String arg, Logger logger) {
-      AddressValidity result = ((CachedAddressProvider) provider).get(arg);
+    private static void cachedInfoAction(ProviderCategories.Basic provider, String arg, Logger logger) {
+      AddressValidity result = ((ProviderCategories.Cacheable) provider).get(arg);
       
       if (result == null) {
         logger.err(key(info, "not-found"), arg);
@@ -271,58 +300,58 @@ public enum ProviderAction {
       logger.infoNormal(builder.toString());
     }
     
-    private static void cloudRefreshAction(AddressProvider provider, Logger logger) {
+    private static void cloudRefreshAction(ProviderCategories.Basic provider, Logger logger) {
       logger.info(key(refresh, "wait"));
-      ((CloudDownloadedProvider) provider).refresh();
+      ((ProviderCategories.Cloudable) provider).refresh();
     }
     
-    private static void editableAddAction(AddressProvider provider, String arg, Logger logger) {
-      if (((EditableAddressProvider) provider).add(new AddressValidity(arg)))
+    private static void editableAddAction(ProviderCategories.Basic provider, String arg, Logger logger) {
+      if (((ProviderCategories.Editable) provider).add(new AddressValidity(arg)))
            logger.info(key(add, "added"));
       else logger.err(key(add, "present"));
     }
     
-    private static void editableRemoveAction(AddressProvider provider, String arg, Logger logger) {
-      if (((EditableAddressProvider) provider).remove(new AddressValidity(arg)))
+    private static void editableRemoveAction(ProviderCategories.Basic provider, String arg, Logger logger) {
+      if (((ProviderCategories.Editable) provider).remove(new AddressValidity(arg)))
         logger.info(key(remove, "removed"));
       else logger.err(key(remove, "not-in"));
     }
     
 /*
-    private static void onlineCheckAction(AddressProvider provider, String arg, Logger logger) {
+    private static void onlineCheckAction(ProviderCategories.Basic provider, String arg, Logger logger) {
       
     }
 */
     
-    private static void onlineAddTokenAction(AddressProvider provider, String arg, Logger logger) {
-      if (!((OnlineServiceProvider) provider).canUseTokens()) {
+    private static void onlineAddTokenAction(ProviderCategories.Basic provider, String arg, Logger logger) {
+      if (!((ProviderCategories.Onlinable) provider).canUseTokens()) {
         logger.err(key(listTokens, "no-use"));
         return;
       }
       
-      if (((OnlineServiceProvider) provider).addToken(arg))
+      if (((ProviderCategories.Onlinable) provider).addToken(arg))
         logger.info(key(addToken, "added"));
       else logger.err(key(addToken, "present"));
     }
     
-    private static void onlineDelTokenAction(AddressProvider provider, String arg, Logger logger) {
-      if (!((OnlineServiceProvider) provider).canUseTokens()) {
+    private static void onlineDelTokenAction(ProviderCategories.Basic provider, String arg, Logger logger) {
+      if (!((ProviderCategories.Onlinable) provider).canUseTokens()) {
         logger.err(key(listTokens, "no-use"));
         return;
       }
       
-      if (((OnlineServiceProvider) provider).removeToken(arg))
+      if (((ProviderCategories.Onlinable) provider).removeToken(arg))
         logger.info(key(delToken, "added"));
       else logger.err(key(delToken, "not-in"));
     }
     
-    private static void onlineListTokensAction(AddressProvider provider, Logger logger) {
-      if (!((OnlineServiceProvider) provider).canUseTokens()) {
+    private static void onlineListTokensAction(ProviderCategories.Basic provider, Logger logger) {
+      if (!((ProviderCategories.Onlinable) provider).canUseTokens()) {
         logger.warn(key(listTokens, "no-use"));
         return;
       }
       
-      Seq<String> result = ((OnlineServiceProvider) provider).getTokens();
+      Seq<String> result = ((ProviderCategories.Onlinable) provider).getTokens();
       
       if (result.isEmpty()) {
         logger.warn(key(list, "empty"));

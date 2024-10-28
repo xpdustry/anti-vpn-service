@@ -135,7 +135,7 @@ public class AntiVpnService {
     }
     
     // Prevents all online services from being unavailable
-    if (onlineProviders.allMatch(p -> p.unavailableTimeout() > 0) && 
+    if (onlineProviders.allMatch(p -> p.unavailableCooldown() > 0) && 
         AVSConfig.preventUnavailable.getBool()) {
       logger.warn("avs.service.prevent-unavailable");
       onlineProviders.each(p -> p.makeAvailable());

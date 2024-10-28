@@ -57,7 +57,7 @@ public class Azure extends com.xpdustry.avs.service.providers.type.CloudDownload
   }
 
   @Override
-  public JsonValue downloadList() {
+  protected JsonValue downloadList() {
     JsonValue output = new JsonValue(JsonValue.ValueType.array);
     
     urls.each(url -> {
@@ -89,7 +89,7 @@ public class Azure extends com.xpdustry.avs.service.providers.type.CloudDownload
   }
   
   @Override
-  public Seq<Subnet> extractAddressRanges(JsonValue downloaded) {
+  protected Seq<Subnet> extractAddressRanges(JsonValue downloaded) {
     Seq<String> list = new Seq<>();
     
     for (JsonValue values=downloaded.child; values!=null; values=values.next) {

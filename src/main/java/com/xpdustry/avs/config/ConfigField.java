@@ -59,7 +59,7 @@ public class ConfigField {
 
   ConfigField(String name, Object defaultValue, ConfigEvents.Callback changed, boolean isDev, boolean readOnly) {
     this.name = name;
-    if (defaultValue == null) throw new NullPointerException("defaultValue cannot be null");
+    if (defaultValue == null) throw new NullPointerException(name + ": defaultValue cannot be null");
     this.defaultValue = defaultValue;
     this.isDev = isDev;
     this.readOnly = readOnly;
@@ -69,9 +69,9 @@ public class ConfigField {
   }
   
   protected void checkType(Object o) {
-    if (o == null) throw new NullPointerException("value to check is null");
+    if (o == null) throw new NullPointerException(name + ": value to check is null");
     if (o.getClass() != defaultValue.getClass())
-      throw new IllegalArgumentException("incompatible type " + o.getClass().getName() + 
+      throw new IllegalArgumentException(name + ": incompatible type " + o.getClass().getName() + 
                                          ". Must be a " + defaultValue.getClass().getName());
   }
 

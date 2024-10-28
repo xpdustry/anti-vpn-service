@@ -162,6 +162,12 @@ public class ConfigEvents {
     return true;
   }
   
+  public static boolean onCleanupRecentsChanged(Object v, Logger logger) {
+    ((com.xpdustry.avs.service.providers.custom.RecentRequestedCache) 
+        com.xpdustry.avs.service.providers.type.OnlineServiceProvider.cacheProvider).scheduleCleanup(((int) v));
+    return true;
+  }
+  
   // dev settings callbacks
   
   private static boolean validatePath(Object v, Logger logger) {

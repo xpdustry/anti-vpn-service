@@ -8,7 +8,7 @@ targetCompatibility = 12
 repositories {
     mavenCentral()
     maven { url "https://maven.xpdustry.com/mindustry" }
-    maven { url 'https://www.jitpack.io' }
+    maven { url "https://www.jitpack.io" }
 }
 
 ext {
@@ -22,7 +22,10 @@ dependencies {
 
 jar {
     archiveFileName = "anti-vpn-service.jar"
-    version="1.0"
+    // Get version from plugin json file
+    def json = new groovy.json.JsonSlurper().parseText(file("src/main/resources/plugin.json").text)
+    version = json.version
+    
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     
     //copy the builded jar to the working directory

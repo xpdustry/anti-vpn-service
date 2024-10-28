@@ -39,7 +39,8 @@ import arc.util.serialization.JsonReader;
 import arc.util.serialization.JsonValue;
 
 
-public abstract class CloudDownloadedProvider extends CachedAddressProvider {
+public abstract class CloudDownloadedProvider extends CachedAddressProvider
+                                              implements ProviderCategories.Cloudable {
   public final String url;
   /* Define the type of provider, used for statistics. Default is VPN */
   protected ProviderType providerType = ProviderType.vpn;
@@ -62,6 +63,7 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider {
     AutoRefresher.toRefresh.add(this);
   }
   
+  @Override
   public boolean refresh() {
     loaded = false;
     Events.fire(new AVSEvents.CloudProviderRefreshingEvent(this));
@@ -137,11 +139,12 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider {
     return loaded;
   }
 
+  @Override
   public ProviderType providerType() {
     return providerType;
   }
   
-  public JsonValue downloadFromURL(String url) {
+  protected JsonValue downloadFromURL(String url) {
     AdvancedHttp.Reply reply = AdvancedHttp.get(url, headers);
     JsonValue result;
     
@@ -166,11 +169,12 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider {
   }
   
   /* Override this if your provider have a custom way to get addresses */
-  public JsonValue downloadList() {
+  protected JsonValue downloadList() {
     return null;
   }
+  
   /* Extract wanted addresses from server reply */
-  public abstract Seq<Subnet> extractAddressRanges(JsonValue downloaded);
+  protected abstract Seq<Subnet> extractAddressRanges(JsonValue downloaded);
   
   
   public static enum ProviderType {

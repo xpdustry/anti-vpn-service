@@ -40,7 +40,7 @@ import arc.struct.Seq;
 import arc.util.serialization.Json;
 
 
-public class CachedAddressProvider extends AddressProvider {  
+public class CachedAddressProvider extends AddressProvider implements ProviderCategories.Cacheable {  
   protected Seq<AddressValidity> cache = new Seq<>(false);
   private DynamicSettings cacheFile = null;
   protected String cacheKey = "cache";
@@ -55,22 +55,27 @@ public class CachedAddressProvider extends AddressProvider {
     folder = AVSConfig.cacheDirectory.get();
   }
   
+  @Override
   public AddressValidity get(String subnet) {
     return cache.find(a -> a.subnet.toString().equals(subnet));
   }
 
+  @Override
   public AddressValidity get(Subnet subnet) {
     return cache.find(a -> a.subnet.equals(subnet));
   }
   
+  @Override
   public Seq<AddressValidity> matches(String address) {
     return cache.select(s -> s.subnet.isInNet(address));
   }
   
+  @Override
   public Seq<AddressValidity> getCache() {
     return cache.copy();
   }
   
+  @Override
   public Seq<Subnet> list() {
     return cache.map(a -> a.subnet);
   }
@@ -100,6 +105,7 @@ public class CachedAddressProvider extends AddressProvider {
     return saveCache();
   }
   
+  @Override
   public int cacheSize() {
     return cache.size;
   }

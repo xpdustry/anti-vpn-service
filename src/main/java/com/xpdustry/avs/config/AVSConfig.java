@@ -50,8 +50,8 @@ public class AVSConfig {
     errorMessage = new ConfigField("error-message", ""),
     clientKickDuration = new ConfigField("kick-duration", 30),
     connectLimit = new ConfigField("connect-limit", arc.util.OS.cores, ConfigEvents::onConnectLimitChanged),
-    tokenCheckTimeout = new ConfigField("token-timeout", 50),
-    serviceCheckTimeout = new ConfigField("service-timeout", 30),
+    tokenCheckCooldown = new ConfigField("token-cooldown", 50),
+    serviceCheckCooldown = new ConfigField("service-cooldown", 30),
     startupDownload = new ConfigField("startup-download", true),
     autosaveSpacing = new ConfigField("autosave-spacing", 60 * 15, ConfigEvents::onAutosaveSpacingChanged),
     resetCommandEnabled = new ConfigField("reset-command", false, false, true),
@@ -63,8 +63,8 @@ public class AVSConfig {
     randomTokens = new ConfigField("random-tokens", false),
     preventUnavailable = new ConfigField("prevent-unavailable", true),
     resultRequired = new ConfigField("result-required", true),
-    cleanupRecents = new ConfigField("cleanup-recents", false),
-    cloudRefreshTimeout = new ConfigField("cloud-refresh", 720),
+    cleanupRecents = new ConfigField("cleanup-recents", 60, ConfigEvents::onCleanupRecentsChanged),
+    cloudRefreshTimeout = new ConfigField("cloud-refresh", 360),
     
     // For devs, better to keep that as default
     pluginDirectory = new ConfigField("plugin-dir", "", ConfigEvents::onPluginDirectoryChanged, true),
@@ -87,11 +87,19 @@ public class AVSConfig {
   }
   
   protected static void setAllToDefault() {
-    all.each(s -> config.put(s.name, s.defaultValue));
+    all.each(s -> s.set(s.defaultValue));
   }
   
   public static void notifyAllValueChanged() {
-    all.each(s -> s.changed.run(s.get(), logger));
+    all.each(s -> {
+      try { s.changed.run(s.get(), logger); }
+      catch (IllegalArgumentException e) { // probably invalid value in config file
+        // notify, remove the field and use the default value
+        logger.err("avs.config.msg.invalid-field", s.name);
+        config.remove(s.name);
+        s.changed.run(s.defaultValue, logger);
+      }
+    });
   }
     
   public static boolean isLoaded() {

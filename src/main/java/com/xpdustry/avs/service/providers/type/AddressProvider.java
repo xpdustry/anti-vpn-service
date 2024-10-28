@@ -35,7 +35,7 @@ import arc.Events;
 import arc.files.Fi;
 
 
-public abstract class AddressProvider {
+public abstract class AddressProvider implements ProviderCategories.Basic {
   /** Folder to store the file, it's relative to the plugin directory */
   protected String folder;
   /** This field can be set manually, if desired. */
@@ -65,6 +65,14 @@ public abstract class AddressProvider {
     this.logger = this.defaultLogger;
   }
   
+  public String name() {
+    return name;
+  }
+  
+  public String displayName() {
+    return displayName;
+  }
+  
   /** Will temporary replace the provider's logger by the given one, while running the function */
   public void exec(Runnable run, Logger logger) {
     // If it's a player logger, add the default logger as dual (for safety)
@@ -89,17 +97,12 @@ public abstract class AddressProvider {
     finally { this.logger = this.defaultLogger; }
   }
 */
-  
-  public abstract boolean load();
-  
-  public abstract boolean reload();
-  
-  public abstract boolean save();
-  
+  @Override
   public boolean isLoaded() {
     return loaded;
   }
   
+  @Override
   public void enable() {
     if (enabled) return;
     logger.info("avs.provider.enabled");
@@ -107,6 +110,7 @@ public abstract class AddressProvider {
     enabled = true;
   }
   
+  @Override
   public void disable() {
     if (!enabled) return;
     logger.info("avs.provider.disabled");
@@ -114,10 +118,12 @@ public abstract class AddressProvider {
     enabled = false;
   }
   
+  @Override
   public boolean isEnabled() {
     return enabled;
   }
   
+  @Override
   public boolean isProviderAvailable() {
     if (!isEnabled()) {
       logger.debug("avs.provider.disabled");
@@ -132,12 +138,7 @@ public abstract class AddressProvider {
     return true;
   }
   
-  /**
-   * Check if address is blacklisted.
-   * 
-   * @apiNote the address should be validated before.
-   * @return the provider reply (nerver {@code null})
-   */
+  @Override
   public AddressProviderReply checkAddress(String address) {
     AddressProviderReply reply = new AddressProviderReply(address);
     

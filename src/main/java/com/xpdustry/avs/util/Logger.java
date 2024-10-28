@@ -124,6 +124,7 @@ public class Logger{
   /** Some keys, with important messages, are static, in case of default bundle is not loaded yet */
   private static final StringMap staticKeys = StringMap.of(
       "avs.general-error", "Error: {0}",
+      "avs.config.msg.invalid-field", "{0} has an invalid value! Using the default one...", 
       "avs.loading.started", "Anti VPN Service (AVS) is loading...",
       "avs.loading.custom-bundles", "Loading custom bundles...",
       "avs.loading.bundle-loaded", "Loaded {0} locales, default is {1}.",

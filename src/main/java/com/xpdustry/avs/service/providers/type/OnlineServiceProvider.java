@@ -41,7 +41,8 @@ import arc.struct.Seq;
 import arc.struct.StringMap;
 
 
-public abstract class OnlineServiceProvider extends AddressProvider {
+public abstract class OnlineServiceProvider extends AddressProvider 
+                                            implements ProviderCategories.Onlinable {
   /** Online providers also use a cache, but it is common to all of them. */
   public static final EditableAddressProvider cacheProvider = 
       new com.xpdustry.avs.service.providers.custom.RecentRequestedCache();
@@ -66,14 +67,14 @@ public abstract class OnlineServiceProvider extends AddressProvider {
   protected String tokenHeaderName;
  
   protected ObjectMap<String, Integer> tokens = new ObjectMap<>();
-  protected boolean canUseTokens = false;
+  protected boolean canNotUseTokens = false;
   protected boolean needTokens = false;
   /** 
    * Define whether the service is trusted when reporting that the IP valid, 
    * so the IP will be not checked by other services. 
    */
   protected boolean isTrusted = false; 
-  protected int unavailableTimeout = 0;
+  protected int unavailableCooldown = 0;
   
   public OnlineServiceProvider(String displayName, String url) { 
     super(displayName);
@@ -164,14 +165,17 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     return true;
   }
   
+  @Override
   public int loadedTokens() {
     return tokens.size;
   }
-  
+
+  @Override
   public Seq<String> getTokens() {
     return tokens.keys().toSeq();
   }
-  
+
+  @Override
   public ObjectMap<String, Integer> waitingTokens() {
     ObjectMap<String, Integer> tmp = new ObjectMap<>();
     tokens.each((k, v) -> {if (v > 0) tmp.put(k, v);});
@@ -183,11 +187,11 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     if(!super.isProviderAvailable()) 
       return false;
     
-    else if (unavailableTimeout() > 0) {
-      if (--unavailableTimeout <= 0) 
+    else if (unavailableCooldown() > 0) {
+      if (--unavailableCooldown <= 0) 
         Events.fire(new AVSEvents.OnlineProviderServiceNowAvailable(this));
       else {
-        logger.debug("avs.provider.online.unavailable", unavailableTimeout());
+        logger.debug("avs.provider.online.unavailable", unavailableCooldown());
         return false;
       }
       
@@ -204,23 +208,27 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     refreshTokens();
     return true;
   }
-  
+
+  @Override
   public boolean isTrusted() {
     return isTrusted;
   }
-  
+
+  @Override
   public boolean tokensNeeded() {
     // little fix
-    if (needTokens && !canUseTokens) canUseTokens = true;
+    if (needTokens && !canNotUseTokens) canNotUseTokens = true;
     return needTokens;
   }
-  
+
+  @Override
   public boolean canUseTokens() {
     // little fix
-    if (needTokens && !canUseTokens) canUseTokens = true;
-    return canUseTokens;
+    if (needTokens && !canNotUseTokens) canNotUseTokens = true;
+    return canNotUseTokens;
   }
-  
+
+  @Override
   public boolean willUseTokens() {
     if (canUseTokens() && !tokens.isEmpty()) {
       for (ObjectMap.Entry<String, Integer> token : tokens.entries()) {
@@ -238,19 +246,21 @@ public abstract class OnlineServiceProvider extends AddressProvider {
       }
     });
   }
-  
-  public int unavailableTimeout() {
-    return unavailableTimeout;
+
+  @Override
+  public int unavailableCooldown() {
+    return unavailableCooldown;
   }
-  
+
+  @Override
   public void makeAvailable() {
-    if (unavailableTimeout > 0) {
-      unavailableTimeout = 0;
+    if (unavailableCooldown > 0) {
+      unavailableCooldown = 0;
       Events.fire(new AVSEvents.OnlineProviderServiceNowAvailable(this));     
     }
   }
   
-  /** @return whether the token has been added */
+  @Override
   public boolean addToken(String token) {
     token = token.strip();
     if (!canUseTokens() || tokens.containsKey(token)) return false;
@@ -260,7 +270,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     return true;
   }
   
-  /** @return whether the token has been removed */
+  @Override
   public boolean removeToken(String token) {
     token = token.strip();
     if (!canUseTokens() || !tokens.containsKey(token)) return false;
@@ -270,7 +280,7 @@ public abstract class OnlineServiceProvider extends AddressProvider {
     return true;
   }
   
-  /** @return whether the token unavailability has been reset */
+  @Override
   public boolean makeTokenAvailable(String token) {
     token = token.strip();
     if (!canUseTokens() || !tokens.containsKey(token)) return false;
@@ -355,10 +365,10 @@ public abstract class OnlineServiceProvider extends AddressProvider {
       catch (Exception e) {
         logger.err("avs.provider.online.error", ip, e.toString());
         result.setError(); 
-        int v = AVSConfig.serviceCheckTimeout.getInt();
+        int v = AVSConfig.serviceCheckCooldown.getInt();
         if (v > 0) {
-          unavailableTimeout = v;
-          logger.warn("avs.provider.online.in-waiting-list", unavailableTimeout);
+          unavailableCooldown = v;
+          logger.warn("avs.provider.online.in-waiting-list", v);
           Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this));        
         }
         return result;
@@ -372,10 +382,10 @@ public abstract class OnlineServiceProvider extends AddressProvider {
                 (reply.status == AdvancedHttp.Status.QUOTA_LIMIT ? "use-limit" : "invalid"), ip, token);
       logger.err("avs.http-status", reply.httpStatus.code, reply.message);
       result.setError();
-      int v = AVSConfig.tokenCheckTimeout.getInt();
+      int v = AVSConfig.tokenCheckCooldown.getInt();
       if (v > 0) {
         tokens.put(token, v);
-        logger.warn("avs.provider.online.token.in-waiting-list", AVSConfig.tokenCheckTimeout.get());
+        logger.warn("avs.provider.online.token.in-waiting-list", v);
         Events.fire(new AVSEvents.OnlineProviderTokenNowUnavailable(this, token));        
       }
       
@@ -390,10 +400,10 @@ public abstract class OnlineServiceProvider extends AddressProvider {
       logger.err("avs.provider.online.service-error", ip);
       logger.err("avs.http-status", reply.httpStatus.code, reply.message);
       result.setError();
-      int v = AVSConfig.serviceCheckTimeout.getInt();
+      int v = AVSConfig.serviceCheckCooldown.getInt();
       if (v > 0) {
-        unavailableTimeout = v;
-        logger.warn("avs.provider.online.in-waiting-list", unavailableTimeout);
+        unavailableCooldown = v;
+        logger.warn("avs.provider.online.in-waiting-list", v);
         Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this));        
       }
     }

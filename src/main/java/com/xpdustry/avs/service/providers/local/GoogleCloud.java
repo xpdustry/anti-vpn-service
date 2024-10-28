@@ -39,7 +39,7 @@ public class GoogleCloud extends com.xpdustry.avs.service.providers.type.CloudDo
   }
 
   @Override
-  public Seq<Subnet> extractAddressRanges(JsonValue downloaded) {
+  protected Seq<Subnet> extractAddressRanges(JsonValue downloaded) {
     Seq<Subnet> list = new Seq<>();
     int i = 0;
     

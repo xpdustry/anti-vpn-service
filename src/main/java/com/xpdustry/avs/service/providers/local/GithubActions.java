@@ -38,7 +38,7 @@ public class GithubActions extends com.xpdustry.avs.service.providers.type.Cloud
   }
 
   @Override
-  public Seq<Subnet> extractAddressRanges(arc.util.serialization.JsonValue downloaded) {
+  protected Seq<Subnet> extractAddressRanges(arc.util.serialization.JsonValue downloaded) {
     return Seq.with(downloaded.get("actions").asStringArray()).map(a -> Subnet.createInstance(a));
   }
 }
