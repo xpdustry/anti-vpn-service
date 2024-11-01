@@ -47,14 +47,14 @@ public abstract class OnlineServiceProvider extends AddressProvider
   public static final EditableAddressProvider cacheProvider = 
       new com.xpdustry.avs.service.providers.custom.RecentRequestedCache();
 
+  /** The headers to use to make the request. */
+  protected final StringMap headers = new StringMap();
+  
   /**
    * URL format to use. <br>
    * <code>{0}</code> will be replaced by the address
    */
-  public final String url;
-  /** The headers to use to make the request. */
-  public final StringMap headers = new StringMap();
-  
+  protected String url;
   /**
    * URL format to use with a token. <br>
    * <code>{0}</code> will be replaced by the address, <code>{1}</code> replaced by the token.
@@ -66,8 +66,8 @@ public abstract class OnlineServiceProvider extends AddressProvider
    */
   protected String tokenHeaderName;
  
-  protected ObjectMap<String, Integer> tokens = new ObjectMap<>();
-  protected boolean canNotUseTokens = false;
+  protected final ObjectMap<String, Integer> tokens = new ObjectMap<>();
+  protected boolean canUseTokens = false;
   protected boolean needTokens = false;
   /** 
    * Define whether the service is trusted when reporting that the IP valid, 
@@ -76,18 +76,14 @@ public abstract class OnlineServiceProvider extends AddressProvider
   protected boolean isTrusted = false; 
   protected int unavailableCooldown = 0;
   
-  public OnlineServiceProvider(String displayName, String url) { 
+  public OnlineServiceProvider(String displayName) { 
     super(displayName);
-    if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
-    this.url = url.strip();
     folder = AVSConfig.tokensDirectory.get();
     fileExt = "txt";
   }
   
-  public OnlineServiceProvider(String displayName, String name, String url) { 
+  public OnlineServiceProvider(String displayName, String name) { 
     super(displayName, name); 
-    if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
-    this.url = url.strip();
     folder = AVSConfig.tokensDirectory.get();
     fileExt = "txt";
   }
@@ -213,19 +209,24 @@ public abstract class OnlineServiceProvider extends AddressProvider
   public boolean isTrusted() {
     return isTrusted;
   }
+  
+  @Override
+  public String getURL() {
+    return willUseTokens() ? urlWithToken : url;
+  }
 
   @Override
   public boolean tokensNeeded() {
     // little fix
-    if (needTokens && !canNotUseTokens) canNotUseTokens = true;
+    if (needTokens && !canUseTokens) canUseTokens = true;
     return needTokens;
   }
 
   @Override
   public boolean canUseTokens() {
     // little fix
-    if (needTokens && !canNotUseTokens) canNotUseTokens = true;
-    return canNotUseTokens;
+    if (needTokens && !canUseTokens) canUseTokens = true;
+    return canUseTokens;
   }
 
   @Override
@@ -341,7 +342,13 @@ public abstract class OnlineServiceProvider extends AddressProvider
   }
 
   protected ServiceResult request(String ip, @arc.util.Nullable String token) {
-    if (token != null && tokenHeaderName == null && urlWithToken == null) {
+    if (token != null) {
+      if (tokenHeaderName == null && urlWithToken == null) {
+        logger.err("avs.provider.online.missing-token.msg1");
+        logger.err("avs.provider.online.missing-token.msg2");
+        return null;
+      }      
+    } else if (url == null) {
       logger.err("avs.provider.online.missing.msg1");
       logger.err("avs.provider.online.missing.msg2");
       return null;

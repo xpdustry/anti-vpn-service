@@ -295,4 +295,8 @@ public class AVSEvents {
     }
   }
   
+  public static class CloudAutoRefresherStartedEvent {}
+  public static class CloudAutoRefresherFinishedEvent {}
+  public static class CloudAutoRefresherFinishedWithErrorsEvent {}
+  
 }

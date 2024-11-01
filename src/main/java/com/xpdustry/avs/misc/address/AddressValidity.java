@@ -76,18 +76,22 @@ public class AddressValidity {
       builder.append(logger.getKey("avs.address-format.no-more")).append('\n');
   }
 
-  public static void checkIP(String ip) throws IllegalArgumentException {
+  public static void checkAddress(String address) throws IllegalArgumentException {
     // single machine mask (or 0) is allowed
-    int index = ip.indexOf('/');
-    if (index == -1) index = ip.indexOf('%');
+    int index = address.indexOf('/');
+    if (index == -1) index = address.indexOf('%');
     if (index != -1) {
-      int mask = arc.util.Strings.parseInt(ip.substring(index+1), 0);
-      ip = ip.substring(0, index);
+      int mask = arc.util.Strings.parseInt(address.substring(index+1), 0);
+      address = address.substring(0, index);
       if (mask != 0 && mask != 32 && mask != 128)
-        throw new IllegalArgumentException("Address must not have a mask, only subnet addresses can.");
+        throw new IllegalArgumentException("Address must not have a mask, only subnets can.");
     }
     
-    if (!com.xpdustry.avs.util.network.InetAddressValidator.getInstance().isValid(ip)) 
-      throw new IllegalArgumentException("Invalid or malformed address");
+    checkSubnet(address);
+  }
+  
+  public static void checkSubnet(String subnet) throws IllegalArgumentException {
+    if (!com.xpdustry.avs.util.network.InetAddressValidator.getInstance().isValid(subnet)) 
+      throw new IllegalArgumentException("Invalid or malformed address or subnet");
   }
 }

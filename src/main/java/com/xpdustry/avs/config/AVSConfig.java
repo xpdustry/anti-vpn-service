@@ -64,7 +64,7 @@ public class AVSConfig {
     preventUnavailable = new ConfigField("prevent-unavailable", true),
     resultRequired = new ConfigField("result-required", true),
     cleanupRecents = new ConfigField("cleanup-recents", 60, ConfigEvents::onCleanupRecentsChanged),
-    cloudRefreshTimeout = new ConfigField("cloud-refresh", 360),
+    cloudRefreshTimeout = new ConfigField("cloud-refresh", 360, ConfigEvents::onCloudRefreshTimeoutChanged),
     
     // For devs, better to keep that as default
     pluginDirectory = new ConfigField("plugin-dir", "", ConfigEvents::onPluginDirectoryChanged, true),

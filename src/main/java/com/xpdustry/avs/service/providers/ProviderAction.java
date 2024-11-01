@@ -60,7 +60,8 @@ public enum ProviderAction {
   ;
   
   public static final Seq<ProviderAction> all = Seq.with(values());
-  public static final String actionKeyFormat = "avs.provider.action.@.@";
+  public static final String actionDescKeyFormat = "avs.provider.action.@.@",
+                             actionArgsKeyFormat = actionDescKeyFormat + ".args";
   
   public final String name;
   public final Category category;
@@ -123,7 +124,12 @@ public enum ProviderAction {
   }
   
   public String getDesc(Logger logger) {
-    return logger.getKey(Strings.format(actionKeyFormat, category.name, name));
+    return logger.getKey(Strings.format(actionDescKeyFormat, category.name, name));
+  }
+  
+  public String getArgs(Logger logger) {
+    if (!argRequired()) return "";
+    return logger.getKey(Strings.format(actionArgsKeyFormat, category.name, name));
   }
   
   
@@ -210,7 +216,7 @@ public enum ProviderAction {
    */
   private static class CallbackKeper {
     private static String key(ProviderAction action, String key) {
-      return Strings.format(actionKeyFormat + ".@", action.category.name, action.name, key);
+      return Strings.format(actionDescKeyFormat + ".@", action.category.name, action.name, key);
     }
     
     
@@ -255,6 +261,12 @@ public enum ProviderAction {
     }
     
     private static void cachedSearchAction(ProviderCategories.Basic provider, String arg, Logger logger) {
+      try { AddressValidity.checkAddress(arg); }
+      catch (IllegalArgumentException e) {
+        logger.err(key(search, "invalid"), arg);
+        return;
+      }
+      
       Seq<AddressValidity> result = ((ProviderCategories.Cacheable) provider).matches(arg);
       
       if (result.isEmpty()) {
@@ -286,6 +298,12 @@ public enum ProviderAction {
     }
     
     private static void cachedInfoAction(ProviderCategories.Basic provider, String arg, Logger logger) {
+      try { AddressValidity.checkSubnet(arg); }
+      catch (IllegalArgumentException e) {
+        logger.err(key(info, "invalid"), arg);
+        return;
+      }
+      
       AddressValidity result = ((ProviderCategories.Cacheable) provider).get(arg);
       
       if (result == null) {
@@ -306,12 +324,43 @@ public enum ProviderAction {
     }
     
     private static void editableAddAction(ProviderCategories.Basic provider, String arg, Logger logger) {
-      if (((ProviderCategories.Editable) provider).add(new AddressValidity(arg)))
+      String[] args = arg.split(" ");
+      
+      try { AddressValidity.checkSubnet(args[0]); }
+      catch (IllegalArgumentException e) {
+        logger.err(key(info, "invalid"), arg);
+        return;
+      }
+      
+      AddressValidity address = new AddressValidity(args[0]);
+      if (args.length > 1) {
+        for (int i=1; i<args.length; i++) {
+          switch (args[i].toLowerCase()) {
+            case "other": address.type.other = true; break;
+            case "vpn": address.type.vpn = true; break;
+            case "proxy": address.type.proxy = true; break;
+            case "tor": address.type.tor = true; break;
+            case "relay": address.type.relay = true; break;
+            case "datacenter": address.type.dataCenter = true; break;
+            default:
+              logger.err(key(add, "invalid-type"));
+              return;
+          }
+        }
+      }
+      
+      if (((ProviderCategories.Editable) provider).add(address))
            logger.info(key(add, "added"));
       else logger.err(key(add, "present"));
     }
     
     private static void editableRemoveAction(ProviderCategories.Basic provider, String arg, Logger logger) {
+      try { AddressValidity.checkSubnet(arg); }
+      catch (IllegalArgumentException e) {
+        logger.err(key(info, "invalid"), arg);
+        return;
+      }
+      
       if (((ProviderCategories.Editable) provider).remove(new AddressValidity(arg)))
         logger.info(key(remove, "removed"));
       else logger.err(key(remove, "not-in"));

@@ -210,6 +210,10 @@ public class DynamicSettings {
     return autosaveThread != null && autosaveThread.isAlive();
   }
   
+  public static int autosaveSpacing() {
+    return autosaveSpacing;
+  }
+  
   public static void setAutosaveSpacing(int spacing) {
     if (spacing < 1) throw new IllegalArgumentException("spacing must be greater than 1 second");
     autosaveSpacing = spacing;

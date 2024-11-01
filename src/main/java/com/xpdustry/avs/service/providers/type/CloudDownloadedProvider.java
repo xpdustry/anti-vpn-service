@@ -35,6 +35,7 @@ import com.xpdustry.avs.util.network.Subnet;
 
 import arc.Events;
 import arc.struct.Seq;
+import arc.struct.StringMap;
 import arc.util.serialization.JsonReader;
 import arc.util.serialization.JsonValue;
 
@@ -45,14 +46,13 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
   /* Define the type of provider, used for statistics. Default is VPN */
   protected ProviderType providerType = ProviderType.vpn;
   /** The headers to use to fetch the list. */
-  protected arc.struct.StringMap headers;
+  protected final StringMap headers = new StringMap();
   
   public CloudDownloadedProvider(String displayName, String url) { 
     super(displayName); 
     folder = AVSConfig.cloudDirectory.get();
     if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
     this.url = url.strip();
-    AutoRefresher.toRefresh.add(this);
   }
   
   public CloudDownloadedProvider(String displayName, String name, String url) { 
@@ -60,7 +60,6 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
     folder = AVSConfig.cloudDirectory.get();
     if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
     this.url = url.strip();
-    AutoRefresher.toRefresh.add(this);
   }
   
   @Override
@@ -197,12 +196,5 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
     public boolean isTOR() { return this == tor; }
     public boolean isRelay() { return this == relay; }
     public boolean isDataCenter() { return this == dataCenter; }
-  }
-  
-  
-  /** TODO: make the auto refresher */
-  public static class AutoRefresher {
-    protected static Seq<CloudDownloadedProvider> toRefresh = new Seq<>();
-    
   }
 }

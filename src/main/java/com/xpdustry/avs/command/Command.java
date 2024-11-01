@@ -2,12 +2,13 @@ package com.xpdustry.avs.command;
 
 import com.xpdustry.avs.util.Logger;
 
+import arc.util.Strings;
+
 
 public abstract class Command {
-  public static final String keyPrefix = "avs.command.",
-                             argsKeySuffix = ".args",
-                             descKeySuffix = ".description",
-                             helpKeySuffix = ".help";
+  public static final String argsKeyFormat = "avs.command.@.args",
+                             descKeyFormat = "avs.command.@.description",
+                             helpKeyFormat = "avs.command.@.help";
   
   /** The command name. Will be used to get args, description and help page, in the bundle */
   public final String name;
@@ -21,17 +22,17 @@ public abstract class Command {
   
   public String getArgs() { return getArgs(defaultLogger); }
   public String getArgs(Logger logger) {
-    return logger.getKey(keyPrefix + name + argsKeySuffix);
+    return logger.getKey(Strings.format(argsKeyFormat, name));
   }
   
   public String getDesc() { return getDesc(defaultLogger); }
   public String getDesc(Logger logger) {
-    return logger.getKey(keyPrefix + name + descKeySuffix);
+    return logger.getKey(Strings.format(descKeyFormat, name));
   }
   
   public String getHelp() { return getHelp(defaultLogger); }
   public String getHelp(Logger logger) {
-    return logger.getKey(keyPrefix + name + helpKeySuffix);
+    return logger.getKey(Strings.format(helpKeyFormat, name));
   }
  
   public void run(String[] args) { run(args, defaultLogger, false); };

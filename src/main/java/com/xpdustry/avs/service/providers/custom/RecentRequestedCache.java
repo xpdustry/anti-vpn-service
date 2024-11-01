@@ -54,7 +54,7 @@ public class RecentRequestedCache extends com.xpdustry.avs.service.providers.typ
     if (!super.loadCache()) return false;
     
     for (AddressValidity v : cache) {
-      try { AddressValidity.checkIP(v.subnet.toString()); }
+      try { AddressValidity.checkAddress(v.subnet.toString()); }
       catch (IllegalArgumentException e) { 
         logger.err("avs.provider.editable.recent-cache.load-failed", v.subnet);
         logger.err("avs.general-error", e.toString());

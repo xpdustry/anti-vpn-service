@@ -66,7 +66,7 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
       
       ProviderAction.Category.all.each(c -> {
         builder.append(c.getDesc(logger)).append('\n');
-        addProviderActions(builder, format, c, logger, 0);
+        addProviderActions(builder, format, ProviderAction.getAll(c), logger);
         logger.infoNormal(builder.append(' ').toString());
         builder.setLength(0);
       });      
@@ -84,11 +84,11 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
     } else if (args.length == 1) {
       String format = logger.getKey("avs.command.provider.action.format");
       StringBuilder builder = new StringBuilder();
-      Seq<ProviderAction.Category> cat = ProviderAction.Category.getAll(provider);
-      int best = Strings.best(cat, c -> Strings.best(ProviderAction.getAll(c), a -> a.name.length()));
-      
+      Seq<ProviderAction> actions = new Seq<>();
+
       builder.append(logger.getKey("avs.command.provider.action.availables")).append('\n');
-      cat.each(c -> addProviderActions(builder, format, c, logger, best));
+      ProviderAction.Category.getAll(provider).each(c -> actions.addAll(ProviderAction.getAll(c)));
+      addProviderActions(builder, format, actions, logger);
       logger.infoNormal(builder.toString());
       return;
     }
@@ -116,16 +116,24 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
       action.run(provider, value, logger);
     } else action.run(provider, logger);
   }
-
+  
   private static void addProviderActions(StringBuilder builder, String format,
-                                         ProviderAction.Category category,  Logger logger,
-                                         int best) {
-    Seq<ProviderAction> actions = ProviderAction.getAll(category);
-    if (best < 1) best = Strings.bestLength(actions.map(a -> a.name));
-
-    for (int i=0; i<actions.size; i++) 
-      builder.append(Strings.format(format, Strings.lJust(actions.get(i).name, best), 
-                                            actions.get(i).getDesc(logger)))
-             .append('\n');
+                                         Seq<ProviderAction> actions,  Logger logger) {
+    Seq<String> args = actions.map(a -> a.getArgs(logger));
+    
+    int best = Strings.best(actions, a -> a.name.length());
+    
+    for (int i=0; i<actions.size; i++) {
+      String text;
+      
+      if (args.get(i).isEmpty())
+        text = Strings.format(format, Strings.lJust(actions.get(i).name, best), "", 
+                                      actions.get(i).getDesc(logger));
+      else
+        text = Strings.format(format, actions.get(i).name, args.get(i)+" ", 
+                                      actions.get(i).getDesc(logger));
+      
+      builder.append(text).append('\n');
+    }
   }
 }

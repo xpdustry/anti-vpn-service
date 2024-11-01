@@ -98,7 +98,7 @@ public class Loader {
         logger.err("avs.general-error", error);
       }
     }
-    logger.infoNormal("");
+    logger.none();
     logger.info("avs.loading.error");
     logger.info("avs.loading.report");
     logger.errNormal("##################################################\n");
@@ -129,17 +129,17 @@ public class Loader {
   }
   
   public static boolean initPlugin() {
-    if (ServiceManager.registerListeners()) {
-      logger.infoNormal("");
-      AntiVpnService.load();
-      if (!AntiVpnService.isOperational()) return false;
-      AntiVpnService.save();
-      if (AVSConfig.autosaveSpacing.getInt() > 0)
-        DynamicSettings.startAutosave("AVS-Autosave");
-      DynamicSettings.globalAutosave();
-      return AntiVpnService.isOperational();
-    }
-    return false;
+    if (!ServiceManager.registerListeners()) return false;
+    logger.none();
+    AntiVpnService.load();
+    if (!AntiVpnService.isOperational()) return false;
+    if (AVSConfig.cloudRefreshTimeout.getInt() > 0)
+      com.xpdustry.avs.misc.CloudAutoRefresher.start();    
+    AntiVpnService.save();
+    if (AVSConfig.autosaveSpacing.getInt() > 0)
+      DynamicSettings.startAutosave("AVS-Autosave");
+    DynamicSettings.globalAutosave();
+    return true;
   }
   
   public static boolean loadBundles() {

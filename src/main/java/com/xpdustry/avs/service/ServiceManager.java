@@ -265,6 +265,7 @@ public class ServiceManager {
     logger.info("avs.manager.dispose.waiting-for");
     Threads.await(threadPool);
     DynamicSettings.stopAutosave();
+    com.xpdustry.avs.misc.CloudAutoRefresher.stop();
     logger.info("avs.manager.dispose.saving");
     AntiVpnService.save();
     DynamicSettings.globalAutosave();
@@ -274,7 +275,7 @@ public class ServiceManager {
   /** Reset can only be done by the event */
   private static void resetPlugin() {
     shutdownPlugin();
-    logger.infoNormal("");
+    logger.none();
     logger.info("avs.manager.reset.progress");
     DynamicSettings.stopAutosave();
     SettingsCleaner.clearFiles();

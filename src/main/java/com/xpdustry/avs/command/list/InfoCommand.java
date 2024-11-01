@@ -90,7 +90,7 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
       // Try with IP (only for console)
       if (queries.isEmpty() && !restrictedMode) {
         try { 
-          com.xpdustry.avs.misc.address.AddressValidity.checkIP(query); 
+          com.xpdustry.avs.misc.address.AddressValidity.checkAddress(query); 
           queries.add(new Helper(com.xpdustry.avs.util.network.Subnet.createInstance(query).toString(), null));
         } catch (Exception ignored) {}
         

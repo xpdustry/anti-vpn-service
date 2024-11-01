@@ -34,8 +34,9 @@ import arc.util.serialization.JsonValue;
 // Others service idea: https://github.com/xpdustry/nucleus/issues/10
 public class VpnApiService extends com.xpdustry.avs.service.providers.type.OnlineServiceProvider {
   public VpnApiService() {
-    super("VpnAPI.io", "vpnapi", "https://vpnapi.io/api/{0}");
-    canNotUseTokens = true;
+    super("VpnAPI.io", "vpnapi");
+    canUseTokens = true;
+    url = "https://vpnapi.io/api/{0}";
     urlWithToken = "https://vpnapi.io/api/{0}?key={1}";
     isTrusted = true;
   }

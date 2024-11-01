@@ -39,12 +39,12 @@ public class Main extends mindustry.mod.Plugin {
     long start = System.currentTimeMillis();
     logger.infoNormal("\n&lg----------------------------------------------------------------");
     logger.info("avs.loading.started");
-    logger.infoNormal("");
+    logger.none();
 
     Loader.load(getClass());
 
     if (Loader.done()) {
-      logger.infoNormal("");
+      logger.none();
       logger.info("avs.loading.finished", Math.max(1, (System.currentTimeMillis()-start)/1000));
       logger.infoNormal("&lg----------------------------------------------------------------\n");      
     }

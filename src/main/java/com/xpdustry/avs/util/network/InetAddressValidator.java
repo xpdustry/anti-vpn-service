@@ -19,7 +19,6 @@ package com.xpdustry.avs.util.network;
 
 import java.io.Serializable;
 import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 import arc.util.Structs;
 
@@ -35,23 +34,23 @@ import arc.util.Structs;
  * @since 1.4
  */
 public class InetAddressValidator implements Serializable {
+    private static final long serialVersionUID = -919201640201914789L;
 
-    private static final int MAX_BYTE = 128;
+    public static final int IPV4_MAX_BITS_MASK = 32;
 
-    private static final int IPV4_MAX_OCTET_VALUE = 255;
+    public static final int IPV4_MAX_OCTET_VALUE = 255;
+    
+    public static final int IPV6_MAX_BITS_MASK = 128;
+    
+    // Max number of hex groups (separated by :) in an IPV6 address
+    public static final int IPV6_MAX_HEX_GROUPS = 8;
+
+    // Max hex digits in each IPv6 group
+    public static final int IPV6_MAX_HEX_DIGITS_PER_GROUP = 4;
 
     private static final int MAX_UNSIGNED_SHORT = 0xffff;
 
-    private static final int BASE_16 = 16;
-
-    private static final long serialVersionUID = -919201640201914789L;
-
-    // Max number of hex groups (separated by :) in an IPV6 address
-    private static final int IPV6_MAX_HEX_GROUPS = 8;
-
-    // Max hex digits in each IPv6 group
-    private static final int IPV6_MAX_HEX_DIGITS_PER_GROUP = 4;
-
+    
     /**
      * Singleton instance of this class.
      */
@@ -60,8 +59,6 @@ public class InetAddressValidator implements Serializable {
     private static final Pattern DIGITS_PATTERN = Pattern.compile("\\d{1,3}");
 
     private static final Pattern ID_CHECK_PATTERN = Pattern.compile("[^\\s/%]+");
-    
-    private static final Pattern IPV4_PATTERN = Pattern.compile("^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$");
 
     /**
      * Private because it's a singleton.
@@ -94,22 +91,17 @@ public class InetAddressValidator implements Serializable {
      * @param inet4Address the IPv4 address to validate
      * @return true if the argument contains a valid IPv4 address
      */
-    public boolean isValidInet4Address(final String inet4Address) {
-        // verify that address conforms to generic IPv4 format
-        final Matcher matcher = IPV4_PATTERN.matcher(inet4Address);
-        String[] groups;
-        if (matcher.matches()) {
-            final int count = matcher.groupCount();
-            groups = new String[count];
-            for (int j = 0; j < count; j++) {
-                groups[j] = matcher.group(j + 1);
-            }
-        } else {
+    public boolean isValidInet4Address(String inet4Address) {
+        // remove the address prefix (% and /)
+        inet4Address = removeAddressPrefix(inet4Address, IPV4_MAX_BITS_MASK);
+        if (inet4Address == null) {
             return false;
         }
-
-        // verify that address subgroups are legal
-        for (final String ipSegment : groups) {
+        
+        final String[] parts = inet4Address.split("\\.");
+        
+        // verify that address parts are legal
+        for (final String ipSegment : parts) {
             if (ipSegment.isBlank()) {
                 return false;
             }
@@ -119,13 +111,14 @@ public class InetAddressValidator implements Serializable {
             } catch (final NumberFormatException e) {
                 return false;
             }
-            if (iIpSegment > IPV4_MAX_OCTET_VALUE) {
+            if (iIpSegment < 0 || iIpSegment > IPV4_MAX_OCTET_VALUE) {
                 return false;
             }
             if (ipSegment.length() > 1 && ipSegment.startsWith("0")) {
                 return false;
             }
         }
+        
         return true;
     }
 
@@ -138,32 +131,12 @@ public class InetAddressValidator implements Serializable {
      * @since 1.4.1
      */
     public boolean isValidInet6Address(String inet6Address) {
-        String[] parts;
-        // remove prefix size. This will appear after the zone id (if any)
-        parts = inet6Address.split("/", -1);
-        if (parts.length > 2) {
-            return false; // can only have one prefix specifier
-        }
-        if (parts.length == 2) {
-            if (!DIGITS_PATTERN.matcher(parts[1]).matches()) {
-                return false; // not a valid number
-            }
-            final int bits = Integer.parseInt(parts[1]); // cannot fail because of RE check
-            if (bits < 0 || bits > MAX_BYTE) {
-                return false; // out of range
-            }
-        }
-        // remove zone-id
-        parts = parts[0].split("%", -1);
-        if (parts.length > 2) {
+        // remove the address prefix (% and /)
+        inet6Address = removeAddressPrefix(inet6Address, IPV6_MAX_BITS_MASK);
+        if (inet6Address == null) {
             return false;
         }
-        // The id syntax is implementation independent, but it presumably cannot allow:
-        // whitespace, '/' or '%'
-        if (parts.length == 2 && !ID_CHECK_PATTERN.matcher(parts[1]).matches()) {
-            return false; // invalid id
-        }
-        inet6Address = parts[0];
+        
         final boolean containsCompressedZeroes = inet6Address.contains("::");
         if (containsCompressedZeroes && inet6Address.indexOf("::") != inet6Address.lastIndexOf("::")) {
             return false;
@@ -210,10 +183,11 @@ public class InetAddressValidator implements Serializable {
                 }
                 int octetInt = 0;
                 try {
-                    octetInt = Integer.parseInt(octet, BASE_16);
+                    octetInt = Integer.parseInt(octet, 16);
                 } catch (final NumberFormatException e) {
                     return false;
                 }
+
                 if (octetInt < 0 || octetInt > MAX_UNSIGNED_SHORT) {
                     return false;
                 }
@@ -224,5 +198,41 @@ public class InetAddressValidator implements Serializable {
             return false;
         }
         return true;
+    }
+    
+    /**
+     * Validate and remove the address prefix.
+     *
+     * @param address the address to validate
+     * @return the address without the prefix or null if it's not valid
+     */
+    public String removeAddressPrefix(String address, final int maxBits) {
+        String[] parts;
+        // remove prefix size. This will appear after the zone id (if any)
+        parts = address.split("/", -1);
+        if (parts.length > 2) {
+            return null; // can only have one prefix specifier
+        }
+        if (parts.length == 2) {
+            if (!DIGITS_PATTERN.matcher(parts[1]).matches()) {
+                return null; // not a valid number
+            }
+            final int bits = Integer.parseInt(parts[1]); // cannot fail because of RE check
+            if (bits < 0 || bits > maxBits) {
+                return null; // out of range
+            }
+        }
+        // remove zone-id
+        parts = parts[0].split("%", -1);
+        if (parts.length > 2) {
+            return null;
+        }
+        // The id syntax is implementation independent, but it presumably cannot allow:
+        // whitespace, '/' or '%'
+        if (parts.length == 2 && !ID_CHECK_PATTERN.matcher(parts[1]).matches()) {
+            return null; // invalid id
+        }
+        
+        return parts[0];
     }
 }

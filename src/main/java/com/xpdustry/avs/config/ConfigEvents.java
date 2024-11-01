@@ -31,6 +31,7 @@ import com.xpdustry.avs.command.AVSCommandManager;
 import com.xpdustry.avs.command.Command;
 import com.xpdustry.avs.command.list.ConfigCommand;
 import com.xpdustry.avs.command.list.ProviderCommand;
+import com.xpdustry.avs.misc.CloudAutoRefresher;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.ServiceManager;
 import com.xpdustry.avs.service.providers.type.AddressProvider;
@@ -165,6 +166,18 @@ public class ConfigEvents {
   public static boolean onCleanupRecentsChanged(Object v, Logger logger) {
     ((com.xpdustry.avs.service.providers.custom.RecentRequestedCache) 
         com.xpdustry.avs.service.providers.type.OnlineServiceProvider.cacheProvider).scheduleCleanup(((int) v));
+    return true;
+  }
+  
+  public static boolean onCloudRefreshTimeoutChanged(Object v, Logger logger) {
+    int i = (int) v;
+    CloudAutoRefresher.spacing(Math.max(i, 1));
+    
+    if (!Loader.done()) return true;
+    
+    if (i == 0) CloudAutoRefresher.stop();
+    else CloudAutoRefresher.start();
+    
     return true;
   }
   

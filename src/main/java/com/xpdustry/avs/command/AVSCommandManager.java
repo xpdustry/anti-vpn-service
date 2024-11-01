@@ -49,6 +49,7 @@ public class AVSCommandManager {
     new ConfigCommand(),
     new ProviderCommand(),
     new InfoCommand(),
+    new RestrictCommand(),
     new ResetCommand(),
     new HelpCommand()
   );

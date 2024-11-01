@@ -45,6 +45,7 @@ public class ResetCommand extends com.xpdustry.avs.command.Command {
       logger.err("avs.command.reset.no-args-pls");
       return;
     }
+    //TODO: check if is the same player who started the reset
     
     if (resetRequested) {
       resetRequested = false;

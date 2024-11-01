@@ -89,7 +89,7 @@ public class AntiVpnService {
   public static AddressProviderReply checkAddress(String address) {
     if (!isOperational()) return null;
     
-    AddressValidity.checkIP(address);
+    AddressValidity.checkAddress(address);
     AddressProviderReply result;
     Events.fire(new AVSEvents.AddressCheckStartedEvent(address));
     
@@ -115,7 +115,7 @@ public class AntiVpnService {
   
   public static AddressProviderReply checkAddressOnline(String address) {
     if (!isOperational()) return null;
-    AddressValidity.checkIP(address);
+    AddressValidity.checkAddress(address);
     AddressProviderReply result = null;
 
     Seq<OnlineServiceProvider> onlines = onlineProviders;
@@ -196,10 +196,10 @@ public class AntiVpnService {
       }
     }
     
-    logger.infoNormal("");
+    logger.none();
     logger.info("avs.service.loaded-local", loadedRanges, localProviders);
     logger.info("avs.service.loaded-online", loadedTokens, onlineProviders);
-    logger.infoNormal("");
+    logger.none();
     
     loaded = true;
     operational = true;

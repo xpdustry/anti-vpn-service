@@ -114,6 +114,8 @@ public class ProviderCategories {
     /** Define if the service can be trusted if it's saying that the address is valid */
     public boolean isTrusted();
     
+    public String getURL();
+    
     /** Address check cooldown before service reuse */
     public int unavailableCooldown();
     /** Remove the service from waiting list */

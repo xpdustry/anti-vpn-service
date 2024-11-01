@@ -40,7 +40,7 @@ public class Blacklist extends com.xpdustry.avs.service.providers.type.EditableA
     if (address == null) throw new NullPointerException("null address not allowed");
     
     if (!address.type.isNotValid()) 
-      address.type.vpn = true; // Let's say, by default it's a vpn
+      address.type.vpn = true; // Let's say by default it's a vpn
     
     return super.add(address);
   }

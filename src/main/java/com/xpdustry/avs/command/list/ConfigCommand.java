@@ -48,6 +48,8 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     
     if (args[0].equals("reload")) {
       AVSConfig.load();
+      AVSConfig.notifyAllValueChanged();
+      logger.none();
       logger.info("avs.command.config.reloaded");
       return;
     }

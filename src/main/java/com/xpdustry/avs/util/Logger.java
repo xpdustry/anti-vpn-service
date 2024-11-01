@@ -58,7 +58,7 @@ public class Logger{
   }
   
   public Logger(Class<?> clazz) {
-    this(clazz.getName());
+    this(clazz.getSimpleName());
   }
   
   public Logger(String topic) {
@@ -117,6 +117,11 @@ public class Logger{
   public void err(Throwable th){
     errNormal(Strings.getStackTrace(th));
   } 
+  
+  /** Log an empty "info" line */
+  public void none() {
+    logNormal(LogLevel.info, "");
+  }
   
   // endregion
   // region bundle
