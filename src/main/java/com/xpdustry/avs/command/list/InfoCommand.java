@@ -82,7 +82,7 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
       // Search name and uuid
       String name = Strings.normalise(query);
       infos.each((id, info) -> {
-        if (info.names.contains(n -> Strings.normalise(n).strip().equals(name)) ||
+        if (info.names.contains(n -> Strings.normalise(n).equalsIgnoreCase(name)) ||
             info.id.equals(query))
           queries.addUnique(new Helper(info.lastIP, info));
       });
@@ -91,7 +91,7 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
       if (queries.isEmpty() && !restrictedMode) {
         try { 
           com.xpdustry.avs.misc.address.AddressValidity.checkAddress(query); 
-          queries.add(new Helper(com.xpdustry.avs.util.network.Subnet.createInstance(query).toString(), null));
+          queries.add(new Helper(query, null));
         } catch (Exception ignored) {}
         
         logger.info("avs.command.info.matches", queries.size);
@@ -132,9 +132,10 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
       builder.append('\n');
       
       if (reply == null || !reply.resultFound()) {
-       builder.append(logger.formatKey("avs.address-format.address", reply.validity.subnet)).append('\n');
+       builder.append(logger.formatKey("avs.address-format.address", 
+           reply == null ? address : reply.address)).append('\n');
        builder.append(logger.formatKey("avs.address-format.error", 
-           reply != null ? reply.type.toString().toLowerCase().replace('_', ' ') : "no reply"))
+           reply == null ? "no reply" : reply.type.toString().toLowerCase().replace('_', ' ')))
               .append('\n');
         
       } else reply.validity.toFormattedString(builder, logger, addLocation);

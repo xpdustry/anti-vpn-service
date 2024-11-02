@@ -42,14 +42,14 @@ public abstract class EditableAddressProvider extends CachedAddressProvider
     super(displayName); 
     this.inCache = inCache;
     folder = (inCache ? AVSConfig.cacheDirectory : AVSConfig.settingsDirectory).getString();
-    if (!inCache) cacheKey = "list";
+    if (!inCache) mainKey = "list";
   }
   
   public EditableAddressProvider(String displayName, String name, boolean inCache) { 
     super(displayName, name);
     this.inCache = inCache;
     folder = (inCache ? AVSConfig.cacheDirectory : AVSConfig.settingsDirectory).getString();
-    if (!inCache) cacheKey = "list";
+    if (!inCache) mainKey = "list";
   }
 
   @Override

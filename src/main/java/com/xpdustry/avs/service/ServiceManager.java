@@ -278,7 +278,7 @@ public class ServiceManager {
     logger.none();
     logger.info("avs.manager.reset.progress");
     DynamicSettings.stopAutosave();
-    SettingsCleaner.clearFiles();
+    SettingsCleaner.deleteFiles();
     ConfigField[] folders = {
         AVSConfig.cloudDirectory, AVSConfig.providerDirectory,
         AVSConfig.cacheDirectory, AVSConfig.settingsDirectory,
@@ -294,9 +294,10 @@ public class ServiceManager {
     private SettingsCleaner(arc.files.Fi file) { super(file); }
     
     /** Clear values and delete the file of all loaded settings files and clear it */
-    private static void clearFiles() {
+    private static void deleteFiles() {
       files.each(f -> {f.clear(); f.getFile().delete();});
       files.clear();
+      logFile.delete();
     }
   }
 }

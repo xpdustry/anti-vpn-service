@@ -176,7 +176,7 @@ public class Strings extends arc.util.Strings {
   }
 
   public static String normalise(String str) {
-    return stripGlyphs(stripColors(str));
+    return stripGlyphs(stripColors(str)).strip();
   }
 
   public static long bits2int(boolean... list) {

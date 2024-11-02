@@ -171,7 +171,8 @@ public class Logger{
   }
 
   protected boolean hasKey0(String key) {
-    return L10NBundle.has(key);
+    // Avoid recursion
+    return L10NBundle.defaultBundle != null ? L10NBundle.has(key) : false;
   }
   
   
@@ -186,7 +187,7 @@ public class Logger{
   }
   
   public boolean hasKey(String key) {
-    return hasKey0(key);
+    return L10NBundle.has(key);
   }
   
   public void log(LogLevel level, String key) {
