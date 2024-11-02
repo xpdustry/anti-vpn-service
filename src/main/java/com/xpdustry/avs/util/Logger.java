@@ -134,7 +134,7 @@ public class Logger{
       "avs.loading.custom-bundles", "Loading custom bundles...",
       "avs.loading.bundle-loaded", "Loaded {0} locales, default is {1}.",
       "avs.loading.finished", "Loading finished in {0} seconds.",
-      "avs.loading.failed", "An error occurred while loading the Anti VPN Service!",
+      "avs.loading.failed", "An error occurred while loading the Anti VPN Service! \nPLEASE SEE ERROR ABOVE.",
       "avs.loading.security-error", "A security manager is present! Unable to take control of the 'ConnectPacket' listener.",
       "avs.loading.error", "Anti VPN service has been stopped and will not be used due to previous error!",
       "avs.loading.report", "You can report this error at: https://github.com/xpdustry/Anti-VPN-Service/issues/new",

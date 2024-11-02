@@ -179,7 +179,7 @@ public class Strings extends arc.util.Strings {
     return stripGlyphs(stripColors(str));
   }
 
-  public static long binary2integer(boolean... list) {
+  public static long bits2int(boolean... list) {
     int out = 0;
 
     for (int i=0; i<list.length; i++) {
@@ -190,8 +190,8 @@ public class Strings extends arc.util.Strings {
     return out >> 1;
   }
 
-  public static boolean[] integer2binary(long number) { return integer2binary(number, 0); }
-  public static boolean[] integer2binary(long number, int bits) {
+  public static boolean[] int2bits(long number) { return int2bits(number, 0); }
+  public static boolean[] int2bits(long number, int bits) {
     // Check value because 0 have a negative size  
     if (number == 0) return new boolean[bits == 0 ? 1 : bits];
       
@@ -364,7 +364,7 @@ public class Strings extends arc.util.Strings {
   
   private static boolean needNewLine(JsonValue object, int maxChildren){
     for (JsonValue child = object.child; child != null; child = child.next) 
-      if (child.isObject() || child.isArray() || maxChildren-- <= 0) return true;
+      if (child.isObject() || child.isArray() || --maxChildren < 0) return true;
     return false;
   }
   

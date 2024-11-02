@@ -35,15 +35,21 @@ import arc.Events;
 
 public abstract class EditableAddressProvider extends CachedAddressProvider 
                                               implements ProviderCategories.Editable {
-  public EditableAddressProvider(String displayName) { 
+  /** Define if the list must be saved in the cache or in provider settings */
+  public final boolean inCache;
+  
+  public EditableAddressProvider(String displayName, boolean inCache) { 
     super(displayName); 
-    // Custom providers are saved in the settings directory
-    folder = AVSConfig.settingsDirectory.get();
+    this.inCache = inCache;
+    folder = (inCache ? AVSConfig.cacheDirectory : AVSConfig.settingsDirectory).getString();
+    if (!inCache) cacheKey = "list";
   }
   
-  public EditableAddressProvider(String displayName, String name) { 
-    super(displayName, name); 
-    folder = AVSConfig.settingsDirectory.get();
+  public EditableAddressProvider(String displayName, String name, boolean inCache) { 
+    super(displayName, name);
+    this.inCache = inCache;
+    folder = (inCache ? AVSConfig.cacheDirectory : AVSConfig.settingsDirectory).getString();
+    if (!inCache) cacheKey = "list";
   }
 
   @Override
@@ -74,5 +80,14 @@ public abstract class EditableAddressProvider extends CachedAddressProvider
     cache.clear();
     save();
     logger.info("avs.provider.editable.cleaned");
+  }
+  
+  /** 
+   * @return {@link AddressProvider#getSettings()} if {@link #inCache} is {@code false}, 
+   *         else {@link CachedAddressProvider#getCacheFile()} 
+   */
+  @Override
+  protected com.xpdustry.avs.util.DynamicSettings getCacheFile() {
+    return inCache ? super.getCacheFile() : getSettings();
   }
 }

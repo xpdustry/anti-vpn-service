@@ -115,24 +115,26 @@ public class JsonSerializer {
       @Override
       public void write(Json json, AddressValidity object, Class knownType) {
         json.writeObjectStart();
-        json.writeValue("ip", object.subnet);
-        json.writeValue("infos", object.infos, AddressInfos.class);
+        json.writeValue("address", object.subnet);
+        if (object.infos != null)
+          json.writeValue("infos", object.infos, AddressInfos.class);
         json.writeValue("stats", object.stats);
         json.writeValue("type", object.type);
         json.writeObjectEnd();
       }
+      
       @Override
-      public AddressValidity read(Json json, JsonValue jsonData, Class type) {
-        Subnet subnet = json.getSerializer(Subnet.class).read(json, jsonData.get("ip"), Subnet.class);
+      public AddressValidity read(Json json, JsonValue jsonData, Class type_) {
+        Subnet subnet = json.readValue("address", Subnet.class, jsonData);
         if (subnet == null) return null;
 
-        AddressInfos infos = json.getSerializer(AddressInfos.class).read(json, jsonData.get("infos"), AddressInfos.class);
-        AddressStats stats = json.getSerializer(AddressStats.class).read(json, jsonData.get("stats"), AddressStats.class);
-        AddressType type_ = json.getSerializer(AddressType.class).read(json, jsonData.get("type"), AddressType.class);
-        
+        AddressInfos infos = json.readValue("infos", AddressInfos.class, jsonData);
         AddressValidity valid = new AddressValidity(subnet, infos);
+        AddressStats stats = json.readValue("stats", AddressStats.class, jsonData);
+        AddressType type = json.readValue("type", AddressType.class, jsonData);
+
         if (stats != null) valid.stats = stats;
-        if (type_ != null) valid.type = type_;
+        if (type != null) valid.type = type;
         return valid;
       }
     });

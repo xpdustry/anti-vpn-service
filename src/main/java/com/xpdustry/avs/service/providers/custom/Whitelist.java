@@ -26,9 +26,36 @@
 
 package com.xpdustry.avs.service.providers.custom;
 
+import com.xpdustry.avs.misc.address.AddressValidity;
+
+import arc.util.serialization.Json;
+
 
 public class Whitelist extends com.xpdustry.avs.service.providers.type.EditableAddressProvider {
   public Whitelist() {
-    super("Whitelist", "whitelist");
+    super("Whitelist", "whitelist", false);
+  }
+  
+  /** 
+   * Override the {@link AddressValidity} serializer, 
+   * because we only need the address for the whitelist
+   */
+  @SuppressWarnings("rawtypes")
+  @Override
+  protected boolean loadMiscSettings() {
+    Json json = new Json();
+    json.setSerializer(AddressValidity.class, new Json.Serializer<>() {
+      @Override
+      public void write(Json json, AddressValidity object, Class knownType) {
+        json.writeValue(object.subnet.toString());
+      }
+      @Override
+      public AddressValidity read(Json json, arc.util.serialization.JsonValue jsonData, Class type) {
+        return new AddressValidity(jsonData.asString());
+      }
+    });
+    super.getSettings().setJson(json);
+    
+    return super.loadMiscSettings();
   }
 }

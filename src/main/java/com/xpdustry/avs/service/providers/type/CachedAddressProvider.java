@@ -42,6 +42,7 @@ public class CachedAddressProvider extends AddressProvider implements ProviderCa
   protected String folder;
   
   protected Seq<AddressValidity> cache = new Seq<>(false);
+  protected String cacheKey = "cache";
   private DynamicSettings file = null;
 
   public CachedAddressProvider(String displayName) { 
@@ -88,12 +89,12 @@ public class CachedAddressProvider extends AddressProvider implements ProviderCa
     try { 
       file.load();
       
-      if (!file.has("cache")) {
-        logger.debug("avs.provider.cached.key-not-found", "cache");
+      if (!file.has(cacheKey)) {
+        logger.debug("avs.provider.cached.key-not-found", cacheKey);
         saveMiscSettings();
       }
       
-      cache = file.getJson("cache", Seq.class, AddressValidity.class, Seq::new); 
+      cache = file.getJson(cacheKey, Seq.class, AddressValidity.class, Seq::new); 
       cache.removeAll(s -> s == null || s.subnet == null || s.type == null);
 
       if (cache.isEmpty()) logger.warn("avs.provider.cached.empty");
@@ -122,7 +123,7 @@ public class CachedAddressProvider extends AddressProvider implements ProviderCa
     DynamicSettings file = getCacheFile();
     
     try { 
-      file.putJson("cache", AddressValidity.class, cache); 
+      file.putJson(cacheKey, AddressValidity.class, cache); 
       logger.debug("avs.provider.cached.saved");
       return true;
       

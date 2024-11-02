@@ -61,7 +61,7 @@ public class AddressValidity {
   public void toFormattedString(StringBuilder builder, Logger logger, boolean addLocation) {
     builder.append(logger.formatKey("avs.address-format.address", subnet)).append('\n');
 
-    boolean[] types = Strings.integer2binary(type.toBinary(), AddressType.numberOfTypes);
+    boolean[] types = Strings.int2bits(type.toBinary(), AddressType.numberOfTypes);
     Object[] args  = new Object[types.length];
     for (int i=0; i<args.length; i++) args[i] = types[i];
     builder.append(logger.formatKey("avs.address-format.security", args)).append('\n');
@@ -86,7 +86,7 @@ public class AddressValidity {
       if (mask != 0 && mask != 32 && mask != 128)
         throw new IllegalArgumentException("Address must not have a mask, only subnets can.");
     }
-    
+
     checkSubnet(address);
   }
   

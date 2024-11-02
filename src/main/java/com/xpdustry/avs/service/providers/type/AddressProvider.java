@@ -33,6 +33,7 @@ import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.PlayerLogger;
 
 import arc.Events;
+import arc.util.serialization.Json;
 
 
 public abstract class AddressProvider implements ProviderCategories.Basic {
@@ -243,9 +244,13 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
 
   
   protected DynamicSettings getSettings() {
-    if (settings == null) 
-      settings = new DynamicSettings(
-          AVSConfig.subDir(AVSConfig.providerDirectory.getString()).child(name + ".json"), true);
+    if (settings == null) {
+      arc.files.Fi file = AVSConfig.subDir(AVSConfig.providerDirectory.getString()).child(name + ".json");
+      settings = new DynamicSettings(file, true);
+      Json json = new Json();
+      com.xpdustry.avs.misc.JsonSerializer.apply(json);
+      settings.setJson(json);
+    }
     
     return settings;
   }

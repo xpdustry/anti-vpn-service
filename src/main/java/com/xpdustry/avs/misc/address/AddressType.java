@@ -55,11 +55,11 @@ public class AddressType {
   
   
   public long toBinary() {
-    return Strings.binary2integer(other, vpn, proxy, tor, relay, dataCenter);
+    return Strings.bits2int(other, vpn, proxy, tor, relay, dataCenter);
   }
   
   public static AddressType fromBinary(long data) {
-    boolean[] values = Strings.integer2binary(data, numberOfTypes);
+    boolean[] values = Strings.int2bits(data, numberOfTypes);
     AddressType address = new AddressType();
     
     try {
