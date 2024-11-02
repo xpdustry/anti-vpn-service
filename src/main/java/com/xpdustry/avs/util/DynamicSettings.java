@@ -36,7 +36,6 @@ import java.util.Date;
 import java.util.Locale;
 
 import arc.files.Fi;
-import arc.func.Cons;
 import arc.func.Prov;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
@@ -64,7 +63,6 @@ public class DynamicSettings {
   
   protected ObjectMap<String, Object> values = new ObjectMap<>();
   protected boolean modified;
-  protected Cons<Throwable> errorHandler = logger::err;
   protected boolean shouldAutosave = true, logging = true;
   /** Option to store settings in a simple or a binary json */
   protected final boolean simpleJson;
@@ -88,17 +86,6 @@ public class DynamicSettings {
   public void setJson(Json json){
       this.json = json;
       if (simpleJson) this.json.setOutputType(JsonWriter.OutputType.json);
-  }
-
-  /**
-   * Sets the error handler function.
-   * 
-   * This function gets called when {@link #forceSave} or {@link #load} fails. 
-   * This can occur most often on browsers,
-   * where extensions can block writing to local storage.
-   */
-  public void setErrorHandler(Cons<Throwable> handler){
-      errorHandler = handler;
   }
 
   /** 
@@ -130,8 +117,7 @@ public class DynamicSettings {
           loadValues(getFile());
       }catch(Throwable error){
           writeLog("Load error: " + Strings.getStackTrace(error));
-          if(errorHandler != null) errorHandler.get(error);
-          else throw new RuntimeException(error);
+          throw new RuntimeException(error);
       }
   }
 
@@ -141,8 +127,7 @@ public class DynamicSettings {
           saveValues(getFile());
       }catch(Throwable error){
           writeLog("Save error: " + Strings.getStackTrace(error));
-          if(errorHandler != null) errorHandler.get(error);
-          else throw new RuntimeException(error);
+          throw new RuntimeException(error);
       }
       modified = false;
   }
@@ -423,24 +408,30 @@ public class DynamicSettings {
   }
 
   public synchronized void putJson(String name, Class<?> elementType, Object value){
-      if (simpleJson) {
-          JsonBuilder builder = new JsonBuilder();
-
-          json.setWriter(builder);
-          json.writeValue(value, value == null ? null : value.getClass(), elementType);
-
-          put(name, builder.getJson());
-      
-      } else {
-          byteStream.reset();
+      try {
+          if (simpleJson) {
+              JsonBuilder builder = new JsonBuilder();
+    
+              json.setWriter(builder);
+              json.writeValue(value, value == null ? null : value.getClass(), elementType);
+    
+              put(name, builder.getJson());
           
-          json.setWriter(new UBJsonWriter(byteStream));
-          json.writeValue(value, value == null ? null : value.getClass(), elementType);  
+          } else {
+              byteStream.reset();
+              
+              json.setWriter(new UBJsonWriter(byteStream));
+              json.writeValue(value, value == null ? null : value.getClass(), elementType);  
+              
+              put(name, byteStream.toByteArray());
+          }
+    
+          modified = true;  
           
-          put(name, byteStream.toByteArray());
+      } catch(Throwable e) {
+          writeLog("Failed to put JSON key=" + name + ":\n" + Strings.getStackTrace(e));
+          throw new RuntimeException(e);
       }
-
-      modified = true;
   }
 
   /**
@@ -472,9 +463,7 @@ public class DynamicSettings {
           
       }catch(Throwable e){
           writeLog("Failed to read JSON key=" + name + " type=" + type + ":\n" + Strings.getStackTrace(e));
-          if(errorHandler != null) errorHandler.get(e);
-          else throw new RuntimeException(e);
-          return def.get();
+          throw new RuntimeException(e);
       }
   }
 

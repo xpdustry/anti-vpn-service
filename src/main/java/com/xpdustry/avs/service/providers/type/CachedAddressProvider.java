@@ -29,21 +29,20 @@ package com.xpdustry.avs.service.providers.type;
 import java.net.InetAddress;
 
 import com.xpdustry.avs.config.AVSConfig;
-import com.xpdustry.avs.misc.AVSEvents;
-import com.xpdustry.avs.misc.JsonSerializer;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.util.DynamicSettings;
 import com.xpdustry.avs.util.network.Subnet;
 
-import arc.Events;
 import arc.struct.Seq;
 import arc.util.serialization.Json;
 
 
 public class CachedAddressProvider extends AddressProvider implements ProviderCategories.Cacheable {  
+  /** Folder to store the cache file, it's relative to the plugin directory */
+  protected String folder;
+  
   protected Seq<AddressValidity> cache = new Seq<>(false);
-  private DynamicSettings cacheFile = null;
-  protected String cacheKey = "cache";
+  private DynamicSettings file = null;
 
   public CachedAddressProvider(String displayName) { 
     super(displayName); 
@@ -80,82 +79,65 @@ public class CachedAddressProvider extends AddressProvider implements ProviderCa
     return cache.map(a -> a.subnet);
   }
   
-  @Override
-  public boolean load() {
-    loaded = false;
-    Events.fire(new AVSEvents.ProviderLoadingEvent(this));
-    loaded = loadCache();
-    return loaded;
-  }
-
-  @Override
-  public boolean reload() {
-    loaded = false;
-    logger.info("avs.provider.cached.reload");
-    Events.fire(new AVSEvents.ProviderReloadingEvent(this));
-    cache.clear();
-    getCacheFile().clear();
-    loaded = loadCache();
-    return loaded;
-  }
-  
-  @Override
-  public boolean save() {
-    Events.fire(new AVSEvents.ProviderSavingEvent(this));
-    return saveCache();
-  }
-  
-  @Override
-  public int cacheSize() {
-    return cache.size;
-  }
-
+  /** Load the cache */
   @SuppressWarnings("unchecked")
-  protected boolean loadCache() {
+  @Override
+  protected boolean loadMiscSettings() {
     DynamicSettings file = getCacheFile();
     
     try { 
       file.load();
       
-      if (!file.has(cacheKey)) {
-        logger.debug("avs.provider.cached.key-not-found", cacheKey);
-        saveCache();
+      if (!file.has("cache")) {
+        logger.debug("avs.provider.cached.key-not-found", "cache");
+        saveMiscSettings();
       }
       
-      cache = file.getJson(cacheKey, Seq.class, AddressValidity.class, Seq::new); 
+      cache = file.getJson("cache", Seq.class, AddressValidity.class, Seq::new); 
       cache.removeAll(s -> s == null || s.subnet == null || s.type == null);
-      
-      //TODO: temporary, make a config file for each provider
-      if (file.has("enabled"))
-        enabled = file.getBool("enabled", true);
-      
+
       if (cache.isEmpty()) logger.warn("avs.provider.cached.empty");
       else logger.info("avs.provider.cached.loaded" + (cache.size > 1 ? "-several" : ""), cache.size);
+      return true;
       
-    } catch (Exception e) { 
+    } catch (RuntimeException e) { 
       logger.err("avs.provider.cached.load-failed", file.getFile().path());
       logger.err("avs.general-error", e.toString()); 
       return false;
     }
-
-    return true;
   }
   
-  protected boolean saveCache() {
+  /** Reload the cache */
+  @Override
+  protected boolean reloadMiscSettings() {
+    logger.info("avs.provider.cached.reload");
+    cache.clear();
+    getCacheFile().clear();
+    return loadMiscSettings();
+  }
+  
+  /** Save the cache */
+  @Override
+  protected boolean saveMiscSettings() {
     DynamicSettings file = getCacheFile();
     
     try { 
-      file.putJson(cacheKey, AddressValidity.class, cache); 
-      file.put("enabled", enabled);
-      logger.debug("avs.provider.cached." + (file.isModified() ? "saved" : "no-modifications"));
-    } catch(Exception e) {
+      file.putJson("cache", AddressValidity.class, cache); 
+      logger.debug("avs.provider.cached.saved");
+      return true;
+      
+    } catch(RuntimeException e) {
       logger.err("avs.provider.cached.save-failed", file.getFile().path());
       logger.err("avs.general-error", e.toString());
       return false;
-    }
-    return true;
+    } 
   }
-  
+
+  @Override
+  public int cacheSize() {
+    return cache.size;
+  }
+
   @Override
   public void checkAddressImpl(AddressProviderReply reply){
     // Normally, never throw an error
@@ -170,16 +152,16 @@ public class CachedAddressProvider extends AddressProvider implements ProviderCa
   
   
   protected DynamicSettings getCacheFile() {
-    if (cacheFile == null) {
-      //fileExt = "json";
-      //cacheFile = new DynamicSettings(getFile(), true);
-      cacheFile = new DynamicSettings(getFile());
-      cacheFile.setErrorHandler(logger::err);
+    if (this.file == null) {
+      arc.files.Fi file = folder == null ? AVSConfig.subDir(name + ".bin"):
+                          AVSConfig.subDir(folder).child(name + ".bin");
+      
+      this.file = new DynamicSettings(file/*, true*/);
       Json json = new Json();
-      JsonSerializer.apply(json);
-      cacheFile.setJson(json);
+      com.xpdustry.avs.misc.JsonSerializer.apply(json);
+      this.file.setJson(json);
     }
     
-    return cacheFile;
+    return this.file;
   }
 }

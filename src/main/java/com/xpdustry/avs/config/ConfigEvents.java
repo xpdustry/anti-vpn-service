@@ -212,7 +212,7 @@ public class ConfigEvents {
     return validatePath(v, l);
   }
 
-  public static boolean onTokensDirectoryChanged(Object v, Logger l) {
+  public static boolean onProviderDirectoryChanged(Object v, Logger l) {
     return validatePath(v, l);
   }
   

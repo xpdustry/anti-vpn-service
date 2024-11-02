@@ -280,7 +280,7 @@ public class ServiceManager {
     DynamicSettings.stopAutosave();
     SettingsCleaner.clearFiles();
     ConfigField[] folders = {
-        AVSConfig.cloudDirectory, AVSConfig.tokensDirectory,
+        AVSConfig.cloudDirectory, AVSConfig.providerDirectory,
         AVSConfig.cacheDirectory, AVSConfig.settingsDirectory,
         AVSConfig.bundlesDirectory, AVSConfig.pluginDirectory
     };

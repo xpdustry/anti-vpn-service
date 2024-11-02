@@ -72,9 +72,8 @@ public class AVSConfig {
     cacheDirectory = new ConfigField("cache-dir", "cache", ConfigEvents::onCacheDirectoryChanged, true),
     cloudDirectory = new ConfigField("cloud-dir", cacheDirectory.defaultValue + "/cloud", ConfigEvents::onCloudDirectoryChanged, true),
     settingsDirectory = new ConfigField("settings-dir", "settings", ConfigEvents::onSettingsDirectoryChanged, true),
-    tokensDirectory = new ConfigField("tokens-dir", settingsDirectory.defaultValue + "/tokens", ConfigEvents::onTokensDirectoryChanged, true), 
+    providerDirectory = new ConfigField("provider-dir", settingsDirectory.defaultValue + "/provider", ConfigEvents::onProviderDirectoryChanged, true),
     configFile = new ConfigField("config-file", "config.json", ConfigEvents::onConfigFileChanged, true),
-    defaultCacheFileExt = new ConfigField("cache-ext", "bin", true),
     allowUntrustedSource = new ConfigField("allow-http203", com.xpdustry.avs.util.network.AdvancedHttp.allowUntrustedSourceHttpCode, ConfigEvents::onAllowUntrustedSourceChanged, true),
     socketTimeout = new ConfigField("socket-timeout", com.xpdustry.avs.util.network.AwaitHttp.readWriteTimeout, ConfigEvents::onSocketTimeoutChanged, true),
     useBundleCache = new ConfigField("bundle-cache", com.xpdustry.avs.util.bundle.L10NBundle.useCache, ConfigEvents::onBundleCacheChanged, true),
@@ -155,7 +154,6 @@ public class AVSConfig {
     logger.debugNormal("file: @", file.absolutePath());
     
     config = new DynamicSettings(file, true);
-    config.setErrorHandler(logger::err);
     config.load();
   }
   
@@ -172,7 +170,6 @@ public class AVSConfig {
     
     config = null;
     config = new DynamicSettings(file, true);
-    config.setErrorHandler(logger::err);
     config.load();
     
     // If plugin or settings folders or config file name, are different from the default values, 

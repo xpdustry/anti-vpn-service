@@ -46,8 +46,8 @@ public class Blacklist extends com.xpdustry.avs.service.providers.type.EditableA
   }
   
   @Override
-  protected boolean loadCache() {
-    boolean loaded = super.loadCache();
+  protected boolean loadMiscSettings() {
+    boolean loaded = super.loadMiscSettings();
     if (!Vars.netServer.admins.dosBlacklist.isEmpty()) {
       // Copy the DOS blacklist from mindustry and empty it
       Vars.netServer.admins.dosBlacklist.each(a -> cache.add(new com.xpdustry.avs.misc.address.AddressValidity(a)));

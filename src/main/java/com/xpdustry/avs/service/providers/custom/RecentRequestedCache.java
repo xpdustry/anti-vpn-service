@@ -50,8 +50,8 @@ public class RecentRequestedCache extends com.xpdustry.avs.service.providers.typ
   }
 
   @Override
-  protected boolean loadCache() {
-    if (!super.loadCache()) return false;
+  protected boolean loadMiscSettings() {
+    if (!super.loadMiscSettings()) return false;
     
     for (AddressValidity v : cache) {
       try { AddressValidity.checkAddress(v.subnet.toString()); }

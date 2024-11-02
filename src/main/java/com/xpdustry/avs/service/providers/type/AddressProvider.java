@@ -28,28 +28,28 @@ package com.xpdustry.avs.service.providers.type;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
+import com.xpdustry.avs.util.DynamicSettings;
 import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.PlayerLogger;
 
 import arc.Events;
-import arc.files.Fi;
 
 
 public abstract class AddressProvider implements ProviderCategories.Basic {
-  /** Folder to store the file, it's relative to the plugin directory */
-  protected String folder;
-  /** This field can be set manually, if desired. */
-  protected Fi file;
-  protected String fileExt;
+  /** Settings of this provider */
+  private DynamicSettings settings;
+  private boolean loaded = false;
+  
+  /** Set to false in the constructor if the provider is disabled by default */
+  protected boolean enabled = true;
   
   public final String name, displayName;
+
   /** This will only be used by {@link #exec(Runnable, Logger)} */
   private final Logger defaultLogger; 
+  
   protected Logger logger;
   
-  protected boolean enabled = true;
-  /** Must be manually set to {@code true} by the inherited class, when overriding {@link #load()} */
-  protected boolean loaded = false;
   
   public AddressProvider(String displayName) { 
     this(displayName, displayName.toLowerCase().replace(' ', '-').replace(',', '_')); 
@@ -75,7 +75,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   
   /** Will temporary replace the provider's logger by the given one, while running the function */
   public void exec(Runnable run, Logger logger) {
-    // If it's a player logger, add the default logger as dual (for safety)
+    // If it's a player logger then add the default logger as dual (for safety)
     boolean isPlayer = logger instanceof PlayerLogger;
     
     if (logger != null) {
@@ -97,6 +97,77 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
     finally { this.logger = this.defaultLogger; }
   }
 */
+
+  @Override
+  public boolean load() {
+    loaded = false;
+    Events.fire(new AVSEvents.ProviderLoadingEvent(this));
+    loaded = loadSettings() && loadMiscSettings();
+    return loaded;
+  }
+
+  @Override
+  public boolean reload() {
+    loaded = false;
+    Events.fire(new AVSEvents.ProviderReloadingEvent(this));
+    loaded = reloadSettings() && reloadMiscSettings();
+    return loaded;
+  }
+
+  @Override
+  public boolean save() {
+    Events.fire(new AVSEvents.ProviderSavingEvent(this));
+    return saveSettings() && saveMiscSettings();
+  }
+  
+  private boolean loadSettings() {
+    DynamicSettings file = getSettings();
+    
+    try { 
+      file.load();
+      
+      enabled = file.getBool("enabled", enabled);
+      //TODO: and others
+
+      logger.debug("avs.provider.loaded");
+      return true;
+      
+    } catch (RuntimeException e) { 
+      logger.err("avs.provider.load-failed", file.getFile().path());
+      logger.err("avs.general-error", e.toString()); 
+      return false;
+    }
+  }
+  
+  private boolean reloadSettings() {
+    logger.debug("avs.provider.reload");
+    getSettings().clear();
+    return loadSettings();
+  }
+  
+  private boolean saveSettings() {
+    DynamicSettings file = getSettings();
+    
+    try { 
+      file.put("enabled", enabled);
+      //TODO: and others
+      
+      logger.debug("avs.provider.saved");
+      return true;
+      
+    } catch(RuntimeException e) {
+      logger.err("avs.provider.save-failed", file.getFile().path());
+      logger.err("avs.general-error", e.toString());
+      return false;
+    } 
+  }
+  
+  protected abstract boolean loadMiscSettings();
+  
+  protected abstract boolean reloadMiscSettings();
+  
+  protected abstract boolean saveMiscSettings();
+  
   @Override
   public boolean isLoaded() {
     return loaded;
@@ -108,6 +179,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
     logger.info("avs.provider.enabled");
     Events.fire(new AVSEvents.ProviderEnabledEvent(this));
     enabled = true;
+    saveSettings();
   }
   
   @Override
@@ -116,6 +188,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
     logger.info("avs.provider.disabled");
     Events.fire(new AVSEvents.ProviderDisabledEvent(this));
     enabled = false;
+    saveSettings();
   }
   
   @Override
@@ -168,14 +241,12 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   
   protected abstract void checkAddressImpl(AddressProviderReply reply);
 
-  protected Fi getFile() {
-    if (fileExt == null) fileExt = AVSConfig.defaultCacheFileExt.get();
+  
+  protected DynamicSettings getSettings() {
+    if (settings == null) 
+      settings = new DynamicSettings(
+          AVSConfig.subDir(AVSConfig.providerDirectory.getString()).child(name + ".json"), true);
     
-    if (file == null) {
-      if (folder == null) file = AVSConfig.subDir(name + "." + fileExt);
-      else file = AVSConfig.subDir(folder).child(name + "." + fileExt);
-    }
-    
-    return file;
+    return settings;
   }
 }

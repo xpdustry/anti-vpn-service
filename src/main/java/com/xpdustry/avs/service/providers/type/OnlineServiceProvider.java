@@ -30,12 +30,10 @@ import java.text.MessageFormat;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
-import com.xpdustry.avs.misc.address.AddressInfos;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 
 import arc.Events;
-import arc.files.Fi;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.struct.StringMap;
@@ -76,89 +74,57 @@ public abstract class OnlineServiceProvider extends AddressProvider
   protected boolean isTrusted = false; 
   protected int unavailableCooldown = 0;
   
-  public OnlineServiceProvider(String displayName) { 
-    super(displayName);
-    folder = AVSConfig.tokensDirectory.get();
-    fileExt = "txt";
-  }
+  public OnlineServiceProvider(String displayName) { super(displayName); }
+  public OnlineServiceProvider(String displayName, String name) { super(displayName, name); }
   
-  public OnlineServiceProvider(String displayName, String name) { 
-    super(displayName, name); 
-    folder = AVSConfig.tokensDirectory.get();
-    fileExt = "txt";
-  }
-  
+  @SuppressWarnings("unchecked")
   @Override
-  public boolean load() {
-    loaded = false;
-    Events.fire(new AVSEvents.ProviderLoadingEvent(this));
-
+  public boolean loadMiscSettings() {
     // No tokens needed. skip tokens loading
     if (!canUseTokens()) {
       logger.info("avs.provider.online.loaded");
-      loaded = true;
-      return loaded;
+      return true;
     }
-    
-    loaded = loadTokens();
-    return loaded;
+
+    try {
+      Seq<String> tokens = getSettings().getJson("tokens", Seq.class, String.class, Seq::new);
+  
+      if (tokens.isEmpty() && tokensNeeded()) logger.warn("avs.provider.online.tokens.empty-but-needed");
+      else if (tokens.isEmpty()) logger.warn("avs.provider.online.tokens.empty");
+      else logger.info("avs.provider.online.tokens.loaded" + (tokens.size > 1 ? "-several" : ""), tokens.size);
+      
+      this.tokens.clear();
+      tokens.each(t -> !t.isBlank(), t -> this.tokens.put(t, 0));
+      return true;
+      
+    } catch(RuntimeException e) {
+      logger.err("avs.provider.online.tokens.load-failed");
+      logger.err("avs.general-error", e.toString());
+      return false;
+    } 
   }
   
   @Override
-  public boolean reload() {
-    loaded = false;
-    Events.fire(new AVSEvents.ProviderReloadingEvent(this));
+  public boolean reloadMiscSettings() {
     logger.info("avs.provider.online.reload" + (canUseTokens() ? "-with-tokens" : ""));
-    tokens.clear();
-    return load();
+    return loadMiscSettings();
   }
   
   @Override
-  public boolean save() {
-    Events.fire(new AVSEvents.ProviderSavingEvent(this));
-    return saveTokens();
-  }
-  
-  protected boolean loadTokens() {
-    Fi tokensFile = getFile();
-    Seq<String> tokens_ = new Seq<>();
-    
-    if (tokensFile.exists() && !tokensFile.isDirectory()) {
-      try { tokens_ = Seq.with(tokensFile.readString().split("\n")).map(line -> line.strip()); }
-      catch (Exception e) { 
-        logger.err("avs.provider.online.tokens.load-failed", tokensFile.path());
-        logger.err("avs.general-error", e.toString());     
-        return false;
-      }
-    } else saveTokens();
-    
-    tokens_.removeAll(v -> v.isEmpty() || v.startsWith("#"));
-    tokens_.each(t -> tokens.put(t, 0));
-    
-    if (tokens.isEmpty() && tokensNeeded()) logger.warn("avs.provider.online.tokens.empty-but-needed");
-    else if (tokens.isEmpty()) logger.warn("avs.provider.online.tokens.empty");
-    else logger.info("avs.provider.online.tokens.loaded" + (tokens.size > 1 ? "-several" : ""), tokens.size);
-    
-    return true;
-  }
-  
-  protected boolean saveTokens() {
-    // No tokens needed. skip this
+  public boolean saveMiscSettings() {
     if (!canUseTokens()) return true;
     
-    Fi tokensFile = getFile();
-    
     try {
-      tokensFile.writeString("# " + logger.getKey("avs.provider.online.tokens.file-comment") + "\n");
-      tokens.each((t, v) -> tokensFile.writeString(t + "\n", true));
+      getSettings().putJson("tokens", String.class, tokens.keys().toSeq());
+      getSettings().save();
+      logger.debug("avs.provider.online.tokens.saved");
+      return true;
       
-    } catch (Exception e) {
-      logger.err("avs.provider.online.tokens.write-failed", tokensFile.path());
+    } catch (RuntimeException e) {
+      logger.err("avs.provider.online.tokens.write-failed");
       logger.err("avs.general-error", e.toString());
       return false;
     }
-    
-    return true;
   }
   
   @Override
@@ -433,7 +399,7 @@ public abstract class OnlineServiceProvider extends AddressProvider
     public ServiceResult(AdvancedHttp.Reply reply, String ip) {
       this.reply = reply;
       this.ip = ip;
-      this.result = new AddressValidity(ip, new AddressInfos(ip));
+      this.result = new AddressValidity(ip, new com.xpdustry.avs.misc.address.AddressInfos(ip));
     }
     
     public boolean isError() {

@@ -111,13 +111,18 @@ public class Strings extends arc.util.Strings {
     return arr;
   }
   
-  public static Seq<String> tableify(Seq<String> lines, int columns, boolean useTabs) {
-    return tableify(lines, columns, Strings::lJust, useTabs);
+  public static Seq<String> tableify(Seq<String> lines, int width) {
+    return tableify(lines, width, Strings::lJust);
   }
-  /** TODO: change the tableify to use a max length instead of static columns */
-  public static Seq<String> tableify(Seq<String> lines, int columns, 
-                                     Func2<String, Integer, String> justifier, boolean useTabs) {
-    Seq<String> result = new Seq<>(lines.size / columns);
+  /** 
+   * Create a table with given {@code lines} 
+   * and automatic columns number calculated with the table's {@code width}.
+   */
+  public static Seq<String> tableify(Seq<String> lines, int width, 
+                                     Func2<String, Integer, String> justifier) {
+    int spacing = 2, // Additional spacing between columns
+        columns = Math.max(1, width / (bestLength(lines) + 2)); // Estimate the columns
+    Seq<String> result = new Seq<>(lines.size / columns + 1);
     int[] bests = new int[columns];
     StringBuilder builder = new StringBuilder();
     
@@ -129,9 +134,9 @@ public class Strings extends arc.util.Strings {
     }
     
     // Now justify lines
-    for (int i=0, c; i<lines.size; i++) { 
+    for (int i=0, c; i<lines.size;) { 
       for (c=0; c<columns && i<lines.size; c++, i++) 
-        builder.append(justifier.get(lines.get(i), bests[c]+1));
+        builder.append(justifier.get(lines.get(i), bests[c]+spacing));
       
       result.add(builder.toString());
       builder.setLength(0);
@@ -321,7 +326,7 @@ public class Strings extends arc.util.Strings {
       if (object.child == null) writer.append("{}");
       else {
         indent++;
-        boolean newLines = needNewLine(object, 2);
+        boolean newLines = needNewLine(object, 1);
         writer.append(newLines ? "{\n" : "{ ");
         for (JsonValue child = object.child; child != null; child = child.next) {
           if(newLines) writer.append("  ".repeat(indent));
@@ -338,7 +343,7 @@ public class Strings extends arc.util.Strings {
       if (object.child == null) writer.append("[]");
       else {
         indent++;
-        boolean newLines = needNewLine(object, 4);
+        boolean newLines = needNewLine(object, 1);
         writer.append(newLines ? "[\n" : "[ ");
         for (JsonValue child = object.child; child != null; child = child.next) {
           if (newLines) writer.append("  ".repeat(indent));
@@ -358,8 +363,8 @@ public class Strings extends arc.util.Strings {
   }
   
   private static boolean needNewLine(JsonValue object, int maxChildren){
-    for(JsonValue child = object.child; child != null; child = child.next) 
-      if(child.isObject() || child.isArray() || maxChildren-- <= 0) return true;
+    for (JsonValue child = object.child; child != null; child = child.next) 
+      if (child.isObject() || child.isArray() || maxChildren-- <= 0) return true;
     return false;
   }
   

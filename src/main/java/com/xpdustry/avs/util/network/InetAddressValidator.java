@@ -100,6 +100,11 @@ public class InetAddressValidator implements Serializable {
         
         final String[] parts = inet4Address.split("\\.");
         
+        // ip v4 addresses can only have four bytes
+        if (parts.length != 4) {
+            return false;
+        }
+        
         // verify that address parts are legal
         for (final String ipSegment : parts) {
             if (ipSegment.isBlank()) {

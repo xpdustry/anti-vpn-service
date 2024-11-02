@@ -64,7 +64,6 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
   
   @Override
   public boolean refresh() {
-    loaded = false;
     Events.fire(new AVSEvents.CloudProviderRefreshingEvent(this));
     
     Seq<Subnet> list = new Seq<>();
@@ -81,7 +80,7 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
     
     if (fetched == null) {
       logger.warn("avs.provider.cloud.fetch.failed");
-      return reload0();
+      return super.loadMiscSettings();
     }
     
     // Extract content to a subnet list
@@ -94,48 +93,38 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
     } catch (Exception e) {
       logger.err("avs.provider.cloud.extract-failed");
       logger.warn("avs.provider.cloud.using-cache");
-      return reload0();
+      return super.loadMiscSettings();
     }
 
     // If fetched list is empty, also use the cache.
     if (list.isEmpty()) {
       logger.warn("avs.provider.cloud.fetch.empty");
-      return reload0();
+      return super.loadMiscSettings();
     }
     
     // Now convert to an AddressValidity
     logger.info("avs.provider.cloud.fetch.found-address" + (list.size > 1 ? "es" : ""), list.size);
-    cache.clear();
-    list.each(s -> {
-      AddressValidity valid = new AddressValidity(s);
-      valid.type = AddressType.fromBinary(providerType.val);
-      cache.add(valid);
-    });
-    list.clear();
+    synchronized (cache) {
+      cache.clear();
+      list.each(s -> {
+        AddressValidity valid = new AddressValidity(s);
+        valid.type = AddressType.fromBinary(providerType.val);
+        cache.add(valid);
+      });
+      list.clear();      
+    }
     
-    loaded = true;
-    return save();    
+    return saveMiscSettings();    
   }
 
   @Override
-  public boolean load() {
-    loaded = false;
-    Events.fire(new AVSEvents.ProviderLoadingEvent(this));
-    
+  public boolean loadMiscSettings() {
     if (!AVSConfig.startupDownload.getBool()) {
       logger.warn("avs.provider.cloud.fetch.disabled");
-      return reload0();
+      return super.loadMiscSettings();
     }
-      
+    
     return refresh();
-  }
-  
-  private boolean reload0() {
-    loaded = false;
-    cache.clear();
-    getCacheFile().clear();
-    loaded = loadCache();
-    return loaded;
   }
 
   @Override

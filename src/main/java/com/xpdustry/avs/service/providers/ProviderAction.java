@@ -250,7 +250,7 @@ public enum ProviderAction {
           toolong = true;
         }
         
-        Seq<String> table = Strings.tableify(result, 3, false);
+        Seq<String> table = Strings.tableify(result, 70);
         if (toolong) table.add(logger.formatKey(key(list, "and-more"), rest));
         
         table.each(l -> builder.append("&lk|&fr ").append(l.strip()).append('\n'));
@@ -287,7 +287,7 @@ public enum ProviderAction {
           toolong = true;
         }
         
-        Seq<String> table = Strings.tableify(result.map(v -> v.subnet.toString()), 3, false);
+        Seq<String> table = Strings.tableify(result.map(v -> v.subnet.toString()), 70);
         if (toolong) table.add(logger.formatKey(key(list, "and-more"), rest));
         
         table.each(l -> builder.append("&lk|&fr ").append(l.strip()).append('\n'));
@@ -342,9 +342,7 @@ public enum ProviderAction {
             case "tor": address.type.tor = true; break;
             case "relay": address.type.relay = true; break;
             case "datacenter": address.type.dataCenter = true; break;
-            default:
-              logger.err(key(add, "invalid-type"));
-              return;
+            default: logger.err(key(add, "invalid-type")); return;
           }
         }
       }

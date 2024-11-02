@@ -159,6 +159,6 @@ public class Loader {
            L10NBundle.isLoaded() &&
            ServiceManager.isReady() &&
            AntiVpnService.isOperational() && 
-           AntiVpnService.allProviders.allMatch(p -> p.isLoaded()); // <- this one can be unsafe
+           AntiVpnService.allProviders.allMatch(p -> p.isLoaded());
   }
 }
