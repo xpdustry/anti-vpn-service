@@ -27,6 +27,7 @@
 package com.xpdustry.avs.misc;
 
 import com.xpdustry.avs.misc.address.*;
+import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.util.network.Subnet;
 
 import arc.util.serialization.Json;
@@ -126,7 +127,8 @@ public class JsonSerializer {
       @Override
       public AddressValidity read(Json json, JsonValue jsonData, Class type_) {
         Subnet subnet = json.readValue("address", Subnet.class, jsonData);
-        if (subnet == null) return null;
+        if (subnet == null) 
+          throw new IllegalArgumentException("malformed AddressValidity object; \"address\" is missing");
 
         AddressInfos infos = json.readValue("infos", AddressInfos.class, jsonData);
         AddressValidity valid = new AddressValidity(subnet, infos);
@@ -136,6 +138,24 @@ public class JsonSerializer {
         if (stats != null) valid.stats = stats;
         if (type != null) valid.type = type;
         return valid;
+      }
+    });
+    
+    json.setSerializer(ProviderAction.class, new Json.Serializer<>() {
+      @Override
+      public void write(Json json, ProviderAction object, Class knownType) {
+        json.writeValue(object.category.name + '.' + object.name);
+      }
+
+      @Override
+      public ProviderAction read(Json json, JsonValue jsonData, Class type) {
+        String name = jsonData.asString();
+        int dot = name.indexOf('.');
+        if (dot < 1) throw new IllegalArgumentException("malformed ProviderAction value");
+        
+        String category = name.substring(0, dot);
+        String action = name.substring(dot+1);
+        return ProviderAction.all.find(a -> a.category.name.equals(category) && a.name.equals(action));
       }
     });
   }

@@ -44,7 +44,7 @@ public class RecentRequestedCache extends com.xpdustry.avs.service.providers.typ
     };;
   
   public RecentRequestedCache() {
-    super("Recent Requested Cache", "recent-cache", true);
+    super("recent-cache", "Recent Requested Cache", true);
   }
 
   @Override

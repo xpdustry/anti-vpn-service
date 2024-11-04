@@ -52,7 +52,7 @@ public class Azure extends com.xpdustry.avs.service.providers.type.CloudDownload
   private Pattern pattern = Pattern.compile("<a.*href=\"(http[s]?:\\/\\/download\\.microsoft\\.com\\/download\\/.*\\/ServiceTags_.*\\.json?)\".*>"); 
   
   public Azure() {
-    super("Azure Cloud", "azure", urls.toString("\n"));
+    super("azure", "Azure Cloud");
     this.providerType = ProviderType.proxy;
   }
 

@@ -34,7 +34,8 @@ import arc.util.serialization.JsonValue;
 
 public class OracleCloud extends com.xpdustry.avs.service.providers.type.CloudDownloadedProvider {
   public OracleCloud() {
-    super("Oracle", "oracle", "https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json");
+    super("oracle", "Oracle Cloud");
+    url = "https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json";
     providerType = ProviderType.dataCenter;
   }
 

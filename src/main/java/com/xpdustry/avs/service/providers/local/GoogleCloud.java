@@ -34,7 +34,8 @@ import arc.util.serialization.JsonValue;
 
 public class GoogleCloud extends com.xpdustry.avs.service.providers.type.CloudDownloadedProvider {
   public GoogleCloud() {
-    super("Google", "google", "https://www.gstatic.com/ipranges/cloud.json");
+    super("google", "Google");
+    url = "https://www.gstatic.com/ipranges/cloud.json";
     providerType = ProviderType.proxy;
   }
 

@@ -31,7 +31,7 @@ import mindustry.Vars;
 
 public class Blacklist extends com.xpdustry.avs.service.providers.type.EditableAddressProvider {
   public Blacklist() {
-    super("Blacklist", "blacklist", false);
+    super("blacklist", "Blacklist", false);
   }
   
   /** When adding a new address in blacklist, it's always to say it's a vpn or something like that */

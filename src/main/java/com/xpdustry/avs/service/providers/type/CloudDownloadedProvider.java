@@ -42,25 +42,14 @@ import arc.util.serialization.JsonValue;
 
 public abstract class CloudDownloadedProvider extends CachedAddressProvider
                                               implements ProviderCategories.Cloudable {
-  public final String url;
+  public String url;
   /* Define the type of provider, used for statistics. Default is VPN */
   protected ProviderType providerType = ProviderType.vpn;
   /** The headers to use to fetch the list. */
   protected final StringMap headers = new StringMap();
   
-  public CloudDownloadedProvider(String displayName, String url) { 
-    super(displayName); 
-    folder = AVSConfig.cloudDirectory.get();
-    if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
-    this.url = url.strip();
-  }
-  
-  public CloudDownloadedProvider(String displayName, String name, String url) { 
-    super(displayName, name); 
-    folder = AVSConfig.cloudDirectory.get();
-    if (url == null || url.isBlank()) throw new NullPointerException("url is empty");
-    this.url = url.strip();
-  }
+  public CloudDownloadedProvider(String name) { super(name); }
+  public CloudDownloadedProvider(String name, String displayName) { super(name, displayName); }
   
   @Override
   public boolean refresh() {
@@ -75,7 +64,9 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
       if (fetched == null) fetched = downloadFromURL(url);
       
     } catch (Exception e) { 
+      logger.warn("avs.provider.cloud.fetch.failed");
       logger.err("avs.general-error", e.toString());
+      return false;
     }
     
     if (fetched == null) {
@@ -133,6 +124,9 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
   }
   
   protected JsonValue downloadFromURL(String url) {
+    if (url == null || url.isBlank())
+      throw new IllegalArgumentException("no url provided");
+    
     AdvancedHttp.Reply reply = AdvancedHttp.get(url, headers);
     JsonValue result;
     

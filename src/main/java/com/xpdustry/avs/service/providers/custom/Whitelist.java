@@ -33,7 +33,7 @@ import arc.util.serialization.Json;
 
 public class Whitelist extends com.xpdustry.avs.service.providers.type.EditableAddressProvider {
   public Whitelist() {
-    super("Whitelist", "whitelist", false);
+    super("whitelist", "Whitelist", false);
   }
   
   /** 
@@ -44,6 +44,7 @@ public class Whitelist extends com.xpdustry.avs.service.providers.type.EditableA
   @Override
   protected boolean loadMiscSettings() {
     Json json = new Json();
+    com.xpdustry.avs.misc.JsonSerializer.apply(json);
     json.setSerializer(AddressValidity.class, new Json.Serializer<>() {
       @Override
       public void write(Json json, AddressValidity object, Class knownType) {

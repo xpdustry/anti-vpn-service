@@ -203,10 +203,6 @@ public class ConfigEvents {
     return validatePath(v, l);
   }
   
-  public static boolean onCloudDirectoryChanged(Object v, Logger l) {
-    return validatePath(v, l);
-  } 
-  
   public static boolean onSettingsDirectoryChanged(Object v, Logger l) {
     Core.settings.put("avs-" + AVSConfig.settingsDirectory.name, (String) v);
     return validatePath(v, l);

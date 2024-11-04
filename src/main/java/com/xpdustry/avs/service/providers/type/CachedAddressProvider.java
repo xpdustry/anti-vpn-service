@@ -39,21 +39,14 @@ import arc.util.serialization.Json;
 
 public class CachedAddressProvider extends AddressProvider implements ProviderCategories.Cacheable {  
   /** Folder to store the cache file, it's relative to the plugin directory */
-  protected String folder;
+  protected String folder = AVSConfig.cacheDirectory.get();
   
   protected Seq<AddressValidity> cache = new Seq<>(false);
   protected String mainKey = "cache";
   private DynamicSettings file = null;
 
-  public CachedAddressProvider(String displayName) { 
-    super(displayName); 
-    folder = AVSConfig.cacheDirectory.get();
-  }
-  
-  public CachedAddressProvider(String displayName, String name) { 
-    super(displayName, name);
-    folder = AVSConfig.cacheDirectory.get();
-  }
+  public CachedAddressProvider(String name) { super(name); }
+  public CachedAddressProvider(String name, String displayName) { super(name, displayName); }
   
   @Override
   public AddressValidity get(String subnet) {

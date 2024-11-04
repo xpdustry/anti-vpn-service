@@ -84,11 +84,9 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
     } else if (args.length == 1) {
       String format = logger.getKey("avs.command.provider.action.format");
       StringBuilder builder = new StringBuilder();
-      Seq<ProviderAction> actions = new Seq<>();
-
+      
       builder.append(logger.getKey("avs.command.provider.action.availables")).append('\n');
-      ProviderAction.Category.getAll(provider).each(c -> actions.addAll(ProviderAction.getAll(c)));
-      addProviderActions(builder, format, actions, logger);
+      addProviderActions(builder, format, ProviderAction.getAll(provider), logger);
       logger.infoNormal(builder.toString());
       return;
     }

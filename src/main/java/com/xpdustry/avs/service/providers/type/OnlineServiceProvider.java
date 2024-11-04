@@ -74,8 +74,8 @@ public abstract class OnlineServiceProvider extends AddressProvider
   protected boolean isTrusted = false; 
   protected int unavailableCooldown = 0;
   
-  public OnlineServiceProvider(String displayName) { super(displayName); }
-  public OnlineServiceProvider(String displayName, String name) { super(displayName, name); }
+  public OnlineServiceProvider(String name) { super(name); }
+  public OnlineServiceProvider(String name, String displayName) { super(name, displayName); }
   
   @SuppressWarnings("unchecked")
   @Override

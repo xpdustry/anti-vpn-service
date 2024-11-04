@@ -34,7 +34,8 @@ import arc.util.serialization.JsonValue;
 
 public class AmazonWebServices extends com.xpdustry.avs.service.providers.type.CloudDownloadedProvider {
   public AmazonWebServices() {
-    super("Amazon Web Services", "amazon-web-services", "https://ip-ranges.amazonaws.com/ip-ranges.json");
+    super("amazon-web-services", "Amazon Web Services");
+    url = "https://ip-ranges.amazonaws.com/ip-ranges.json";
   }
 
   @Override

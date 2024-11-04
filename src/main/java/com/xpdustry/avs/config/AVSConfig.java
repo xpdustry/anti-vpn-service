@@ -70,7 +70,6 @@ public class AVSConfig {
     pluginDirectory = new ConfigField("plugin-dir", "", ConfigEvents::onPluginDirectoryChanged, true),
     bundlesDirectory = new ConfigField("bundles-dir", "bundles", ConfigEvents::onBundlesDirectoryChanged, true),
     cacheDirectory = new ConfigField("cache-dir", "cache", ConfigEvents::onCacheDirectoryChanged, true),
-    cloudDirectory = new ConfigField("cloud-dir", cacheDirectory.defaultValue + "/cloud", ConfigEvents::onCloudDirectoryChanged, true),
     settingsDirectory = new ConfigField("settings-dir", "settings", ConfigEvents::onSettingsDirectoryChanged, true),
     providerDirectory = new ConfigField("provider-dir", settingsDirectory.defaultValue + "/provider", ConfigEvents::onProviderDirectoryChanged, true),
     configFile = new ConfigField("config-file", "config.json", ConfigEvents::onConfigFileChanged, true),

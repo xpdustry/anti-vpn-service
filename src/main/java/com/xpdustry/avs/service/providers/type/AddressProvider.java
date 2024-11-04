@@ -28,15 +28,24 @@ package com.xpdustry.avs.service.providers.type;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
+import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.util.DynamicSettings;
 import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.PlayerLogger;
 
 import arc.Events;
+import arc.struct.Seq;
 import arc.util.serialization.Json;
 
 
 public abstract class AddressProvider implements ProviderCategories.Basic {
+  /** 
+   * Field to save allowed actions, of this provider, 
+   * by the {@link com.xpdustry.avs.command.list.ProviderCommand}.
+   * @apiNote this is just a secured interface for user, this doesn't block anything.
+   */
+  public Seq<ProviderAction> actions = new Seq<>();
+  
   /** Settings of this provider */
   private DynamicSettings settings;
   private boolean loaded = false;
@@ -52,11 +61,11 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   protected Logger logger;
   
   
-  public AddressProvider(String displayName) { 
-    this(displayName, displayName.toLowerCase().replace(' ', '-').replace(',', '_')); 
+  public AddressProvider(String name) { 
+    this(name, arc.util.Strings.capitalize(name)); 
   }
   
-  public AddressProvider(String displayName, String name) {
+  public AddressProvider(String name, String displayName) {
     if (name == null || displayName == null || name.isBlank() || displayName.isBlank()) 
       throw new IllegalArgumentException("name or displayName cannot be null or empty");
       
@@ -121,6 +130,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
     return saveSettings() && saveMiscSettings();
   }
   
+  @SuppressWarnings("unchecked")
   private boolean loadSettings() {
     DynamicSettings file = getSettings();
     
@@ -128,8 +138,14 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
       file.load();
       
       enabled = file.getBool("enabled", enabled);
-      //TODO: and others
-
+      if (file.has("actions")) {
+        actions = file.getJson("actions", Seq.class, ProviderAction.class, Seq::new);
+        
+        // Check if allowed actions are the right
+        if (!ProviderAction.getAll(this).containsAll(actions))
+          throw new RuntimeException("the settings contains not compatible actions for this provider");
+      }
+      
       logger.debug("avs.provider.loaded");
       return true;
       
@@ -151,7 +167,8 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
     
     try { 
       file.put("enabled", enabled);
-      //TODO: and others
+      if (!actions.isEmpty())
+        file.putJson("actions", ProviderAction.class, actions);
       
       logger.debug("avs.provider.saved");
       return true;

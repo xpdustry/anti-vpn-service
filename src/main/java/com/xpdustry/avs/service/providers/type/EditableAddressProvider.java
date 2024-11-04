@@ -38,15 +38,15 @@ public abstract class EditableAddressProvider extends CachedAddressProvider
   /** Define if the list must be saved in the cache or in provider settings */
   public final boolean inCache;
   
-  public EditableAddressProvider(String displayName, boolean inCache) { 
-    super(displayName); 
+  public EditableAddressProvider(String name, boolean inCache) { 
+    super(name); 
     this.inCache = inCache;
     folder = (inCache ? AVSConfig.cacheDirectory : AVSConfig.settingsDirectory).getString();
     if (!inCache) mainKey = "list";
   }
   
-  public EditableAddressProvider(String displayName, String name, boolean inCache) { 
-    super(displayName, name);
+  public EditableAddressProvider(String name, String displayName, boolean inCache) { 
+    super(name, displayName);
     this.inCache = inCache;
     folder = (inCache ? AVSConfig.cacheDirectory : AVSConfig.settingsDirectory).getString();
     if (!inCache) mainKey = "list";

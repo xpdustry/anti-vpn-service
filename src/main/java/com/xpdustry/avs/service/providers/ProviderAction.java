@@ -140,6 +140,12 @@ public enum ProviderAction {
   public static Seq<ProviderAction> getAll(Category category) {
     return all.select(a -> a.category.equals(category));
   }
+  
+  public static Seq<ProviderAction> getAll(AddressProvider provider) {
+    Seq<ProviderAction> result = new Seq<>();
+    Category.getAll(provider).each(c ->  result.addAll(getAll(c)));
+    return result;
+  }
 
   
   public static enum Category {
@@ -159,7 +165,7 @@ public enum ProviderAction {
       this.name = Strings.camelToKebab(name());
       if (clazz != ProviderCategories.Basic.class && (!clazz.isInterface() || 
           !Seq.with(clazz.getInterfaces()).contains(ProviderCategories.Basic.class))) 
-        throw new IllegalArgumentException(name + ": the class category must be an interface "
+        throw new IllegalArgumentException(name + ": the category class must be an interface "
                                          + "inherited from ProviderCategories.Basic");
       this.clazz = clazz;
     }
@@ -168,7 +174,7 @@ public enum ProviderAction {
       this.name = name;
       if (!clazz.isInterface() || 
           !Seq.with(clazz.getInterfaces()).contains(ProviderCategories.Basic.class)) 
-        throw new IllegalArgumentException(name + ": the class category must be an interface "
+        throw new IllegalArgumentException(name + ": the category class must be an interface "
                                          + "inherited from ProviderCategories.Basic");
       this.clazz = clazz;
     }
