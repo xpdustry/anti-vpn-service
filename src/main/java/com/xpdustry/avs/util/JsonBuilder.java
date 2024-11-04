@@ -157,9 +157,10 @@ public class JsonBuilder implements BaseJsonWriter {
     if (name != null) 
       throw new IllegalStateException("Expected an object, array or value, since a name was set.");
     last = current;
-    if (last == null) return this;
-    while (last.next != null) last = last.next;
-    current = current.parent;
+    if (last != null) {
+      while (last.next != null) last = last.next;
+      current = current.parent;      
+    }
     return this;
   }
 

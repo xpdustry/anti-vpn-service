@@ -28,6 +28,7 @@ package com.xpdustry.avs.command.list;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.config.ConfigField;
+import com.xpdustry.avs.config.RestrictedModeConfig;
 import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
 
@@ -35,17 +36,15 @@ import arc.struct.Seq;
 
 
 public class ConfigCommand extends com.xpdustry.avs.command.Command {
-  public static final Seq<ConfigField> restrictedSettings = new Seq<>();
-  
   public ConfigCommand() { super("config"); }
 
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
-      printSettings(restrictedMode ? restrictedSettings : AVSConfig.all, logger);
+      printSettings(restrictedMode ? RestrictedModeConfig.settings : AVSConfig.all, logger);
       return;
     }
-    
+
     if (args[0].equals("reload")) {
       AVSConfig.load();
       AVSConfig.notifyAllValueChanged();
@@ -59,7 +58,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     if (field == null) {
       logger.err("avs.command.config.field.not-found", args[0]);
       return;
-    } else if (restrictedMode && !restrictedSettings.contains(field)) {
+    } else if (restrictedMode && !RestrictedModeConfig.settings.contains(field)) {
       logger.err("avs.command.config.field.restricted");
       return;
     } else if (args.length == 1) {

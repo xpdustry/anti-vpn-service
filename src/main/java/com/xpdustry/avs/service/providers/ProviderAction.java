@@ -37,7 +37,6 @@ import arc.func.Cons3;
 import arc.struct.Seq;
 
 
-/** TODO: make action configurable per provider */
 public enum ProviderAction {
   enable(Category.common, CallbackKeper::commonEnableAction),
   disable(Category.common, CallbackKeper::commonDisableAction),

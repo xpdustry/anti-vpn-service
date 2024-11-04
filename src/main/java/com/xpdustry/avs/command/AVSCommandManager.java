@@ -28,6 +28,7 @@ package com.xpdustry.avs.command;
 
 import com.xpdustry.avs.Loader;
 import com.xpdustry.avs.command.list.*;
+import com.xpdustry.avs.config.RestrictedModeConfig;
 import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.PlayerLogger;
 
@@ -53,8 +54,7 @@ public class AVSCommandManager {
     new ResetCommand(),
     new HelpCommand()
   );
-  public static final Seq<Command> restrictedCommands = new Seq<>();
-  
+
   public static void registerServer(CommandHandler handler) {
     handler.register("avs", "[command] [args...]", "Anti VPN Service command line manager", args -> {
       if (!Loader.done()) {
@@ -85,6 +85,9 @@ public class AVSCommandManager {
       } else if (!player.admin) {
         plogger.err("avs.command.admin-required");
         return;
+      } else if (!RestrictedModeConfig.enabled) {
+        plogger.err("avs.command.disabled");
+        return;
       } else if (args.length == 0) {
         plogger.err("avs.command.invalid-usage");
         return;
@@ -95,7 +98,7 @@ public class AVSCommandManager {
       if (command == null) {
         plogger.err("avs.command.not-found", args[0]);
         return;
-      } else if (!restrictedCommands.contains(command)) {
+      } else if (!RestrictedModeConfig.commands.contains(command)) {
         plogger.err("avs.command.restricted");
         return;
       }

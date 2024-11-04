@@ -63,7 +63,7 @@ public class Logger{
   
   public Logger(String topic) {
     this.topic = topic;
-    this.tag = topic.isEmpty() ? "&fr" : Strings.format(topicFormat, topic) + " ";
+    this.tag = this.topic.isEmpty() ? "&fr" : Strings.format(topicFormat, this.topic) + " ";
   }
 
   // region normal

@@ -27,6 +27,7 @@
 package com.xpdustry.avs;
 
 import com.xpdustry.avs.config.AVSConfig;
+import com.xpdustry.avs.config.RestrictedModeConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.ServiceManager;
@@ -133,6 +134,7 @@ public class Loader {
     logger.none();
     AntiVpnService.load();
     if (!AntiVpnService.isOperational()) return false;
+    if (!RestrictedModeConfig.load()) return false;
     if (AVSConfig.cloudRefreshTimeout.getInt() > 0)
       com.xpdustry.avs.misc.CloudAutoRefresher.start();    
     AntiVpnService.save();
@@ -159,6 +161,7 @@ public class Loader {
            L10NBundle.isLoaded() &&
            ServiceManager.isReady() &&
            AntiVpnService.isOperational() && 
-           AntiVpnService.allProviders.allMatch(p -> p.isLoaded());
+           AntiVpnService.allProviders.allMatch(p -> p.isLoaded()) &&
+           RestrictedModeConfig.isLoaded();
   }
 }

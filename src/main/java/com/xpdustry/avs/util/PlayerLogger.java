@@ -28,7 +28,6 @@ package com.xpdustry.avs.util;
 
 import java.text.MessageFormat;
 
-import com.xpdustry.avs.service.providers.type.AddressProvider;
 import com.xpdustry.avs.util.bundle.L10NBundlePlayer;
 
 import arc.util.Log;
@@ -41,15 +40,7 @@ import mindustry.gen.Player;
 public class PlayerLogger extends Logger {
   public final Player player;
   public final MessageFormat formatter;
-  
-  /** 
-   * Special feature to have a second logger. <br>
-   * Like to also log all send messages, in the console.
-   * 
-   * @apiNote mostly used by {@link AddressProvider} to be sure what the player/admin do.
-   */
-  public Logger dualLogger;
-  
+
   public PlayerLogger(Player player) {
     this.player = player;
     this.formatter = new MessageFormat("", Strings.string2Locale(player.locale));
@@ -70,7 +61,6 @@ public class PlayerLogger extends Logger {
                     level == LogLevel.err ? "&lr":
                     "";
     send(prefix + text, args);
-    if (dualLogger != null) dualLogger.logNormal(level, text, args);
   }
 
   @Override

@@ -31,7 +31,6 @@ import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.util.DynamicSettings;
 import com.xpdustry.avs.util.Logger;
-import com.xpdustry.avs.util.PlayerLogger;
 
 import arc.Events;
 import arc.struct.Seq;
@@ -85,28 +84,10 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   
   /** Will temporary replace the provider's logger by the given one, while running the function */
   public void exec(Runnable run, Logger logger) {
-    // If it's a player logger then add the default logger as dual (for safety)
-    boolean isPlayer = logger instanceof PlayerLogger;
-    
-    if (logger != null) {
-      this.logger = logger;
-      if (isPlayer) ((PlayerLogger) logger).dualLogger = this.defaultLogger;
-    }
-    
-    try { run.run(); }
-    finally { 
-      if (isPlayer) ((PlayerLogger) logger).dualLogger = null;
-      this.logger = this.defaultLogger; 
-    }
-  }
- 
-/* // Disabled until we introduce configurable provider actions
-  public void exec(Runnable run, Logger logger) {
     if (logger != null) this.logger = logger;
     try { run.run(); }
     finally { this.logger = this.defaultLogger; }
   }
-*/
 
   @Override
   public boolean load() {
@@ -139,11 +120,22 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
       
       enabled = file.getBool("enabled", enabled);
       if (file.has("actions")) {
-        actions = file.getJson("actions", Seq.class, ProviderAction.class, Seq::new);
+        actions = file.getJson("actions", Seq.class, ProviderAction.class, () -> actions);
+        
+        if (actions.contains((ProviderAction) null)) {
+          logger.err("avs.provider.load-failed", file.getFile().path());
+          logger.err("avs.provider.invalid-actions");
+          actions.removeAll(a -> a == null);
+          return false;
+        }
         
         // Check if allowed actions are the right
-        if (!ProviderAction.getAll(this).containsAll(actions))
-          throw new RuntimeException("the settings contains not compatible actions for this provider");
+        if (!ProviderAction.getAll(this).containsAll(actions)) {
+          actions.clear();
+          logger.err("avs.provider.load-failed", file.getFile().path());
+          logger.err("avs.provider.not-compatible-actions");
+          return false;
+        }
       }
       
       logger.debug("avs.provider.loaded");

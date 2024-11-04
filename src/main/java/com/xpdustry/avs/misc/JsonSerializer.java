@@ -26,6 +26,10 @@
 
 package com.xpdustry.avs.misc;
 
+import com.xpdustry.avs.command.AVSCommandManager;
+import com.xpdustry.avs.command.Command;
+import com.xpdustry.avs.config.AVSConfig;
+import com.xpdustry.avs.config.ConfigField;
 import com.xpdustry.avs.misc.address.*;
 import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.util.network.Subnet;
@@ -156,6 +160,32 @@ public class JsonSerializer {
         String category = name.substring(0, dot);
         String action = name.substring(dot+1);
         return ProviderAction.all.find(a -> a.category.name.equals(category) && a.name.equals(action));
+      }
+    });
+    
+    json.setSerializer(ConfigField.class, new Json.Serializer<>() {
+      @Override
+      public void write(Json json, ConfigField object, Class knownType) {
+        json.writeValue(object.name);
+      }
+
+      @Override
+      public ConfigField read(Json json, JsonValue jsonData, Class type) {
+        String name = jsonData.asString();
+        return AVSConfig.all.find(f -> f.name.equals(name));
+      }
+    });
+    
+    json.setSerializer(Command.class, new Json.Serializer<>() {
+      @Override
+      public void write(Json json, Command object, Class knownType) {
+        json.writeValue(object.name);
+      }
+
+      @Override
+      public Command read(Json json, JsonValue jsonData, Class type) {
+        String name = jsonData.asString();
+        return AVSCommandManager.subCommands.find(c -> c.name.equals(name));
       }
     });
   }

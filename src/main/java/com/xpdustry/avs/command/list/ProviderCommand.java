@@ -26,6 +26,7 @@
 
 package com.xpdustry.avs.command.list;
 
+import com.xpdustry.avs.config.RestrictedModeConfig;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.service.providers.type.AddressProvider;
@@ -36,15 +37,14 @@ import arc.struct.Seq;
 
 
 public class ProviderCommand extends com.xpdustry.avs.command.Command {
-  public static final Seq<AddressProvider> restrictedProviders = new Seq<>();
-  
   public ProviderCommand() { super("provider"); }
 
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
-      Seq<AddressProvider> list = restrictedMode ? restrictedProviders : AntiVpnService.allProviders;
-      
+      Seq<AddressProvider> list = restrictedMode ? RestrictedModeConfig.providers : 
+                                                   AntiVpnService.allProviders;
+
       if (list.isEmpty()) {
         logger.warn("avs.command.provider.nothing");
         return;
@@ -78,7 +78,7 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
     if (provider == null) {
       logger.err("avs.command.provider.not-found", args[0]);
       return;
-    } else if (restrictedMode && !restrictedProviders.contains(provider)) {
+    } else if (restrictedMode && !RestrictedModeConfig.providers.contains(provider)) {
       logger.err("avs.command.provider.restricted");
       return;
     } else if (args.length == 1) {
@@ -86,7 +86,9 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
       StringBuilder builder = new StringBuilder();
       
       builder.append(logger.getKey("avs.command.provider.action.availables")).append('\n');
-      addProviderActions(builder, format, ProviderAction.getAll(provider), logger);
+      addProviderActions(builder, format, 
+          provider.actions.isEmpty() ? ProviderAction.getAll(provider) : provider.actions, 
+          logger);
       logger.infoNormal(builder.toString());
       return;
     }
@@ -98,6 +100,9 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
       return;
     } else if (!ProviderAction.Category.getAll(provider).contains(c -> c == action.category)) {
       logger.err("avs.command.provider.action.not-compatible");
+      return;
+    } else if (!provider.actions.isEmpty() && !provider.actions.contains(action)) {
+      logger.err("avs.command.provider.action.restricted");
       return;
     }
     

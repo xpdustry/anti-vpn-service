@@ -439,14 +439,14 @@ public class DynamicSettings {
    */
   @SuppressWarnings("rawtypes")
   public synchronized <T> T getJson(String name, Class<T> type, Class elementType, Prov<T> def){
+      if(!has(name)) {
+          // put and return the default value
+          T fall = def.get();
+          putJson(name, elementType, fall);
+          return fall;
+      }
+    
       try{
-          if(!has(name)) {
-            // put and return the default value
-            T fall = def.get();
-            putJson(name, elementType, fall);
-            return fall;
-          }
-          
           JsonValue jvalue;
           if (simpleJson) jvalue = (JsonValue) get(name, null);
           else {
