@@ -34,9 +34,11 @@ import arc.util.serialization.JsonValue.ValueType;
 
 
 /**
- * Build an JsonValue object
+ * Build an JsonValue object <br><br>
+ * 
+ * TODO: i found an issue with that (i think), when closing an object
  */
-public class JsonBuilder implements BaseJsonWriter {
+public class JsonWriterBuilder implements BaseJsonWriter {
   private JsonValue base, current, last;
   private String name;
 
@@ -109,7 +111,7 @@ public class JsonBuilder implements BaseJsonWriter {
       while (last.next != null) last = last.next;
     
     } else {
-      if (name != null) value.name = new String(name);
+      if (name != null) value.name = new String(name); // idk why this works
       value.parent = current;
       last.next = value;
       last = last.next;

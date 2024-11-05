@@ -259,6 +259,14 @@ public abstract class OnlineServiceProvider extends AddressProvider
   
   @Override
   public void checkAddressImpl(AddressProviderReply reply) {
+    // First, search in the cache
+    AddressValidity cached = cacheProvider.get(reply.address);
+    if (cached != null) {
+      reply.validity = cached;
+      reply.type = AddressProviderReply.ReplyType.FOUND;
+      return;
+    }
+    
     if (willUseTokens()) {
       if (AVSConfig.randomTokens.getBool() && tokens.size > 1) { 
         if (tokens.keys().toSeq().shuffle().contains(t -> !checkAddressWithToken(reply, t, tokens.get(t))))

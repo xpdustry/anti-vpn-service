@@ -290,7 +290,7 @@ public class DynamicSettings {
             
             for(ObjectMap.Entry<String, Object> entry : values.entries()){
               Object value = entry.value;
-              JsonValue jvalue = null;
+              JsonValue jvalue;
 
               if (value instanceof Boolean) jvalue = new JsonValue((Boolean) value);
               else if (value instanceof Integer) jvalue = new JsonValue((Integer) value);
@@ -306,15 +306,20 @@ public class DynamicSettings {
                 jvalue = new JsonValue(JsonValue.ValueType.object);
                 jvalue.addChild("bytes", new JsonValue(new String(Base64Coder.encode((byte[]) value))));
               }
-              else if (value instanceof JsonValue) jvalue = (JsonValue) value;
+              else if (value instanceof JsonValue) {
+                jvalue = (JsonValue) value;
+                // Because when saving again without any modifications, this can create a recursion
+                jvalue.next = jvalue.prev = jvalue.parent = null;
+              }
+              else throw new IOException("Unknown value type: " + value.getClass().getName());
               
-              if (jvalue != null) content.addChild(entry.key, jvalue);
+              content.addChild(entry.key, jvalue);
             }
             
             OutputStreamWriter out = new OutputStreamWriter(stream);
             Strings.jsonPrettyPrint(content, out, JsonWriter.OutputType.json);
             out.flush();
-            
+
           } else {
               stream.writeInt(values.size);
     
@@ -342,6 +347,8 @@ public class DynamicSettings {
                       stream.writeByte(typeBinary);
                       stream.writeInt(((byte[])value).length);
                       stream.write((byte[])value);
+                  }else{
+                      throw new IOException("Unknown value type: " + value.getClass().getName());
                   }
               }
               
@@ -410,7 +417,7 @@ public class DynamicSettings {
   public synchronized void putJson(String name, Class<?> elementType, Object value){
       try {
           if (simpleJson) {
-              JsonBuilder builder = new JsonBuilder();
+              JsonWriterBuilder builder = new JsonWriterBuilder();
     
               json.setWriter(builder);
               json.writeValue(value, value == null ? null : value.getClass(), elementType);
