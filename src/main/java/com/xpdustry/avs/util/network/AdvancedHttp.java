@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,6 @@ import java.net.HttpURLConnection;
 
 import arc.func.Boolf;
 import arc.struct.StringMap;
-import arc.util.Http.HttpResponse;
-import arc.util.Http.HttpStatus;
 
 
 public class AdvancedHttp {
@@ -48,7 +46,7 @@ public class AdvancedHttp {
         success -> handleSuccess(reply, success), 
         failure -> handleFailure(reply, failure)); 
     // Retry the request, 3 times max, if a timeout occurs.
-    } while ((reply.httpStatus == HttpStatus.REQUEST_TIMEOUT ||
+    } while ((reply.httpStatus == 408/*REQUEST_TIMEOUT*/ ||
               (reply.error != null && reply.error instanceof java.net.SocketTimeoutException))
             && --retries > 0);
 
@@ -66,12 +64,12 @@ public class AdvancedHttp {
     return reply;
   }
   
-  private static void handleSuccess(Reply toProvide, HttpResponse response) {
+  private static void handleSuccess(Reply toProvide, AwaitHttp.HttpResponse response) {
     toProvide.error = null;
-    toProvide.httpStatus = response.getStatus();
+    toProvide.setHttpStatus(response);
     toProvide.result = response.getResultAsString().strip();
     if (toProvide.result.isEmpty()) toProvide.status = Status.EMPTY_CONTENT;
-    else toProvide.status = Status.getByHttpCode(toProvide.httpStatus.code);
+    else toProvide.status = Status.getByHttpCode(toProvide.httpStatus);
     toProvide.setMessage(response);
   }
   
@@ -79,8 +77,8 @@ public class AdvancedHttp {
     if (error instanceof AwaitHttp.HttpStatusException) {
       AwaitHttp.HttpStatusException status = (AwaitHttp.HttpStatusException) error;
       toProvide.error = null;
-      toProvide.httpStatus = status.status;
-      toProvide.status = Status.getByHttpCode(toProvide.httpStatus.code);
+      toProvide.setHttpStatus(status.response);
+      toProvide.status = Status.getByHttpCode(toProvide.httpStatus);
       
       String message = status.response.getResultAsString().strip();
       if (!message.isBlank() && message.length() < 512)
@@ -89,7 +87,7 @@ public class AdvancedHttp {
       
     } else {
       toProvide.error = error;
-      toProvide.httpStatus = HttpStatus.UNKNOWN_STATUS;
+      toProvide.httpStatus = -1;
       toProvide.status = Status.ERROR;
       toProvide.setMessage(error.toString());
     }
@@ -98,7 +96,9 @@ public class AdvancedHttp {
   
   public static class Reply {
     public String result, message;
-    public HttpStatus httpStatus = HttpStatus.UNKNOWN_STATUS;
+    /** @apiNote We will use an integer because Arc doesn't handle http codes properly */
+    public int httpStatus = -1;
+    //public HttpStatus httpStatus = HttpStatus.UNKNOWN_STATUS;
     public Status status = Status.NONE;
     public Throwable error;
    
@@ -119,12 +119,20 @@ public class AdvancedHttp {
       else setMessage(message);
     }
     
-    public void setMessage(HttpResponse reply) {
+    public void setMessage(AwaitHttp.HttpResponse reply) {
       // Why make this private Anuke???
       try {
         HttpURLConnection con = arc.util.Reflect.get(reply, "connection");
         setMessage(con);
       } catch (RuntimeException e) { setMessage(); }
+    }
+    
+    public void setHttpStatus(AwaitHttp.HttpResponse reply) {
+      // Why make this private Anuke???
+      try {
+        HttpURLConnection con = arc.util.Reflect.get(reply, "connection");
+        httpStatus = con.getResponseCode();
+      } catch (Exception e) { httpStatus = reply.getStatus().code; }
     }
     
     public boolean isError() {

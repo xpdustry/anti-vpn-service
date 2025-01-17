@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ import arc.struct.Seq;
 import arc.util.serialization.JsonValue;
 
 
+/** Google's public data-centers, proxies and crawlers list. */
 public class GoogleCloud extends com.xpdustry.avs.service.providers.type.CloudDownloadedProvider {
   public GoogleCloud() {
     super("google", "Google");

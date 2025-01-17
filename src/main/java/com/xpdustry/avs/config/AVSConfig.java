@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,87 +26,28 @@
 
 package com.xpdustry.avs.config;
 
-import arc.Core;
 import arc.files.Fi;
-import arc.struct.Seq;
 
-import com.xpdustry.avs.util.DynamicSettings;
+import com.xpdustry.avs.config.abstracts.ChangeValider;
 import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
 
 
-public class AVSConfig {
-  public static final Seq<ConfigField> all = new Seq<>();
-  protected static Fi workingDirectory;
-  protected static DynamicSettings config;  
-  protected static boolean isLoading = false;
-  protected static Logger logger = new Logger("Config");
+public class AVSConfig extends com.xpdustry.avs.config.abstracts.AbstractConfig {
+  private static final AVSConfig INSTANCE = new AVSConfig();
+  private static Fi workingDirectory;
+  /** Limit to prevent a config redirection loop */
+  private static int configRedirectLimit = 5;
   
-  public static final ConfigField
-    enabled = new ConfigField("enabled", true),
-    defaultLocale = new ConfigField("default-locale", "en", ConfigEvents::onDefaultLocaleChanged),
-    kickMessage = new ConfigField("kick-message", ""),
-    serverBusyMessage = new ConfigField("busy-message", ""),
-    errorMessage = new ConfigField("error-message", ""),
-    clientKickDuration = new ConfigField("kick-duration", 30),
-    connectLimit = new ConfigField("connect-limit", arc.util.OS.cores, ConfigEvents::onConnectLimitChanged),
-    tokenCheckCooldown = new ConfigField("token-cooldown", 50),
-    serviceCheckCooldown = new ConfigField("service-cooldown", 30),
-    startupDownload = new ConfigField("startup-download", true),
-    autosaveSpacing = new ConfigField("autosave-spacing", 60 * 15, ConfigEvents::onAutosaveSpacingChanged),
-    resetCommandEnabled = new ConfigField("reset-command", false, false, true),
-    useDefaultBundle = new ConfigField("bundle-default", com.xpdustry.avs.util.bundle.L10NBundle.useDefaultWhenKeyNotFound, ConfigEvents::onUseDefaultBundleChanged),
-    randomOnlineProviders = new ConfigField("random-online", false),
-    randomTokens = new ConfigField("random-tokens", false),
-    preventUnavailable = new ConfigField("prevent-unavailable", true),
-    resultRequired = new ConfigField("result-required", true),
-    cleanupRecents = new ConfigField("cleanup-recents", 60, ConfigEvents::onCleanupRecentsChanged),
-    cloudRefreshTimeout = new ConfigField("cloud-refresh", 360, ConfigEvents::onCloudRefreshTimeoutChanged),
-    
-    // For devs, better to keep that as default
-    pluginDirectory = new ConfigField("plugin-dir", "", ConfigEvents::onPluginDirectoryChanged, true),
-    bundlesDirectory = new ConfigField("bundles-dir", "bundles", ConfigEvents::onBundlesDirectoryChanged, true),
-    cacheDirectory = new ConfigField("cache-dir", "cache", ConfigEvents::onCacheDirectoryChanged, true),
-    settingsDirectory = new ConfigField("settings-dir", "settings", ConfigEvents::onSettingsDirectoryChanged, true),
-    providerDirectory = new ConfigField("provider-dir", settingsDirectory.defaultValue + "/provider", ConfigEvents::onProviderDirectoryChanged, true),
-    configFile = new ConfigField("config-file", "config.json", ConfigEvents::onConfigFileChanged, true),
-    allowUntrustedSource = new ConfigField("allow-http203", com.xpdustry.avs.util.network.AdvancedHttp.allowUntrustedSourceHttpCode, ConfigEvents::onAllowUntrustedSourceChanged, true),
-    socketTimeout = new ConfigField("socket-timeout", com.xpdustry.avs.util.network.AwaitHttp.readWriteTimeout, ConfigEvents::onSocketTimeoutChanged, true),
-    useBundleCache = new ConfigField("bundle-cache", com.xpdustry.avs.util.bundle.L10NBundle.useCache, ConfigEvents::onBundleCacheChanged, true),
-    none = null
-    ;
+  private AVSConfig() { super("config", true); }
+  public static AVSConfig instance() { return INSTANCE; }
 
-  
-  public static ConfigField get(String name) {
-    return all.find(f -> f.name.equals(name));
-  }
-  
-  protected static void setAllToDefault() {
-    all.each(s -> s.set(s.defaultValue));
-  }
-  
-  public static void notifyAllValueChanged() {
-    all.each(s -> {
-      try { s.changed.run(s.get(), logger); }
-      catch (IllegalArgumentException e) { // probably invalid value in config file
-        // notify, remove the field and use the default value
-        logger.err("avs.config.msg.invalid-field", s.name);
-        config.remove(s.name);
-        s.changed.run(s.defaultValue, logger);
-      }
-    });
-  }
-    
-  public static boolean isLoaded() {
-    return config != null && !isLoading;
-  }
-  
   public static Fi subDir(String path) {
     // use the custom plugin directory first
-    if (config != null || isLoading) {
-      
-      String pd =  pluginDirectory.getString(); //Core.settings.getString("avs-" + pluginDirectory.name, pluginDirectory.getString());
-      if (!pd.isBlank()) setWorkingDirectory(Strings.getFiChild(Core.settings.getDataDirectory(), pd));
+    if (INSTANCE.config != null || INSTANCE.isLoading) {
+      String pd =  pluginDirectory.getString();
+      if (!pd.isBlank()) 
+        setWorkingDirectory(Strings.getFiChild(arc.Core.settings.getDataDirectory(), pd));
     }
     // By default, use the mods directory
     if (workingDirectory == null) setWorkingDirectory(mindustry.Vars.modDirectory);
@@ -119,63 +60,105 @@ public class AVSConfig {
   }
   
   public static void setWorkingDirectory(Fi wd) {
-    if (isLoaded()) throw new IllegalStateException("cannot change working directory after loading config");
+    if (INSTANCE.isLoaded()) 
+      throw new IllegalStateException("cannot change working directory after loaded config");
     workingDirectory = wd;
   }
   
   public static Fi getWorkingDirectory() {
     return workingDirectory;
   }
-  
-  public static void load() {
-    isLoading = true;
-    
-    //loadWithFileRedirection();
-    loadWithFileRedirection();
-    
-    //setAllToDefault();
-    //notifyAllValueChanged();
-    
-    isLoading = false;
+
+  @Override
+  protected String msgBundleKey(String key) {
+    return "avs." + name + ".msg." + key;
   }
   
-  
-  /////// Two methods to load the configuration ////////
-  
-  protected static void loadWithCoreSettings() {
-    // Use values in the server settings, first
-    String sdir = Core.settings.getString("avs-" + settingsDirectory.name, settingsDirectory.getString());
-    String cfile = Core.settings.getString("avs-" + configFile.name, configFile.getString());
-    Fi file = Strings.getFiChild(subDir(sdir), cfile);
-    logger.debugNormal("file: @", file.absolutePath());
-    
-    config = new DynamicSettings(file, true);
-    config.load();
-  }
-  
-  /** Private variable to prevent a redirection loop */
-  private static int configRedirectLimit = 5;
-  
-  /** 
-   * Other method is to have a default file that redirect to the new. <br>
-   * Instead of putting location in the server settings
-   */
-  protected static void loadWithFileRedirection() {
-    Fi file = Strings.getFiChild(subDir(settingsDirectory.getString()), configFile.getString());
-    logger.debugNormal("file: @", file.absolutePath());
-    
-    config = null;
-    config = new DynamicSettings(file, true);
-    config.load();
-    
+  @Override
+  public void loadMisc() {
     // If plugin or settings folders or config file name, are different from the default values, 
     // reload the configuration with values in these keys.
     if (!configFile.getString().equals(configFile.defaultValue) ||
         !pluginDirectory.getString().equals(pluginDirectory.defaultValue) ||
         !settingsDirectory.getString().equals(settingsDirectory.defaultValue)) {
-      if (configRedirectLimit-- <= 0) throw new IllegalStateException("too many config file redirection");
+      if (configRedirectLimit-- <= 0) {
+        config = null;
+        throw new IllegalStateException("too many config file redirection");
+      }
       load();
-      return;
-    } else configRedirectLimit = 5; 
+      
+    } else configRedirectLimit = 5;    
   }
+  
+  @Override
+  protected Fi getFile() {
+    return Strings.getFiChild(subDir(settingsDirectory.getString()), configFile.getString());
+  }
+  
+  
+  public static class Field extends com.xpdustry.avs.config.abstracts.AbstractBasicField {
+    public static final String bundleDescFormat = "avs." + INSTANCE.name + ".@";
+    
+    public final boolean isDev, readOnly;
+    
+    Field(String name, Object defaultValue) { this(name, defaultValue, null, false, false); }
+    Field(String name, Object defaultValue, boolean isDev) { this(name, defaultValue, null, isDev, false); }
+    Field(String name, Object defaultValue, boolean isDev, boolean readOnly) { this(name, defaultValue, null, isDev, readOnly); }
+    Field(String name, Object defaultValue, ChangeValider<Object> validate) { this(name, defaultValue, validate, false, false); }
+    Field(String name, Object defaultValue, ChangeValider<Object> validate, boolean isDev) { this(name, defaultValue, validate, isDev, false); }
+    Field(String name, Object defaultValue, ChangeValider<Object> validate, boolean isDev, boolean readOnly) {
+      super(AVSConfig.instance(), name, defaultValue, validate);
+      this.isDev = isDev;
+      this.readOnly = readOnly;
+    }
+    
+    @Override
+    protected String descKeyFormat() { return bundleDescFormat; }
+    @Override
+    protected Object getValue() { return master.config().get(name(), defaultValue()); }
+    /** Handle {@link #readOnly} */
+    @Override
+    public boolean set(Object value, Logger logger) { return !readOnly && super.set(value, logger); }
+    @Override
+    protected void putValue(Object value) {
+      if (value == defaultValue()) master.config().remove(name());
+      else super.putValue(value);
+    }
+  }
+
+  
+  /** Config variables */
+  public static final Field
+    enabled = new Field("enabled", true),
+    defaultLocale = new Field("default-locale", "en", ConfigEvents::onDefaultLocaleChanged),
+    kickMessage = new Field("kick-message", ""),
+    serverBusyMessage = new Field("busy-message", ""),
+    errorMessage = new Field("error-message", ""),
+    clientKickDuration = new Field("kick-duration", 30),
+    connectLimit = new Field("connect-limit", arc.util.OS.cores, ConfigEvents::onConnectLimitChanged),
+    tokenCheckCooldown = new Field("token-cooldown", 50),
+    serviceCheckCooldown = new Field("service-cooldown", 30),
+    startupDownload = new Field("startup-download", true),
+    autosaveSpacing = new Field("autosave-spacing", 60 * 15, ConfigEvents::onAutosaveSpacingChanged),
+    resetCommandEnabled = new Field("reset-command", false, false, true),
+    useDefaultBundle = new Field("bundle-default", com.xpdustry.avs.util.bundle.L10NBundle.useDefaultWhenKeyNotFound, ConfigEvents::onUseDefaultBundleChanged),
+    randomOnlineProviders = new Field("random-online", false),
+    randomTokens = new Field("random-tokens", false),
+    preventUnavailable = new Field("prevent-unavailable", true),
+    resultRequired = new Field("result-required", true),
+    cleanupRecents = new Field("cleanup-recents", 60, ConfigEvents::onCleanupRecentsChanged),
+    cloudRefreshTimeout = new Field("cloud-refresh", 360, ConfigEvents::onCloudRefreshTimeoutChanged),
+    
+    // For devs, better to keep that as default
+    pluginDirectory = new Field("plugin-dir", "", ConfigEvents::onPluginDirectoryChanged, true),
+    bundlesDirectory = new Field("bundles-dir", "bundles", ConfigEvents::onBundlesDirectoryChanged, true),
+    cacheDirectory = new Field("cache-dir", "cache", ConfigEvents::onCacheDirectoryChanged, true),
+    settingsDirectory = new Field("settings-dir", "settings", ConfigEvents::onSettingsDirectoryChanged, true),
+    providersDirectory = new Field("providers-dir", settingsDirectory.defaultValue + "/providers", ConfigEvents::onProviderDirectoryChanged, true),
+    configFile = new Field("config-file", INSTANCE.name + ".json", ConfigEvents::onConfigFileChanged, true),
+    allowUntrustedSource = new Field("allow-http203", com.xpdustry.avs.util.network.AdvancedHttp.allowUntrustedSourceHttpCode, ConfigEvents::onAllowUntrustedSourceChanged, true),
+    socketTimeout = new Field("socket-timeout", com.xpdustry.avs.util.network.AwaitHttp.readWriteTimeout, ConfigEvents::onSocketTimeoutChanged, true),
+    useBundleCache = new Field("bundle-cache", com.xpdustry.avs.util.bundle.L10NBundle.useCache, ConfigEvents::onBundleCacheChanged, true),
+    none = null
+    ;
 }

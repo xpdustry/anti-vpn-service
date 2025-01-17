@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -112,15 +112,18 @@ public class Loader {
   
   public static boolean loadSettings(Fi workingDirectory) {
     AVSConfig.setWorkingDirectory(workingDirectory);
-    AVSConfig.load();
+    DynamicSettings.logFile = AVSConfig.subDir((String)AVSConfig.settingsDirectory.defaultValue())
+                                       .child(workingDirectory.name() + ".log");
+    AVSConfig.instance().load();
     DynamicSettings.logFile = AVSConfig.subDir(AVSConfig.settingsDirectory.getString())
                                        .child(workingDirectory.name() + ".log");
-    return AVSConfig.isLoaded();
+    return AVSConfig.instance().isLoaded();
   }
   
   /** Because we need to load the bundles before trigger the initial value change listener */
   public static boolean finishSettingsLoading() {
-    AVSConfig.notifyAllValueChanged();
+    logger.none();
+    AVSConfig.instance().notifyValuesChanged();
     return true;
   }
   
@@ -134,9 +137,10 @@ public class Loader {
     logger.none();
     AntiVpnService.load();
     if (!AntiVpnService.isOperational()) return false;
-    if (!RestrictedModeConfig.load()) return false;
+    RestrictedModeConfig.instance().load();
+    if (!RestrictedModeConfig.instance().isLoaded()) return false;
     if (AVSConfig.cloudRefreshTimeout.getInt() > 0)
-      com.xpdustry.avs.misc.CloudAutoRefresher.start();    
+      com.xpdustry.avs.misc.CloudAutoRefresher. start();    
     AntiVpnService.save();
     if (AVSConfig.autosaveSpacing.getInt() > 0)
       DynamicSettings.startAutosave("AVS-Autosave");
@@ -157,11 +161,11 @@ public class Loader {
   /** Will check the state of plugin's components */
   public static boolean isAllOk() {
     return done() && 
-           AVSConfig.isLoaded() &&
+           AVSConfig.instance().isLoaded() &&
            L10NBundle.isLoaded() &&
            ServiceManager.isReady() &&
            AntiVpnService.isOperational() && 
            AntiVpnService.allProviders.allMatch(p -> p.isLoaded()) &&
-           RestrictedModeConfig.isLoaded();
+           RestrictedModeConfig.instance().isLoaded();
   }
 }

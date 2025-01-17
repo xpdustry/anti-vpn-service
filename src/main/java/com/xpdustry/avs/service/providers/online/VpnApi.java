@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,12 @@ import com.xpdustry.avs.util.network.AdvancedHttp;
 
 import arc.util.serialization.JsonValue;
 
-// Others service idea: https://github.com/xpdustry/nucleus/issues/10
-public class VpnApiService extends com.xpdustry.avs.service.providers.type.OnlineServiceProvider {
-  public VpnApiService() {
+/**
+ * You have 100 queries/day without an account, 1k queries/day with a free account
+ * and up to 200k queries/day with the highest, $99/month, plan.
+ */
+public class VpnApi extends com.xpdustry.avs.service.providers.type.OnlineServiceProvider {
+  public VpnApi() {
     super("vpnapi", "VpnAPI.io");
     canUseTokens = true;
     url = "https://vpnapi.io/api/{0}";
@@ -44,23 +47,24 @@ public class VpnApiService extends com.xpdustry.avs.service.providers.type.Onlin
   @Override
   public void handleReply(ServiceResult result) {
     JsonValue soup = new arc.util.serialization.JsonReader().parse(result.reply.result);
+    JsonValue tmp;
     
     if (soup.child == null) {
       result.reply.status = AdvancedHttp.Status.EMPTY_CONTENT;
       return;
       
-    } else if (soup.has("message")) {
-      result.reply.setMessage(soup.getString("message"));
+    } else if ((tmp = soup.get("message")) != null) {
+      result.reply.setMessage(tmp.asString());
       String message = result.reply.message.toLowerCase();
       
       if (message.contains("invalid api key")) {
         result.reply.status = AdvancedHttp.Status.INVALID_TOKEN;
         return;
         
-      } else if (message.contains("is not a valid ip") ||
-                 message.contains("is a unspecified ip") ||
-                 message.contains("is a loopback ip") ||
-                 message.contains("is a private ip")) {
+      } else if (message.contains("not a valid ip") ||
+                 message.contains("a unspecified ip") ||
+                 message.contains("a loopback ip") ||
+                 message.contains("a private ip")) {
         result.reply.status = AdvancedHttp.Status.ERROR;
         return;
         
@@ -75,13 +79,13 @@ public class VpnApiService extends com.xpdustry.avs.service.providers.type.Onlin
     JsonValue network = soup.get("network");
   
     // Fill informations about address
-    result.result.infos.network = network.getString("network");
-    JsonValue c = location.get("city");
-    String city = c == null ? "" : c.asString();
-    result.result.infos.location = location.getString("country") + (city.isBlank() ? "" : ", " + city);
-    result.result.infos.ISP = network.getString("autonomous_system_organization");
+    String region = location.getString("region"), city = location.getString("city");
+    result.result.infos.location = location.getString("country") 
+                                 + (region.isBlank() ? "" : ", " + region)
+                                 + (city.isBlank() ? "" : ", " + city);
     result.result.infos.ASN = network.getString("autonomous_system_number");
-    result.result.infos.locale = location.getString("country_code").toLowerCase();
+    result.result.infos.ISP = network.getString("autonomous_system_organization");
+    result.result.infos.locale = java.util.Locale.forLanguageTag(location.getString("country_code"));
     result.result.infos.longitude = Strings.parseFloat(location.getString("longitude"));
     result.result.infos.latitude = Strings.parseFloat(location.getString("latitude"));
     
@@ -94,7 +98,11 @@ public class VpnApiService extends com.xpdustry.avs.service.providers.type.Onlin
   
   @Override
   public void handleError(AdvancedHttp.Reply reply) {
-    if (reply.httpStatus.code == 403) 
+    if (reply.httpStatus == 403/*FORBIDDEN*/) 
       reply.status = AdvancedHttp.Status.QUOTA_LIMIT;
+    
+    // Try to get the error message
+    JsonValue soup = new arc.util.serialization.JsonReader().parse(reply.result);
+    if (soup.child != null)  reply.setMessage(soup.getString("message", null));
   }
 }

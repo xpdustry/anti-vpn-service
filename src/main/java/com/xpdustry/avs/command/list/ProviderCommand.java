@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
-      Seq<AddressProvider> list = restrictedMode ? RestrictedModeConfig.providers : 
+      Seq<AddressProvider> list = restrictedMode ? RestrictedModeConfig.providers.values : 
                                                    AntiVpnService.allProviders;
 
       if (list.isEmpty()) {
@@ -55,7 +55,7 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
       
       builder.append(logger.getKey("avs.command.provider.availables")).append('\n');
       list.each(p -> 
-          builder.append(Strings.format(format, p.name, p.displayName)).append('\n'));
+          builder.append(Strings.format(format, p.isEnabled() ? "&lg" : "&lr", p.name, p.displayName)).append('\n'));
       logger.infoNormal(builder.toString());
       return;
     }
@@ -78,7 +78,7 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
     if (provider == null) {
       logger.err("avs.command.provider.not-found", args[0]);
       return;
-    } else if (restrictedMode && !RestrictedModeConfig.providers.contains(provider)) {
+    } else if (restrictedMode && !RestrictedModeConfig.providers.values.contains(provider)) {
       logger.err("avs.command.provider.restricted");
       return;
     } else if (args.length == 1) {

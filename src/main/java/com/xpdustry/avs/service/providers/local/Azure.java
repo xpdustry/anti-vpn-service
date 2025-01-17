@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,7 @@ import arc.struct.Seq;
 import arc.util.serialization.JsonValue;
 
 
+/** Microsoft Azure's public data-centers and proxies lists. */
 public class Azure extends com.xpdustry.avs.service.providers.type.CloudDownloadedProvider {
   public static final Seq<String> urls = Seq.with(
     "https://www.microsoft.com/en-us/download/details.aspx?id=56519",
@@ -66,7 +67,7 @@ public class Azure extends com.xpdustry.avs.service.providers.type.CloudDownload
       if (reply.isError()) {
         logger.err("avs.provider.cloud.azure.find-link-failed", url);
         if (reply.error != null) logger.err("avs.general-error", reply.error.toString());
-        else logger.err("avs.http-status", reply.httpStatus.code, reply.message);
+        else logger.err("avs.http-status", reply.httpStatus, reply.message);
         return;
       }
       

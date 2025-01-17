@@ -64,22 +64,22 @@ public class PlayerLogger extends Logger {
   }
 
   @Override
-  protected String getKey0(String key) {
+  protected String getKeyImpl(String key) {
     return L10NBundlePlayer.get(key, player);
   }
   
   @Override
-  protected String formatKeyBundle0(com.xpdustry.avs.util.bundle.Bundle bundle, String key, Object... args) {
+  protected String formatKeyBundleImpl(com.xpdustry.avs.util.bundle.Bundle bundle, String key, Object... args) {
     return bundle.formatColor(formatter, key, "&lb", "&fr", args);
   }
   
   @Override
-  protected String formatKey0(String key, Object... args) {
-    return formatKeyBundle0(L10NBundlePlayer.getBundle(player), key, args);
+  protected String formatKeyImpl(String key, Object... args) {
+    return formatKeyBundleImpl(L10NBundlePlayer.getBundle(player), key, args);
   }
 
   @Override
-  protected boolean hasKey0(String key) {
+  protected boolean hasKeyImpl(String key) {
     return L10NBundlePlayer.has(key, player);
   }
 }

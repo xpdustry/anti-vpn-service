@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,7 @@ public class VersionChecker {
     AdvancedHttp.Reply reply = AdvancedHttp.get(Strings.format(repoApiLinkFormat, githubRepo));
     
     if (reply.isError()) {
-      String message = reply.error != null ? reply.error.toString() : reply.httpStatus.code + ": " + reply.message;
+      String message = reply.error != null ? reply.error.toString() : reply.httpStatus + ": " + reply.message;
       logger.err("avs.updater.error", message);
       return;
     } else if (reply.result.isBlank()) {

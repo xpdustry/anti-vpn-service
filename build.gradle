@@ -18,12 +18,14 @@ ext {
 dependencies {
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+    // To be compatible with the slf4md plugin
+    compileOnly "org.slf4j:slf4j-api:2.0.16" // according to slf4md-1.0.1
 }
 
 jar {
-    archiveFileName = "anti-vpn-service.jar"
-    // Get version from plugin json file
     def json = new groovy.json.JsonSlurper().parseText(file("src/main/resources/plugin.json").text)
+    
+    archiveFileName = json.name + ".jar"
     version = json.version
     
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }

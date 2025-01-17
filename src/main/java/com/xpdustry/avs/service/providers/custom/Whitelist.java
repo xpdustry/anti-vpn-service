@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 package com.xpdustry.avs.service.providers.custom;
 
 
+/** Editable custom white list. */
 public class Whitelist extends com.xpdustry.avs.service.providers.type.EditableAddressProvider {
   public Whitelist() {
     super("whitelist", "Whitelist", false);

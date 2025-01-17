@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@ import com.xpdustry.avs.misc.address.AddressValidity;
 import arc.util.Timer;
 
 
+/** Cache provider used by online providers, to store the recently requested addresses' informations. */
 public class RecentRequestedCache extends com.xpdustry.avs.service.providers.type.EditableAddressProvider 
        implements com.xpdustry.avs.service.providers.type.ProviderCategories.Cleanable {
   private final Timer.Task cleanupTimer = new Timer.Task() {
@@ -41,7 +42,7 @@ public class RecentRequestedCache extends com.xpdustry.avs.service.providers.typ
           clear();
         }
       }
-    };;
+    };
   
   public RecentRequestedCache() {
     super("recent-cache", "Recent Requested Cache", true);

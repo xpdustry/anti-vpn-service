@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,12 +40,16 @@ public class Logger{
   
   public static String pluginTopic = "&lc[AVS]";
   /** The formatter for logger topics. Only used when creating a new instance of {@link Logger}. */
-  public static String topicFormat = "&ly[@]&fr";
+  public static String topicFormat = "&ly[@]";
   
   /** If {@code true} will not print the plugin and logger topic. */
   public boolean disableTopic = false;
   public final String topic;
   protected final String tag;
+  
+  /** Will use slf4j when slf4md plugin is present */
+  private static boolean slf4mdPresentAndEnabled = mindustry.Vars.mods.locateMod("slf4md") != null;
+  private static Object slf4jLogger;
   
   
   public Logger() { 
@@ -53,7 +57,7 @@ public class Logger{
   }
   
   public Logger(boolean disableTopic) {
-    this("");
+    this();
     this.disableTopic = disableTopic;
   }
   
@@ -62,20 +66,44 @@ public class Logger{
   }
   
   public Logger(String topic) {
-    this.topic = topic;
-    this.tag = this.topic.isEmpty() ? "&fr" : Strings.format(topicFormat, this.topic) + " ";
+    this.topic = topic.trim();
+    this.tag = this.topic.isEmpty() ? "&fr" : Strings.format(topicFormat, this.topic) + "&fr ";
   }
 
   // region normal
   
-  public void logNormal(LogLevel level, String text) {
-    logNormal(level, text, empty);
+  public void logNormal(LogLevel level, String text, Object... args) {
+    if(Log.level.ordinal() > level.ordinal()) return;
+
+    String tag = disableTopic ? "" : pluginTopic + " " + this.tag;
+    text = Log.format(text, args);
+    
+    if (slf4mdPresentAndEnabled) {
+      if (slf4jLogger == null) slf4jLogger = org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+      org.slf4j.Logger l = (org.slf4j.Logger) slf4jLogger;
+      arc.func.Cons<String> printer;
+      
+      switch (level) {
+        case debug: printer = l::debug; break;
+        case info: printer = l::info; break;
+        case warn: printer = l::warn; break;
+        case err: printer = l::error; break;
+        default: return;
+      }
+      
+      synchronized (slf4jLogger) {
+        for (String line : text.split("\n")) printer.get(tag + line);    
+      }
+      
+    } else {
+      synchronized (Logger.class) {
+        for (String line : text.split("\n")) Log.log(level, tag + line, empty);    
+      }
+    }
   }
   
-  public void logNormal(LogLevel level, String text, Object... args) {
-    String t = disableTopic ? "" : pluginTopic + " " + tag;
-    for (String line : text.split("\n"))
-      Log.log(level, t + line, args);
+  public void logNormal(LogLevel level, String text) {
+    logNormal(level, text, empty);
   }
 
   public void debugNormal(String text, Object... args) {
@@ -127,9 +155,11 @@ public class Logger{
   // region bundle
  
   /** Some keys, with important messages, are static, in case of default bundle is not loaded yet */
-  private static final StringMap staticKeys = StringMap.of(
+  private static final Bundle staticBundle = new Bundle(java.util.Locale.ENGLISH, StringMap.of(
       "avs.general-error", "Error: {0}",
-      "avs.config.msg.invalid-field", "{0} has an invalid value! Using the default one...", 
+      "avs.config.msg.loading", "Loading settings...",
+      "avs.config.msg.file", "Loading file: {0}",
+      "avs.config.msg.invalid-field", "{0} have an invalid value! Using the default one...", 
       "avs.loading.started", "Anti VPN Service (AVS) is loading...",
       "avs.loading.custom-bundles", "Loading custom bundles...",
       "avs.loading.bundle-loaded", "Loaded {0} locales, default is {1}.",
@@ -137,7 +167,7 @@ public class Logger{
       "avs.loading.failed", "An error occurred while loading the Anti VPN Service! \nPLEASE SEE ERROR ABOVE.",
       "avs.loading.security-error", "A security manager is present! Unable to take control of the 'ConnectPacket' listener.",
       "avs.loading.error", "Anti VPN service has been stopped and will not be used due to previous error!",
-      "avs.loading.report", "You can report this error at: https://github.com/xpdustry/Anti-VPN-Service/issues/new",
+      "avs.loading.report", "You can report this error at: &lbhttps://github.com/xpdustry/Anti-VPN-Service/issues/new",
       "avs.bundle.loading.started", "Loading bundles in directory: {0}",
       "avs.bundle.loading.list", "Appending {0} bundles.",
       "avs.bundle.loading.file.loaded", "Bundle loaded for locale {0}.",
@@ -151,39 +181,37 @@ public class Logger{
       "avs.bundle.not-found", "Unable to find a bundle for locale {0}. Using default one...",
       "avs.bundle.default-not-found", "Unable to a find bundle for the default locale '{0}'. Using machine local...",
       "avs.command.error-detected", "An error was detected during the Anti VPN service startup. Commands have been disabled."
-  );
-  private static final Bundle staticBundle = new Bundle(java.util.Locale.ENGLISH);
+  ));
+
+  ///// Followed methods can be overrides
   
-  static { 
-    staticBundle.properties.putAll(staticKeys);
-  }
-  
-  protected String getKey0(String key) {
+  protected String getKeyImpl(String key) {
     return L10NBundle.get(key);
   }
   
-  protected String formatKeyBundle0(Bundle bundle, String key, Object... args) {
+  protected String formatKeyBundleImpl(Bundle bundle, String key, Object... args) {
     return bundle.formatColor(L10NBundle.getDefaultFormatter(), key, "&fb&lb", "&fr", args);
   }
   
-  protected String formatKey0(String key, Object... args) {
-    return formatKeyBundle0(L10NBundle.getDefaultBundle(), key, args);
+  protected String formatKeyImpl(String key, Object... args) {
+    return formatKeyBundleImpl(L10NBundle.getDefaultBundle(), key, args);
   }
 
-  protected boolean hasKey0(String key) {
+  protected boolean hasKeyImpl(String key) {
     // Avoid recursion
     return L10NBundle.defaultBundle != null ? L10NBundle.has(key) : false;
   }
   
+  /////
   
   public String getKey(String key) {
-    if (hasKey0(key)) return getKey0(key);
+    if (hasKeyImpl(key)) return getKeyImpl(key);
     else return staticBundle.get(key);
   }
   
   public String formatKey(String key, Object... args) {
-    if (hasKey0(key)) return formatKey0(key, args);
-    else return formatKeyBundle0(staticBundle, key, args);
+    if (hasKeyImpl(key)) return formatKeyImpl(key, args);
+    else return formatKeyBundleImpl(staticBundle, key, args);
   }
   
   public boolean hasKey(String key) {
@@ -197,6 +225,7 @@ public class Logger{
   }
  
   public void log(LogLevel level, String key, Object... args) {
+    // avoid to search the key in the bundle, if the level is not enough to print the message
     if(Log.level.ordinal() > level.ordinal()) return;
     logNormal(level, formatKey(key, args));
   }

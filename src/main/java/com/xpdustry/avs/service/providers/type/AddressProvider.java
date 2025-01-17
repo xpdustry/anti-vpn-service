@@ -110,7 +110,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
     Events.fire(new AVSEvents.ProviderSavingEvent(this));
     return saveSettings() && saveMiscSettings();
   }
-  
+
   @SuppressWarnings("unchecked")
   private boolean loadSettings() {
     DynamicSettings file = getSettings();
@@ -254,7 +254,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   
   protected DynamicSettings getSettings() {
     if (settings == null) {
-      arc.files.Fi file = AVSConfig.subDir(AVSConfig.providerDirectory.getString()).child(name + ".json");
+      arc.files.Fi file = AVSConfig.subDir(AVSConfig.providersDirectory.getString()).child(name + ".json");
       settings = new DynamicSettings(file, true);
       Json json = new Json();
       com.xpdustry.avs.misc.JsonSerializer.apply(json);

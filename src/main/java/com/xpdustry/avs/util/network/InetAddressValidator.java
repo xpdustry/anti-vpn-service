@@ -17,7 +17,6 @@
 
 package com.xpdustry.avs.util.network;
 
-import java.io.Serializable;
 import java.util.regex.Pattern;
 
 import arc.util.Structs;
@@ -27,53 +26,18 @@ import arc.util.Structs;
  *
  * <p>This class provides methods to validate a candidate IP address.
  *
- * <p>
- * This class is a Singleton; you can retrieve the instance via the {@link #getInstance()} method.
- * </p>
- *
  * @since 1.4
  */
-public class InetAddressValidator implements Serializable {
-    private static final long serialVersionUID = -919201640201914789L;
-
+public class InetAddressValidator {
     public static final int IPV4_MAX_BITS_MASK = 32;
-
     public static final int IPV4_MAX_OCTET_VALUE = 255;
-    
     public static final int IPV6_MAX_BITS_MASK = 128;
-    
-    // Max number of hex groups (separated by :) in an IPV6 address
     public static final int IPV6_MAX_HEX_GROUPS = 8;
-
-    // Max hex digits in each IPv6 group
     public static final int IPV6_MAX_HEX_DIGITS_PER_GROUP = 4;
-
     private static final int MAX_UNSIGNED_SHORT = 0xffff;
 
-    
-    /**
-     * Singleton instance of this class.
-     */
-    private static final InetAddressValidator VALIDATOR = new InetAddressValidator();
-
     private static final Pattern DIGITS_PATTERN = Pattern.compile("\\d{1,3}");
-
     private static final Pattern ID_CHECK_PATTERN = Pattern.compile("[^\\s/%]+");
-
-    /**
-     * Private because it's a singleton.
-     */
-    private InetAddressValidator() {
-    }
-
-    /**
-     * Returns the singleton instance of this validator.
-     *
-     * @return the singleton instance of this validator
-     */
-    public static InetAddressValidator getInstance() {
-        return VALIDATOR;
-    }
 
     /**
      * Checks if the specified string is a valid IPv4 or IPv6 address.
@@ -81,7 +45,7 @@ public class InetAddressValidator implements Serializable {
      * @param inetAddress the string to validate
      * @return true if the string validates as an IP address
      */
-    public boolean isValid(final String inetAddress) {
+    public static boolean isValid(final String inetAddress) {
         return isValidInet4Address(inetAddress) || isValidInet6Address(inetAddress);
     }
 
@@ -91,7 +55,7 @@ public class InetAddressValidator implements Serializable {
      * @param inet4Address the IPv4 address to validate
      * @return true if the argument contains a valid IPv4 address
      */
-    public boolean isValidInet4Address(String inet4Address) {
+    public static boolean isValidInet4Address(String inet4Address) {
         // remove the address prefix (% and /)
         inet4Address = removeAddressPrefix(inet4Address, IPV4_MAX_BITS_MASK);
         if (inet4Address == null) {
@@ -135,7 +99,7 @@ public class InetAddressValidator implements Serializable {
      *
      * @since 1.4.1
      */
-    public boolean isValidInet6Address(String inet6Address) {
+    public static boolean isValidInet6Address(String inet6Address) {
         // remove the address prefix (% and /)
         inet6Address = removeAddressPrefix(inet6Address, IPV6_MAX_BITS_MASK);
         if (inet6Address == null) {
@@ -211,7 +175,7 @@ public class InetAddressValidator implements Serializable {
      * @param address the address to validate
      * @return the address without the prefix or null if it's not valid
      */
-    public String removeAddressPrefix(String address, final int maxBits) {
+    private static String removeAddressPrefix(String address, final int maxBits) {
         String[] parts;
         // remove prefix size. This will appear after the zone id (if any)
         parts = address.split("/", -1);

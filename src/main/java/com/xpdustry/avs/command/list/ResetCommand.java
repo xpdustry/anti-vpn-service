@@ -69,7 +69,7 @@ public class ResetCommand extends com.xpdustry.avs.command.Command {
       resetTask = Timer.schedule(() -> {
         resetRequested = false;
         logger.info("avs.command.reset.canceled");
-      }, 30);
+      }, 10);
       resetRequested = true;
       resetConfirmed = false;
     }

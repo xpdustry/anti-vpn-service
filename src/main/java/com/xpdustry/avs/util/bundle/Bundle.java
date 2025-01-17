@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,10 +43,20 @@ public class Bundle {
   public final TextFormatter formatter;
   public Bundle parent;
   
+  /** Build a new bundle for the specified {@code locale}. */
   public Bundle(Locale locale) {
     if (locale == null) throw new NullPointerException("locale cannot be null");
     this.locale = locale;
     this.formatter = new TextFormatter(locale, true);
+  }
+  
+  /** 
+   * Build a new bundle for the specified {@code locale} with {@code defaults} messages.
+   * @apiNote {@code defaults} messages locales are not checked, it can be different as the specified locale.
+   */
+  public Bundle(Locale locale, StringMap defaults) {
+    this(locale);
+    properties.putAll(defaults);
   }
   
   /**
@@ -148,7 +158,8 @@ public class Bundle {
   public void setParent(Bundle other) {
     // Iterate through self's and other's parents
     Bundle tmp1 = parent, tmp2 = other;
-    String tmp3 = "", tmp4 = "";
+    String tmp3 = "", tmp4 = ""; //trace parents
+    
     while (tmp1 != null || tmp2 != null) {
       if (tmp1 != null) tmp3 += (tmp3.isEmpty() ? "" : ", ") + tmp1.locale;
       if (tmp2 != null) tmp4 += (tmp4.isEmpty() ? "" : ", ") + tmp2.locale;

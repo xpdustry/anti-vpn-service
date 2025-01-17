@@ -286,6 +286,7 @@ public class Strings extends arc.util.Strings {
     return "";
   }
   
+  @SuppressWarnings("deprecation")
   public static Locale string2Locale(String tag) {
     if (tag == null) return null;
     if (tag.isEmpty()) return Locale.ROOT;

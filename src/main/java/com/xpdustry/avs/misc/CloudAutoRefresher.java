@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,14 +41,11 @@ import arc.Events;
 public class CloudAutoRefresher {
   private static Logger logger = new Logger(CloudAutoRefresher.class);
   private static Thread thread;
-  private static long spacing; // in ms
-  
-  static {
-    spacing(360); // every 6 hours
-  }
+  private static long spacing = 360 * 60 * 1000; // in ms, default is every 6 hours
   
   /** Refresh providers identified by the {@link ProviderCategories#Cloudable} interface */
   public static void refreshProviders() {
+    logger.none();
     logger.info("avs.refresher.trigger");
     logger.none();
     Events.fire(new AVSEvents.CloudAutoRefresherStartedEvent());
@@ -69,11 +66,12 @@ public class CloudAutoRefresher {
       Events.fire(new AVSEvents.CloudAutoRefresherFinishedWithErrorsEvent());
       logger.info("avs.refresher.done");
     }
+    logger.none();
   }
   
   
   public static boolean start() {
-    if (thread == null) {
+    if (thread == null && spacing > 0) {
       thread = arc.util.Threads.daemon(logger.topic, () -> {
         logger.info("avs.refresher.started");
 
@@ -113,6 +111,7 @@ public class CloudAutoRefresher {
   
   public static void spacing(int minutes) {
     if (minutes < 1) throw new IllegalArgumentException("spacing must be greater than 1 minute");
+    logger.info("avs.refresher.spacing", minutes);
     spacing = minutes * 60 * 1000;
   }
 }

@@ -39,7 +39,7 @@ import arc.util.serialization.Json;
 
 public class CachedAddressProvider extends AddressProvider implements ProviderCategories.Cacheable {  
   /** Folder to store the cache file, it's relative to the plugin directory */
-  protected String folder = AVSConfig.cacheDirectory.get();
+  protected String folder = AVSConfig.cacheDirectory.getString();
   
   protected Seq<AddressValidity> cache = new Seq<>(false);
   protected String mainKey = "cache";

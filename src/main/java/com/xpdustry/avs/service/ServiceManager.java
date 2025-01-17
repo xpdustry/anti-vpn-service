@@ -29,7 +29,6 @@ package com.xpdustry.avs.service;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.xpdustry.avs.config.AVSConfig;
-import com.xpdustry.avs.config.ConfigField;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.service.providers.type.AddressProviderReply;
 import com.xpdustry.avs.util.DynamicSettings;
@@ -183,7 +182,7 @@ public class ServiceManager {
               Events.fire(new AVSEvents.ClientRejectedEvent(con, packet, false, reply));
               logger.warn("avs.validator.not-found", con.address, con.uuid);
               
-              String message = AVSConfig.errorMessage.get();
+              String message = AVSConfig.errorMessage.getString();
               if (!message.isBlank()) con.kick(message, 0L);
               else L10NBundlePlayer.kick(con, packet.locale, "avs.validator.kick.error");
               return;
@@ -199,7 +198,7 @@ public class ServiceManager {
             Events.fire(new AVSEvents.ClientCheckFailedEvent(con, packet, e));
             logger.warn("avs.validator.failed", con.address, con.uuid);
             logger.err("avs.general-error", e);
-            String message = AVSConfig.errorMessage.get();
+            String message = AVSConfig.errorMessage.getString();
             if (!message.isBlank()) con.kick(message, 0L);
             else L10NBundlePlayer.kick(con, packet.locale, "avs.validator.kick.error");
           }
@@ -221,7 +220,7 @@ public class ServiceManager {
   }
   
   protected static void kickClient(NetConnection con, ConnectPacket packet, int duration, boolean isServerBusy) {
-    String message = (isServerBusy ? AVSConfig.serverBusyMessage : AVSConfig.kickMessage).get();
+    String message = (isServerBusy ? AVSConfig.serverBusyMessage : AVSConfig.kickMessage).getString();
     if (message.isBlank()) 
       L10NBundlePlayer.kick(con, packet.locale, duration, 
                             "avs.validator.kick." + (isServerBusy ? "busy" : "not-valid"), con.address);
@@ -267,6 +266,7 @@ public class ServiceManager {
     DynamicSettings.stopAutosave();
     com.xpdustry.avs.misc.CloudAutoRefresher.stop();
     logger.info("avs.manager.dispose.saving");
+    com.xpdustry.avs.config.RestrictedModeConfig.instance().save();
     AntiVpnService.save();
     DynamicSettings.globalAutosave();
     logger.info("avs.manager.dispose.completed");    
@@ -279,12 +279,12 @@ public class ServiceManager {
     logger.info("avs.manager.reset.progress");
     DynamicSettings.stopAutosave();
     SettingsCleaner.deleteFiles();
-    ConfigField[] folders = {
-        AVSConfig.providerDirectory,
+    AVSConfig.Field[] folders = {
+        AVSConfig.providersDirectory,
         AVSConfig.cacheDirectory, AVSConfig.settingsDirectory,
         AVSConfig.bundlesDirectory, AVSConfig.pluginDirectory
     };
-    for (ConfigField d : folders) AVSConfig.subDir(d.getString()).delete();
+    for (AVSConfig.Field d : folders) AVSConfig.subDir(d.getString()).delete();
     logger.info("avs.manager.reset.done");
   }
   

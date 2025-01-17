@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024-2025 Xpdustry
+ * Copyright (c) 2024 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,32 +24,9 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.service.providers.local;
-
-import com.xpdustry.avs.util.network.Subnet;
-
-import arc.struct.Seq;
-import arc.util.serialization.JsonValue;
+package com.xpdustry.avs.config.abstracts;
 
 
-/** Oracle's public data-centers list. */
-public class OracleCloud extends com.xpdustry.avs.service.providers.type.CloudDownloadedProvider {
-  public OracleCloud() {
-    super("oracle", "Oracle Cloud");
-    url = "https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json";
-    providerType = ProviderType.dataCenter;
-  }
-
-  @Override
-  protected Seq<Subnet> extractAddressRanges(JsonValue downloaded) {
-    Seq<Subnet> list = new Seq<>();
-    
-    for (JsonValue values=downloaded.get("regions").child; values!=null; values=values.next) {
-      for (JsonValue entry=values.get("cidrs").child; entry!=null; entry=entry.next) {
-        list.add(Subnet.createInstance(entry.getString("cidr")));
-      }
-    }
-    
-    return list;
-  }
+public interface ChangeValider<T> {
+  boolean accept(T value, com.xpdustry.avs.util.Logger logger);
 }

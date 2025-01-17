@@ -41,7 +41,7 @@ public class HelpCommand extends com.xpdustry.avs.command.Command {
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
-      Seq<Command> list = restrictedMode ? RestrictedModeConfig.commands : 
+      Seq<Command> list = restrictedMode ? RestrictedModeConfig.commands.values : 
                                            AVSCommandManager.subCommands;
 
       if (list.isEmpty()) {
@@ -64,7 +64,7 @@ public class HelpCommand extends com.xpdustry.avs.command.Command {
     if (command == null) {
       logger.err("avs.command.not-found", args[0]);
       return;
-    } else if (restrictedMode && !RestrictedModeConfig.commands.contains(command)) {
+    } else if (restrictedMode && !RestrictedModeConfig.commands.values.contains(command)) {
       logger.err("avs.command.restricted");
       return;
     }

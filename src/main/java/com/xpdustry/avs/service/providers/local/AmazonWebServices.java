@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +32,10 @@ import arc.struct.Seq;
 import arc.util.serialization.JsonValue;
 
 
+/** Amazon's public data-centers list. */
 public class AmazonWebServices extends com.xpdustry.avs.service.providers.type.CloudDownloadedProvider {
   public AmazonWebServices() {
-    super("amazon-web-services", "Amazon Web Services");
+    super("aws", "Amazon Web Services");
     url = "https://ip-ranges.amazonaws.com/ip-ranges.json";
   }
 

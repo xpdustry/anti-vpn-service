@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@ import com.xpdustry.avs.util.network.Subnet;
 import arc.struct.Seq;
 
 
+/** Github's public data-centers, proxies and crawlers list. */
 public class GithubActions extends com.xpdustry.avs.service.providers.type.CloudDownloadedProvider {
   public GithubActions() {
     super("github-actions", "Github Actions");

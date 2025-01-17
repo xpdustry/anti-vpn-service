@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,14 +27,8 @@
 package com.xpdustry.avs.config;
 
 import com.xpdustry.avs.Loader;
-import com.xpdustry.avs.command.AVSCommandManager;
-import com.xpdustry.avs.command.Command;
-import com.xpdustry.avs.command.list.ConfigCommand;
-import com.xpdustry.avs.command.list.ProviderCommand;
 import com.xpdustry.avs.misc.CloudAutoRefresher;
-import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.ServiceManager;
-import com.xpdustry.avs.service.providers.type.AddressProvider;
 import com.xpdustry.avs.util.DynamicSettings;
 import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
@@ -42,16 +36,9 @@ import com.xpdustry.avs.util.bundle.L10NBundle;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 import com.xpdustry.avs.util.network.AwaitHttp;
 
-import arc.Core;
-import arc.struct.Seq;
-
 
 /** Used by {@link AVSConfig} to notify a changed value */
 public class ConfigEvents {
-  public static interface Callback {
-    boolean run(Object value, Logger logger);
-  }
-
   public static boolean onDefaultLocaleChanged(Object v, Logger logger) {
     if (!Loader.done()) return false;
       
@@ -74,12 +61,12 @@ public class ConfigEvents {
   }
   
   public static boolean onAutosaveSpacingChanged(Object v, Logger logger) {
-    int i = (int) v;
-    DynamicSettings.setAutosaveSpacing(Math.max(i, 1));
+    int s = (int) v;
+    DynamicSettings.setAutosaveSpacing(Math.max(s, 1));
     
     if (!Loader.done()) return true;
     
-    if (i == 0) DynamicSettings.stopAutosave();
+    if (s == 0) DynamicSettings.stopAutosave();
     else DynamicSettings.startAutosave("AVS-Autosave");
     
     return true;
@@ -92,12 +79,12 @@ public class ConfigEvents {
   }
   
   public static boolean onCloudRefreshTimeoutChanged(Object v, Logger logger) {
-    int i = (int) v;
-    CloudAutoRefresher.spacing(Math.max(i, 1));
+    int s = (int) v;
+    CloudAutoRefresher.spacing(Math.max(s, 1));
     
     if (!Loader.done()) return true;
     
-    if (i == 0) CloudAutoRefresher.stop();
+    if (s == 0) CloudAutoRefresher.stop();
     else CloudAutoRefresher.start();
     
     return true;
@@ -113,7 +100,6 @@ public class ConfigEvents {
   
   public static boolean onPluginDirectoryChanged(Object v, Logger l) {
     String s = (String) v;
-    Core.settings.put("avs-" + AVSConfig.pluginDirectory.name, s);
     return s.isEmpty() || validatePath(s, l);
   }
   
@@ -126,7 +112,6 @@ public class ConfigEvents {
   }
   
   public static boolean onSettingsDirectoryChanged(Object v, Logger l) {
-    Core.settings.put("avs-" + AVSConfig.settingsDirectory.name, (String) v);
     return validatePath(v, l);
   }
 
@@ -135,7 +120,6 @@ public class ConfigEvents {
   }
   
   public static boolean onConfigFileChanged(Object v, Logger l) {
-    Core.settings.put("avs-" + AVSConfig.configFile.name, (String) v);
     return validatePath(v, l);
   }
   

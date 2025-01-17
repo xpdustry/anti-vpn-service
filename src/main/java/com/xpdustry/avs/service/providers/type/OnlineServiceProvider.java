@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -361,7 +361,7 @@ public abstract class OnlineServiceProvider extends AddressProvider
         reply.status == AdvancedHttp.Status.QUOTA_LIMIT) && token != null) {
       logger.err("avs.provider.online.token." + 
                 (reply.status == AdvancedHttp.Status.QUOTA_LIMIT ? "use-limit" : "invalid"), ip, token);
-      logger.err("avs.http-status", reply.httpStatus.code, reply.message);
+      logger.err("avs.http-status", reply.httpStatus, reply.message);
       result.setError();
       int v = AVSConfig.tokenCheckCooldown.getInt();
       if (v > 0) {
@@ -379,7 +379,7 @@ public abstract class OnlineServiceProvider extends AddressProvider
     // Service specific
     } else if (reply.status.isFatalError()) {
       logger.err("avs.provider.online.service-error", ip);
-      logger.err("avs.http-status", reply.httpStatus.code, reply.message);
+      logger.err("avs.http-status", reply.httpStatus, reply.message);
       result.setError();
       int v = AVSConfig.serviceCheckCooldown.getInt();
       if (v > 0) {

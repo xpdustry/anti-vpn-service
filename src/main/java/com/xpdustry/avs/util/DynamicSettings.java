@@ -414,7 +414,7 @@ public class DynamicSettings {
       putJson(name, null, value);
   }
 
-  public synchronized void putJson(String name, Class<?> elementType, Object value){
+  public synchronized <T> void putJson(String name, Class<T> elementType, Object value){
       try {
           if (simpleJson) {
               JsonWriterBuilder builder = new JsonWriterBuilder();
@@ -444,11 +444,10 @@ public class DynamicSettings {
   /**
    * @apiNote if the key is not found, {@code def} is put and returned.
    */
-  @SuppressWarnings("rawtypes")
-  public synchronized <T> T getJson(String name, Class<T> type, Class elementType, Prov<T> def){
+  public synchronized <L, T> L getJson(String name, Class<L> type, Class<T> elementType, Prov<L> def){
       if(!has(name)) {
           // put and return the default value
-          T fall = def.get();
+          L fall = def.get();
           putJson(name, elementType, fall);
           return fall;
       }
@@ -463,9 +462,9 @@ public class DynamicSettings {
           
           if (jvalue == null) return def.get();
           
-          T decoded = json.readValue(type, elementType, jvalue);
+          L decoded = json.readValue(type, elementType, jvalue);
           // if null, then the json was not decoded correctly 
-          if (decoded == null) throw new IllegalStateException("json value is null");
+          if (decoded == null) throw new IllegalStateException("failed to decode json");
           return decoded;
           
       }catch(Throwable e){
@@ -474,7 +473,7 @@ public class DynamicSettings {
       }
   }
 
-  public <T> T getJson(String name, Class<T> type, Prov<T> def){
+  public <L> L getJson(String name, Class<L> type, Prov<L> def){
       return getJson(name, type, null, def);
   }
 

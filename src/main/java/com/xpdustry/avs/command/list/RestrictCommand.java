@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,8 +34,8 @@ public class RestrictCommand extends Command {
 
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
-    // TODO Auto-generated method stub
-
+    logger.errNormal("Unavailable now.");
+    
   }
 
 }

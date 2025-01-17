@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,16 +26,19 @@
 
 package com.xpdustry.avs.misc.address;
 
+import java.util.Locale;
+
 
 public class AddressInfos {
   public final String ip;
   // placeholders
-  public String network = "", 
-      location = "",
-      ISP = "",
-      ASN = "",
-      locale = "";
-  public float longitude = 0, latitude = 0;
+  public String location = "n/a",
+                ISP = "n/a",
+                ASN = "n/a";
+  @SuppressWarnings("deprecation") 
+  public Locale locale = new Locale("n/a");
+  public float longitude = 0, 
+               latitude = 0;
   
   public AddressInfos(String ip) {
     this.ip = ip;

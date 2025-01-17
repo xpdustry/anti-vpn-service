@@ -42,15 +42,16 @@ public class Subnet
     public Subnet( final InetAddress subnetAddress, final InetAddress mask )
     {
         this.bytesSubnetCount = subnetAddress.getAddress().length;
-        if (null == mask) this.bitsMaskCount = this.bytesSubnetCount*8;
+        if ( null == mask ) this.bitsMaskCount = this.bytesSubnetCount*8;
         else {
           int bits = 0;
-          for (byte b : mask.getAddress()) bits += Integer.bitCount(b);
+          for ( byte b : mask.getAddress() ) 
+            bits += Integer.bitCount( b );
           this.bitsMaskCount = bits;
         }
         this.bigMask = null == mask ? BigInteger.valueOf( -1 ) : new BigInteger( mask.getAddress() ); // no mask given case is handled here.
         this.bigSubnetMasked = new BigInteger( subnetAddress.getAddress() ).and( this.bigMask );
-        this.address = this.bytesSubnetCount == 4 ? toIPv4String( this.bigSubnetMasked ) :
+        this.address = 4 == this.bytesSubnetCount ? toIPv4String( this.bigSubnetMasked ) :
                                                     toIPv6String( this.bigSubnetMasked );
     }
 
@@ -79,9 +80,9 @@ public class Subnet
 
     public boolean isInNet( final String address ) { 
       try {
-        return isInNet(InetAddress.getByName(address));
+          return isInNet( InetAddress.getByName( address ) );
       } catch (UnknownHostException e) {
-        return false;
+          return false;
       } 
     }
     
@@ -92,14 +93,19 @@ public class Subnet
             return false;
         return new BigInteger( bytesAddress ).and( this.bigMask ).equals( this.bigSubnetMasked );
     }
-
+    
+    public boolean isInNet( final Subnet subnet ) {
+        //if ( this.bytesSubnetCount != subnet.bytesSubnetCount )
+        //    return false;
+        return subnet.bigSubnetMasked.and( this.bigMask ).equals( this.bigSubnetMasked );
+    }
     
     public boolean partialEquals( final String other ) {
-      return toString().equals(other);
+      return toString().equals( other );
     }    
     
     public boolean partialEquals( final Subnet other ) {
-      return this.bigSubnetMasked.equals(other.bigSubnetMasked);
+      return this.bigSubnetMasked.equals( other.bigSubnetMasked );
     }
     
     @Override

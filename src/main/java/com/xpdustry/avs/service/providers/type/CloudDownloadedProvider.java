@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -136,7 +136,7 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
       catch (Exception ignore) {}
       
       logger.err("avs.provider.cloud.fetch.url-failed", url);
-      logger.err("avs.http-status", reply.httpStatus.code, reply.message);
+      logger.err("avs.http-status", reply.httpStatus, reply.message);
       return null;
     }
     

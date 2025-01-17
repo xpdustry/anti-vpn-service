@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -70,8 +70,7 @@ public class AddressValidity {
       if (addLocation) 
         builder.append(logger.formatKey("avs.address-format.location", 
             infos.location, infos.latitude, infos.longitude, infos.locale)).append('\n');
-      builder.append(logger.formatKey("avs.address-format.network", 
-         infos.network, infos.ISP, infos.ASN)).append('\n');
+      builder.append(logger.formatKey("avs.address-format.infos", infos.ISP, infos.ASN)).append('\n');
     } else
       builder.append(logger.getKey("avs.address-format.no-more")).append('\n');
   }
@@ -91,7 +90,7 @@ public class AddressValidity {
   }
   
   public static void checkSubnet(String subnet) throws IllegalArgumentException {
-    if (!com.xpdustry.avs.util.network.InetAddressValidator.getInstance().isValid(subnet)) 
+    if (!com.xpdustry.avs.util.network.InetAddressValidator.isValid(subnet)) 
       throw new IllegalArgumentException("Invalid or malformed address or subnet");
   }
 }

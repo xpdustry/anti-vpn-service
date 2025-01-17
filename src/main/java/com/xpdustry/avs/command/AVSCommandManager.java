@@ -85,7 +85,7 @@ public class AVSCommandManager {
       } else if (!player.admin) {
         plogger.err("avs.command.admin-required");
         return;
-      } else if (!RestrictedModeConfig.enabled) {
+      } else if (!RestrictedModeConfig.enabled.get()) {
         plogger.err("avs.command.disabled");
         return;
       } else if (args.length == 0) {
@@ -98,7 +98,7 @@ public class AVSCommandManager {
       if (command == null) {
         plogger.err("avs.command.not-found", args[0]);
         return;
-      } else if (!RestrictedModeConfig.commands.contains(command)) {
+      } else if (!RestrictedModeConfig.commands.values.contains(command)) {
         plogger.err("avs.command.restricted");
         return;
       }

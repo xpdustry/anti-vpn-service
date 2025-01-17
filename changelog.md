@@ -14,9 +14,14 @@
  - improved plugin loading
  - added an auto refresh
  - added a configuration file for each provider
+ - fixed bug with random online provider when it's defined as not trusted
+ - fixed others minor bugs
 
 1.0:
  - first realease
 
 TODO: 
-make a rule to whitelist all ips of specific a UUID
+ - make a rule to whitelist all ips of specific a UUID
+ - make a description for each providers
+ - make metrics
+ - make a provider type that load address ranges from a file

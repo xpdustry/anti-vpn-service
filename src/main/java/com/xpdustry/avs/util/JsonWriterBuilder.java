@@ -33,16 +33,14 @@ import arc.util.serialization.JsonValue;
 import arc.util.serialization.JsonValue.ValueType;
 
 
-/**
- * Build an JsonValue object <br><br>
- * 
- * TODO: i found an issue with that (i think), when closing an object
- */
+/** Build an JsonValue object */
 public class JsonWriterBuilder implements BaseJsonWriter {
   private JsonValue base, current, last;
   private String name;
 
   public JsonValue getJson() {
+    if (current != null && base != current) 
+      throw new IllegalStateException("Builder must be closed before getting the result");
     return base;
   }
   
@@ -168,7 +166,7 @@ public class JsonWriterBuilder implements BaseJsonWriter {
 
   @Override
   public void close() throws IOException {
-    while (current != null || base != current) 
+    while (current != null && base != current) 
       pop();
   }
 

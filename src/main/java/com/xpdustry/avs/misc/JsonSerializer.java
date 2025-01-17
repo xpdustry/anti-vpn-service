@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,6 @@ package com.xpdustry.avs.misc;
 import com.xpdustry.avs.command.AVSCommandManager;
 import com.xpdustry.avs.command.Command;
 import com.xpdustry.avs.config.AVSConfig;
-import com.xpdustry.avs.config.ConfigField;
 import com.xpdustry.avs.misc.address.*;
 import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.util.network.Subnet;
@@ -58,11 +57,10 @@ public class JsonSerializer {
       public void write(Json json, AddressInfos object, Class knownType) {
         json.writeObjectStart();
         json.writeValue("ip", object.ip);
-        json.writeValue("network", object.network);
         json.writeValue("location", object.location);
         json.writeValue("ISP", object.ISP);
         json.writeValue("ASN", object.ASN);
-        json.writeValue("locale", object.locale);
+        json.writeValue("locale", object.locale.toLanguageTag());
         json.writeValue("longitude", object.longitude);
         json.writeValue("latitude", object.latitude);
         json.writeObjectEnd();
@@ -73,11 +71,10 @@ public class JsonSerializer {
         if (jsonData.isNull()) return null;
         AddressInfos infos = new AddressInfos(jsonData.getString("ip"));
         
-        infos.network = jsonData.getString("network");
         infos.location = jsonData.getString("location");
         infos.ISP = jsonData.getString("ISP");
         infos.ASN = jsonData.getString("ASN");
-        infos.locale = jsonData.getString("locale");
+        infos.locale = java.util.Locale.forLanguageTag(jsonData.getString("locale"));
         infos.longitude = jsonData.getFloat("longitude");
         infos.latitude = jsonData.getFloat("latitude");
         
@@ -163,16 +160,16 @@ public class JsonSerializer {
       }
     });
     
-    json.setSerializer(ConfigField.class, new Json.Serializer<>() {
+    json.setSerializer(AVSConfig.Field.class, new Json.Serializer<>() {
       @Override
-      public void write(Json json, ConfigField object, Class knownType) {
+      public void write(Json json, AVSConfig.Field object, Class knownType) {
         json.writeValue(object.name);
       }
 
       @Override
-      public ConfigField read(Json json, JsonValue jsonData, Class type) {
+      public AVSConfig.Field read(Json json, JsonValue jsonData, Class type) {
         String name = jsonData.asString();
-        return AVSConfig.all.find(f -> f.name.equals(name));
+        return (AVSConfig.Field) AVSConfig.instance().all.find(f -> f.name().equals(name));
       }
     });
     

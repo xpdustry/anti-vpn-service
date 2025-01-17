@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ import arc.struct.Seq;
 
 public class AntiVpnService {
   /**
-   * Reversed providers are checked at first. <br>
+   * 1- Reversed providers are checked at first. <br>
    * And as his name suggests, the check is valid when the address is found. (like the whitelist)
    * 
    * @apiNote These providers should return null only if the address is not found.
@@ -50,14 +50,14 @@ public class AntiVpnService {
       new Whitelist()
   );
   
-  /** After, the user editable providers. (and the cache for online providers) */  
+  /** 2- After, the user editable providers. (and the cache for online providers) */  
   public static final Seq<EditableAddressProvider> customProviders = Seq.with(
       new Blacklist(),
       // Add also the provider used as a cache for online services
       OnlineServiceProvider.cacheProvider
   );
   
-  /** Next we have local lists, downloaded from providers and saved in cache. */
+  /** 3- Next we have local lists, downloaded from providers and saved in cache. */
   public static final Seq<CloudDownloadedProvider> localProviders = Seq.with(
       new AmazonWebServices(),
       new Azure(),
@@ -66,14 +66,16 @@ public class AntiVpnService {
       new OracleCloud()
   );
   /**
-   * And the online Services API. <br>
-   * Must be used when local providers founds nothing. <br><br>
+   * 4- And the online Services API. Will be used when local providers founds nothing. <br><br>
    * This list is in rotation, so when a service is down or token limit is reach, 
    * this will use the next service. <br>
    * Or a random one, if the option was enabled.
    */
   public static final Seq<OnlineServiceProvider> onlineProviders = Seq.with(
-      new VpnApiService()
+      new VpnApi(),
+      new IPQualityScore(),
+      new IPHub(),
+      new IP2Location()
   );
   
   /** Field to store all providers */
@@ -81,7 +83,6 @@ public class AntiVpnService {
       reversedProviders, customProviders, localProviders, onlineProviders
   );
   
-  /** Logger without a topic is by default the main plugin topic. */
   private static final Logger logger = new Logger();
   private static boolean operational = false, loaded = false;
 
@@ -116,21 +117,21 @@ public class AntiVpnService {
   public static AddressProviderReply checkAddressOnline(String address) {
     if (!isOperational()) return null;
     AddressValidity.checkAddress(address);
-    AddressProviderReply result = null;
+    AddressProviderReply result = null, r = null;
 
     Seq<OnlineServiceProvider> onlines = onlineProviders;
-    if (AVSConfig.randomOnlineProviders.getBool()&& 
-        onlineProviders.size > 1)
+    if (AVSConfig.randomOnlineProviders.getBool() && onlineProviders.size > 1)
       onlines = onlineProviders.copy().shuffle();
     
     for (OnlineServiceProvider p : onlines) {
       if (!isOperational()) return null;
-      result = p.checkAddress(address);
+      r = p.checkAddress(address);
       
-      if (result.resultFound()) {
-        if (!result.validity.type.isNotValid() && !p.isTrusted())
+      if (r.resultFound()) {
+        result = r;
+        if (!r.validity.type.isNotValid() && !p.isTrusted())
           continue;
-        return result;
+        break;
       }   
     }
     
@@ -141,19 +142,23 @@ public class AntiVpnService {
       onlineProviders.each(p -> p.makeAvailable());
     }
     
-    return result;
+    return result == null ? r : result;
   }
   
-  protected static AddressProviderReply checkAddressImpl(String ip, Seq<? extends AddressProvider> providers) {
-    AddressProviderReply result = null;
+  protected static AddressProviderReply checkAddressImpl(String address, Seq<? extends AddressProvider> providers) {
+    AddressProviderReply result = null, r = null;
+    
     for (AddressProvider p : providers) {
       if (!isOperational()) return null;
       
-      result = p.checkAddress(ip);
-      if (result.resultFound()) return result;
-    }      
+      r = p.checkAddress(address);
+      if (r.resultFound()) {
+        result = r;
+        break;
+      }
+    }   
 
-    return result;
+    return result == null ? r : result;
   }
   
   public static boolean isOperational() {

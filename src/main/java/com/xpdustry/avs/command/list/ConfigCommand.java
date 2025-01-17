@@ -27,7 +27,6 @@
 package com.xpdustry.avs.command.list;
 
 import com.xpdustry.avs.config.AVSConfig;
-import com.xpdustry.avs.config.ConfigField;
 import com.xpdustry.avs.config.RestrictedModeConfig;
 import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
@@ -41,32 +40,33 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
-      printSettings(restrictedMode ? RestrictedModeConfig.settings : AVSConfig.all, logger);
+      printSettings(restrictedMode ? RestrictedModeConfig.settings.values : 
+                                     AVSConfig.instance().all.map(f -> (AVSConfig.Field) f), logger);
       return;
     }
 
     if (args[0].equals("reload")) {
-      AVSConfig.load();
-      AVSConfig.notifyAllValueChanged();
+      AVSConfig.instance().load();
+      AVSConfig.instance().notifyValuesChanged();
       logger.none();
       logger.info("avs.command.config.reloaded");
       return;
     }
     
-    ConfigField field = AVSConfig.get(args[0]);
+    AVSConfig.Field field = (AVSConfig.Field) AVSConfig.instance().get(args[0]);
     
     if (field == null) {
       logger.err("avs.command.config.field.not-found", args[0]);
       return;
-    } else if (restrictedMode && !RestrictedModeConfig.settings.contains(field)) {
+    } else if (restrictedMode && !RestrictedModeConfig.settings.values.contains(field)) {
       logger.err("avs.command.config.field.restricted");
       return;
     } else if (args.length == 1) {
-      logger.info("avs.command.config.field.value.is", field.name, 
-                  Strings.objToStr(field.get()), Strings.objToStr(field.defaultValue));
+      logger.info("avs.command.config.field.value.is", field.name(), 
+                  Strings.objToStr(field.get()), Strings.objToStr(field.defaultValue()));
       return;
     } else if (field.readOnly && args.length > 1) {
-      logger.err("avs.command.config.field.read-only", field.name);
+      logger.err("avs.command.config.field.read-only", field.name());
       return;
     }
     
@@ -95,16 +95,17 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     } else logger.errNormal("ho no! invalid configuration!"); // what?
     
     if (v == null) {
-      logger.err("avs.command.config.field.value.invalid", value, field.name, 
-                 (positive ? "Positive " : "") + field.defaultValue.getClass().getSimpleName());
+      logger.err("avs.command.config.field.value.invalid", value, field.name(), 
+                 (positive ? "Positive " : "") + field.defaultValue().getClass().getSimpleName());
       return;  
       
     }
     
-    if (field.set(v, logger)) logger.info("avs.command.config.field.value.set", field.name, v);
+    if (field.set(v, logger)) 
+      logger.info("avs.command.config.field.value.set", field.name(), v);
   }
   
-  private static void printSettings(Seq<ConfigField> list, Logger logger) {
+  private static void printSettings(Seq<AVSConfig.Field> list, Logger logger) {
     if (list.isEmpty()) {
       logger.warn("avs.command.config.nothing");
       return;
@@ -114,14 +115,14 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     String descF =  logger.getKey("avs.command.config.desc");
     String nextF = logger.getKey("avs.command.config.next");
     
-    Seq<ConfigField> dev = list.select(f -> f.isDev);
+    Seq<AVSConfig.Field> dev = list.select(f -> f.isDev);
     list = list.select(f -> !f.isDev);
     
     StringBuilder builder = new StringBuilder();
-    arc.func.Cons<Seq<ConfigField>> printer = (l) -> {
+    arc.func.Cons<Seq<AVSConfig.Field>> printer = (l) -> {
       l.each(f -> {
-        builder.append(Strings.format(valueF, f.name, Strings.objToStr(f.get()))).append('\n');
-        for (String line : f.getDescription(logger).split("\n"))
+        builder.append(Strings.format(valueF, f.name(), Strings.objToStr(f.get()))).append('\n');
+        for (String line : f.desc(logger).split("\n"))
           builder.append(Strings.format(descF, line)).append('\n');
         logger.infoNormal(builder.toString() + nextF);
         builder.setLength(0);
