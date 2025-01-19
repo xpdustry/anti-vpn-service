@@ -46,7 +46,7 @@ public class Main extends mindustry.mod.Plugin {
     if (Loader.done()) {
       logger.none();
       logger.info("avs.loading.finished", Math.max(1, (System.currentTimeMillis()-start)/1000));
-      logger.infoNormal("&lg----------------------------------------------------------------\n");      
+      logger.infoNormal("&lg----------------------------------------------------------------\n ");      
     }
   }
 

@@ -41,7 +41,7 @@ public class ProxyCheck extends com.xpdustry.avs.service.providers.type.OnlineSe
     canUseTokens = true;
     url = "https://proxycheck.io/v2/{0}?vpn=3&asn=1&cur=0&short=1&p=0&days=365";
     urlWithToken = "https://proxycheck.io/v2/{0}?key={1}&vpn=3&asn=1&cur=0&short=1&p=0&days=365";
-    //isTrusted = true; //not sure of that
+    isTrusted = true;
   }
 
   @Override
@@ -61,10 +61,20 @@ public class ProxyCheck extends com.xpdustry.avs.service.providers.type.OnlineSe
         break;
         
       case "warning":
-        break;
+        if (message.contains("disabled for a violation"))
+          result.reply.status = AdvancedHttp.Status.ERROR;
+        else break;
+        return;
         
       case "denied":
-        
+        if (message.contains("your access to the api has been blocked"))
+          result.reply.status = AdvancedHttp.Status.ERROR;
+        else if (message.contains("free queries exhausted") || 
+                 message.contains("queries exhausted"))
+          result.reply.status = AdvancedHttp.Status.QUOTA_LIMIT;
+        else if (message.contains("you're sending more than"))
+          result.reply.status = AdvancedHttp.Status.ACCESS_FORBIDDEN;
+        else break;
         return;
         
       case "error":
@@ -72,6 +82,16 @@ public class ProxyCheck extends com.xpdustry.avs.service.providers.type.OnlineSe
         return;
     }
     
-    
+
+    result.result.infos.location = soup.getString("country") +  ", " 
+                                 + soup.getString("region") + ", " 
+                                 + soup.getString("city");
+    result.result.infos.ASN = soup.getString("asn");
+    result.result.infos.ISP = soup.getString("provider");
+    result.result.infos.locale = java.util.Locale.forLanguageTag(soup.getString("isocode"));
+    result.result.infos.longitude = soup.getFloat("longitude");
+    result.result.infos.latitude = soup.getFloat("latitude");
+    result.result.type.vpn = soup.getString("vpn").equals("yes");
+    result.result.type.proxy = soup.getString("proxy").equals("yes");
   }
 }

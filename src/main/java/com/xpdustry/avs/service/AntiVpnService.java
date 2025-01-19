@@ -75,7 +75,8 @@ public class AntiVpnService {
       new VpnApi(),
       new IPQualityScore(),
       new IPHub(),
-      new IP2Location()
+      new IP2Location(),
+      new ProxyCheck()
   );
   
   /** Field to store all providers */
