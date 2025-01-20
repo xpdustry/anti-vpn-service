@@ -3,7 +3,7 @@
 A powerful anti vpn service, using multiple types of providers, like downloaded address ranges or online services,
 to protect your Mindustry server against players using VPNs (also useful against classic DDoS attacks).
 
-Custom whitelist and blacklist are given to allow or block specific addresses.
+Custom whitelist and blacklist are given to allow or block specific addresses or ranges of addresses. <br>
 And there are many settings, to configure the plugin to your needs.
 
 
@@ -20,8 +20,12 @@ And there are many settings, to configure the plugin to your needs.
 **Admin command:**  `/avs [command] [args...]` Restricted Anti VPN Service manager for admins
 
 
+### Documentation
+Documentation can be [found here](https://github.com/xpdustry/Anti-VPN-Service/tree/master/docs).
+
+
 ### Releases
-Prebuild releases can be found [here](https://github.com/Xpdustry/anti-vpn-service/releases)
+Prebuild releases can be [found here](https://github.com/Xpdustry/anti-vpn-service/releases).
 
 
 ### Feedback
@@ -29,6 +33,7 @@ Free to you to [open an issue](https://github.com/xpdustry/Anti-VPN-Service/issu
 
 
 ### Building a Jar
+
 Just run the command: `./gradlew build clean`, and the plugin will compile and export automatically.
 
 
