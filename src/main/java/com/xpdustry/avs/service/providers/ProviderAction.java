@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,24 +38,24 @@ import arc.struct.Seq;
 
 
 public enum ProviderAction {
-  enable(Category.common, CallbackKeper::commonEnableAction),
-  disable(Category.common, CallbackKeper::commonDisableAction),
+  enable(Category.common, CallbackKeeper::commonEnableAction),
+  disable(Category.common, CallbackKeeper::commonDisableAction),
   reload(Category.common, (a, l) -> a.reload()),
   
-  list(Category.cached, CallbackKeper::cachedListAction),
-  search(Category.cached, CallbackKeper::cachedSearchAction),
-  info(Category.cached, CallbackKeper::cachedInfoAction),
+  list(Category.cached, CallbackKeeper::cachedListAction),
+  search(Category.cached, CallbackKeeper::cachedSearchAction),
+  info(Category.cached, CallbackKeeper::cachedInfoAction),
   
-  refresh(Category.cloud, CallbackKeper::cloudRefreshAction),
+  refresh(Category.cloud, CallbackKeeper::cloudRefreshAction),
   
-  add(Category.editable, CallbackKeper::editableAddAction),
-  remove(Category.editable, CallbackKeper::editableRemoveAction),
+  add(Category.editable, CallbackKeeper::editableAddAction),
+  remove(Category.editable, CallbackKeeper::editableRemoveAction),
   clear(Category.editable, (a, l) -> ((ProviderCategories.Editable) a).clear()),
 
   //check(Category.online, CallbackKeper::onlineCheckAction),
-  addToken(Category.online, CallbackKeper::onlineAddTokenAction),
-  delToken(Category.online, CallbackKeper::onlineDelTokenAction),
-  listTokens(Category.online, CallbackKeper::onlineListTokensAction),
+  addToken(Category.online, CallbackKeeper::onlineAddTokenAction),
+  delToken(Category.online, CallbackKeeper::onlineDelTokenAction),
+  listTokens(Category.online, CallbackKeeper::onlineListTokensAction),
   ;
   
   public static final Seq<ProviderAction> all = Seq.with(values());
@@ -219,7 +219,7 @@ public enum ProviderAction {
    * Private class to store {@link ProviderAction} callbacks, 
    * for a better visual in action definition 
    */
-  private static class CallbackKeper {
+  private static class CallbackKeeper {
     private static String key(ProviderAction action, String key) {
       return Strings.format(actionDescKeyFormat + ".@", action.category.name, action.name, key);
     }

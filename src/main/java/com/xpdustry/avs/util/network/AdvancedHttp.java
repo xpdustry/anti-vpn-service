@@ -29,6 +29,8 @@ package com.xpdustry.avs.util.network;
 import java.net.HttpURLConnection;
 
 import arc.func.Boolf;
+import arc.struct.ObjectMap;
+import arc.struct.Seq;
 import arc.struct.StringMap;
 
 
@@ -67,8 +69,9 @@ public class AdvancedHttp {
   private static void handleSuccess(Reply toProvide, AwaitHttp.HttpResponse response) {
     toProvide.error = null;
     toProvide.setHttpStatus(response);
-    toProvide.result = response.getResultAsString().strip();
-    if (toProvide.result.isEmpty()) toProvide.status = Status.EMPTY_CONTENT;
+    toProvide.content = response.getResultAsString().strip();
+    toProvide.headers = response.getHeaders();
+    if (toProvide.content.isEmpty()) toProvide.status = Status.EMPTY_CONTENT;
     else toProvide.status = Status.getByHttpCode(toProvide.httpStatus);
     toProvide.setMessage(response);
   }
@@ -79,6 +82,7 @@ public class AdvancedHttp {
       toProvide.error = null;
       toProvide.setHttpStatus(status.response);
       toProvide.status = Status.getByHttpCode(toProvide.httpStatus);
+      toProvide.headers = status.response.getHeaders();
       
       String message = status.response.getResultAsString().strip();
       if (!message.isBlank() && message.length() < 512)
@@ -95,7 +99,8 @@ public class AdvancedHttp {
   
   
   public static class Reply {
-    public String result, message;
+    public ObjectMap<String, Seq<String>> headers;
+    public String content, message;
     /** @apiNote We will use an integer because Arc doesn't handle http codes properly */
     public int httpStatus = -1;
     //public HttpStatus httpStatus = HttpStatus.UNKNOWN_STATUS;

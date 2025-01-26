@@ -76,7 +76,9 @@ public class AntiVpnService {
       new IPQualityScore(),
       new IPHub(),
       new IP2Location(),
-      new ProxyCheck()
+      new ProxyCheck(),
+      new IPApi(),
+      new IPApiIs()
   );
   
   /** Field to store all providers */
@@ -137,7 +139,7 @@ public class AntiVpnService {
     }
     
     // Prevents all online services from being unavailable
-    if (onlineProviders.allMatch(p -> p.unavailableCooldown() > 0) && 
+    if (onlineProviders.allMatch(p -> p.unavailability() != null) && 
         AVSConfig.preventUnavailable.getBool()) {
       logger.warn("avs.service.prevent-unavailable");
       onlineProviders.each(p -> p.makeAvailable());

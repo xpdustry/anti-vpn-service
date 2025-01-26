@@ -26,6 +26,7 @@
 
 package com.xpdustry.avs.service.providers.online;
 
+import com.xpdustry.avs.util.CronExpression;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 
 import arc.util.serialization.JsonValue;
@@ -42,11 +43,13 @@ public class ProxyCheck extends com.xpdustry.avs.service.providers.type.OnlineSe
     url = "https://proxycheck.io/v2/{0}?vpn=3&asn=1&cur=0&short=1&p=0&days=365";
     urlWithToken = "https://proxycheck.io/v2/{0}?key={1}&vpn=3&asn=1&cur=0&short=1&p=0&days=365";
     isTrusted = true;
+    reavailabilityCheck = CronExpression.createWithoutSeconds("0 * * * *");
+    reuseCheck = CronExpression.createWithoutSeconds("10 0 * * *");
   }
 
   @Override
   public void handleReply(ServiceResult result) {
-    JsonValue soup = new arc.util.serialization.JsonReader().parse(result.reply.result);
+    JsonValue soup = new arc.util.serialization.JsonReader().parse(result.reply.content);
 
     if (soup.child == null) {
       result.reply.status = AdvancedHttp.Status.EMPTY_CONTENT;
@@ -88,7 +91,7 @@ public class ProxyCheck extends com.xpdustry.avs.service.providers.type.OnlineSe
                                  + soup.getString("city");
     result.result.infos.ASN = soup.getString("asn");
     result.result.infos.ISP = soup.getString("provider");
-    result.result.infos.locale = java.util.Locale.forLanguageTag(soup.getString("isocode"));
+    result.result.infos.locale = com.xpdustry.avs.util.Strings.string2Locale(soup.getString("isocode"));
     result.result.infos.longitude = soup.getFloat("longitude");
     result.result.infos.latitude = soup.getFloat("latitude");
     result.result.type.vpn = soup.getString("vpn").equals("yes");

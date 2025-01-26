@@ -26,6 +26,7 @@
 
 package com.xpdustry.avs.service.providers.online;
 
+import com.xpdustry.avs.util.CronExpression;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 
 import arc.util.serialization.JsonValue;
@@ -40,11 +41,13 @@ public class IPQualityScore extends com.xpdustry.avs.service.providers.type.Onli
     needTokens = true;
     urlWithToken = "https://ipqualityscore.com/api/json/ip/{1}/{0}?strictness=1";
     isTrusted = true;
+    reavailabilityCheck = CronExpression.createWithoutSeconds("0 */4 * * *");
+    reuseCheck = CronExpression.createWithoutSeconds("0 1 1 * *");
   }
 
   @Override
   public void handleReply(ServiceResult result) {
-    JsonValue soup = new arc.util.serialization.JsonReader().parse(result.reply.result);
+    JsonValue soup = new arc.util.serialization.JsonReader().parse(result.reply.content);
 
     if (soup.child == null) {
       result.reply.status = AdvancedHttp.Status.EMPTY_CONTENT;
@@ -78,7 +81,7 @@ public class IPQualityScore extends com.xpdustry.avs.service.providers.type.Onli
     result.result.infos.location = soup.getString("region", "n/a") + ", " + soup.getString("city", "n/a");
     result.result.infos.ASN = soup.getString("ASN"); 
     result.result.infos.ISP = isp;
-    result.result.infos.locale = java.util.Locale.forLanguageTag(soup.getString("country_code"));
+    result.result.infos.locale = com.xpdustry.avs.util.Strings.string2Locale(soup.getString("country_code"));
     result.result.infos.longitude = soup.getFloat("longitude");
     result.result.infos.latitude = soup.getFloat("latitude");
     

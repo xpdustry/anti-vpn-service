@@ -26,6 +26,8 @@
 
 package com.xpdustry.avs.misc;
 
+import java.time.Duration;
+
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.service.providers.type.*;
 import com.xpdustry.avs.util.network.AdvancedHttp;
@@ -260,10 +262,12 @@ public class AVSEvents {
   public static class OnlineProviderTokenNowUnavailable {
     public final OnlineServiceProvider provider;
     public final String token;
+    public final Duration cooldown;
     
-    public OnlineProviderTokenNowUnavailable(OnlineServiceProvider provider, String token) {
+    public OnlineProviderTokenNowUnavailable(OnlineServiceProvider provider, String token, Duration cooldown) {
       this.provider = provider;
       this.token = token;
+      this.cooldown = cooldown;
     }
   }
   public static class OnlineProviderTokenNowAvailable {
@@ -278,9 +282,11 @@ public class AVSEvents {
   
   public static class OnlineProviderServiceNowUnavailable {
     public final OnlineServiceProvider provider;
+    public final Duration cooldown;
     
-    public OnlineProviderServiceNowUnavailable(OnlineServiceProvider provider) {
+    public OnlineProviderServiceNowUnavailable(OnlineServiceProvider provider, Duration cooldown) {
       this.provider = provider;
+      this.cooldown = cooldown;
     }
   }
   public static class OnlineProviderServiceNowAvailable {

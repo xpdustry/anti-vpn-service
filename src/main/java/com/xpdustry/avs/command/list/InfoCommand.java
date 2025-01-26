@@ -62,7 +62,7 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
           logger.err("avs.command.info.public-address-failed");
           return;
         }
-        queries.add(new Helper(publicAddress = reply.result, null));
+        queries.add(new Helper(publicAddress = reply.content, null));
         
       } else queries.add(new Helper(publicAddress, null));
 

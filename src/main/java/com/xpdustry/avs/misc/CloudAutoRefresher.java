@@ -111,7 +111,7 @@ public class CloudAutoRefresher {
   
   public static void spacing(int minutes) {
     if (minutes < 1) throw new IllegalArgumentException("spacing must be greater than 1 minute");
-    logger.info("avs.refresher.spacing", minutes);
     spacing = minutes * 60 * 1000;
+    logger.info("avs.refresher.spacing", com.xpdustry.avs.util.Strings.duration2str(logger, spacing, false, 2));
   }
 }

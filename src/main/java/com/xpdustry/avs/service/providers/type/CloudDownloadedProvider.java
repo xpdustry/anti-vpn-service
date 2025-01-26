@@ -43,7 +43,7 @@ import arc.util.serialization.JsonValue;
 public abstract class CloudDownloadedProvider extends CachedAddressProvider
                                               implements ProviderCategories.Cloudable {
   public String url;
-  /* Define the type of provider, used for statistics. Default is VPN */
+  /** Define the type of provider, used for statistics. Default is VPN */
   protected ProviderType providerType = ProviderType.vpn;
   /** The headers to use to fetch the list. */
   protected final StringMap headers = new StringMap();
@@ -99,7 +99,7 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
       cache.clear();
       list.each(s -> {
         AddressValidity valid = new AddressValidity(s);
-        valid.type = AddressType.fromBinary(providerType.val);
+        valid.type = AddressType.fromBinary(providerType().val);
         cache.add(valid);
       });
       list.clear();      
@@ -110,6 +110,15 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
 
   @Override
   public boolean loadMiscSettings() {
+    // check properties
+    if (providerType() == null) {
+      logger.err("avs.provider.cloud.missing-type");
+      return false;
+    } else if (url == null || url.isBlank()) {
+      logger.err("avs.provider.cloud.missing-url");
+      return false;
+    }
+    
     if (!AVSConfig.startupDownload.getBool()) {
       logger.warn("avs.provider.cloud.fetch.disabled");
       return super.loadMiscSettings();
@@ -140,7 +149,7 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
       return null;
     }
     
-    try { result = new JsonReader().parse(reply.result); } 
+    try { result = new JsonReader().parse(reply.content); } 
     catch (Exception e) {
       logger.err("avs.provider.cloud.fetch.json-failed", url);
       logger.err("avs.general-error", e.getLocalizedMessage());
@@ -150,12 +159,12 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
     return result;
   }
   
-  /* Override this if your provider have a custom way to get addresses */
+  /** Can be overrides if the provider have a custom way to get addresses */
   protected JsonValue downloadList() {
     return null;
   }
   
-  /* Extract wanted addresses from server reply */
+  /** Extract wanted addresses from server reply */
   protected abstract Seq<Subnet> extractAddressRanges(JsonValue downloaded);
   
   

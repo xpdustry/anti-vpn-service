@@ -29,68 +29,70 @@ package com.xpdustry.avs.service.providers.online;
 import com.xpdustry.avs.util.CronExpression;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 
+import arc.struct.Seq;
+import arc.util.Strings;
 import arc.util.serialization.JsonValue;
 
 
 /** 
- * You have 1k queries/day with a free account and up to 200k queries/day with the highest, €249/month, plan.
+ * You have 45 queries/minutes (~64k queries/day) without an account 
+ * and unlimited queries with the, €13.3/month, pro plan.
  * 
- * @apiNote This provider is not very accurate and doesn't provide much information.
+ * @apiNote Tokens are not supported yet.
  */
-public class IPHub extends com.xpdustry.avs.service.providers.type.OnlineServiceProvider {
-  public IPHub() {
-    super("iphub", "IPHub");
-    needTokens = true;
-    url = "http://v2.api.iphub.info/ip/{0}";
-    tokenHeaderName = "X-Key";
-    reavailabilityCheck = CronExpression.createWithoutSeconds("0 * * * *");
-    reuseCheck = CronExpression.createWithoutSeconds("0 1 * * *");
+public class IPApi extends com.xpdustry.avs.service.providers.type.OnlineServiceProvider {
+  public IPApi() {
+    super("ip-api", "IP-API");
+    canUseTokens = false; // i need to pay to see the documentation for token use
+    url = "http://ip-api.com/json/{0}?fields=16968411";
+    reavailabilityCheck = CronExpression.createWithoutSeconds("* * * * *");
+    reuseCheck = CronExpression.create("1 * * * * *");
   }
 
   @Override
   public void handleReply(ServiceResult result) {
     JsonValue soup = new arc.util.serialization.JsonReader().parse(result.reply.content);
-    JsonValue tmp;
 
     if (soup.child == null) {
       result.reply.status = AdvancedHttp.Status.EMPTY_CONTENT;
       return;
-      
-    } else if ((tmp = soup.get("error")) != null) {
-      result.reply.setMessage(tmp.asString());
+    } 
+    
+    if (soup.getString("status").equals("failed")) {
+      result.reply.setMessage(soup.getString("message"));
       String message = result.reply.message.toLowerCase();
       
-      result.reply.status = message.contains("empty api key") ? AdvancedHttp.Status.INVALID_TOKEN :
-                            message.contains("invalid api key") ? AdvancedHttp.Status.INVALID_TOKEN :
-                            message.contains("exceeded your rate limit") ? AdvancedHttp.Status.QUOTA_LIMIT : 
+      result.reply.status = message.contains("invalid/expired key") ? AdvancedHttp.Status.INVALID_TOKEN :
                             AdvancedHttp.Status.ERROR;
       return;
     }
     
-    // Some errors are in the ISP key
-    String isp = soup.getString("isp");
-
-    if (isp.equalsIgnoreCase("private or bogon ip address")) {
-      result.reply.setMessage(isp);
-      result.reply.status = AdvancedHttp.Status.ERROR;
+    //Check the remaining requests in the header. to avoid an ip ban.
+    Seq<String> remains = result.reply.headers.get("X-Rl");
+    if (remains != null && !remains.isEmpty() && Strings.parseInt(remains.get(0)) == 0) {
+      result.reply.status = AdvancedHttp.Status.QUOTA_LIMIT;
       return;
     }
     
-    result.result.infos.location = soup.getString("countryName");
-    result.result.infos.ASN = soup.getString("asn"); 
-    result.result.infos.ISP = isp;
+    result.result.infos.location = soup.getString("country") +  ", " 
+                                 + soup.getString("regionName") + ", " 
+                                 + soup.getString("city");
+    String asn = soup.getString("as");
+    int i = asn.indexOf(' ');
+    if (i != -1) asn = asn.substring(0, i);
+    result.result.infos.ASN = asn;
+    result.result.infos.ISP = soup.getString("isp");
     result.result.infos.locale = com.xpdustry.avs.util.Strings.string2Locale(soup.getString("countryCode"));
-    result.result.type.vpn = soup.getInt("block") == 1; //block=2 can be a false positive
+    result.result.infos.longitude = soup.getFloat("lon");
+    result.result.infos.latitude = soup.getFloat("lat");
+    result.result.type.vpn = soup.getBoolean("hosting");
+    result.result.type.proxy = soup.getBoolean("proxy");
   }
 
+  
   @Override
   public void handleError(AdvancedHttp.Reply reply) {
-    if (//reply.httpStatus == 403/*FORBIDDEN*/ ||
-        reply.httpStatus == 429/*TO_MANY_REQUESTS*/)
+    if (reply.httpStatus == 429/*TO_MANY_REQUESTS*/)
       reply.status = AdvancedHttp.Status.QUOTA_LIMIT;
-    
-    // Try to get the error message
-    JsonValue soup = new arc.util.serialization.JsonReader().parse(reply.content);
-    if (soup.child != null)  reply.setMessage(soup.getString("error", null));
   }
 }

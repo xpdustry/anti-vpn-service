@@ -26,6 +26,7 @@
 
 package com.xpdustry.avs.service.providers.online;
 
+import com.xpdustry.avs.util.CronExpression;
 import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 
@@ -42,11 +43,13 @@ public class VpnApi extends com.xpdustry.avs.service.providers.type.OnlineServic
     url = "https://vpnapi.io/api/{0}";
     urlWithToken = "https://vpnapi.io/api/{0}?key={1}";
     isTrusted = true;
+    reavailabilityCheck = CronExpression.createWithoutSeconds("0 * * * *");
+    reuseCheck = CronExpression.createWithoutSeconds("0 1 * * *");
   }
 
   @Override
   public void handleReply(ServiceResult result) {
-    JsonValue soup = new arc.util.serialization.JsonReader().parse(result.reply.result);
+    JsonValue soup = new arc.util.serialization.JsonReader().parse(result.reply.content);
     JsonValue tmp;
     
     if (soup.child == null) {
@@ -85,7 +88,7 @@ public class VpnApi extends com.xpdustry.avs.service.providers.type.OnlineServic
                                  + (city.isBlank() ? "" : ", " + city);
     result.result.infos.ASN = network.getString("autonomous_system_number");
     result.result.infos.ISP = network.getString("autonomous_system_organization");
-    result.result.infos.locale = java.util.Locale.forLanguageTag(location.getString("country_code"));
+    result.result.infos.locale = Strings.string2Locale(location.getString("country_code"));
     result.result.infos.longitude = Strings.parseFloat(location.getString("longitude"));
     result.result.infos.latitude = Strings.parseFloat(location.getString("latitude"));
     
@@ -98,11 +101,11 @@ public class VpnApi extends com.xpdustry.avs.service.providers.type.OnlineServic
   
   @Override
   public void handleError(AdvancedHttp.Reply reply) {
-    if (reply.httpStatus == 403/*FORBIDDEN*/) 
-      reply.status = AdvancedHttp.Status.QUOTA_LIMIT;
+//    if (reply.httpStatus == 403/*FORBIDDEN*/) 
+//      reply.status = AdvancedHttp.Status.QUOTA_LIMIT;
     
     // Try to get the error message
-    JsonValue soup = new arc.util.serialization.JsonReader().parse(reply.result);
-    if (soup.child != null)  reply.setMessage(soup.getString("message", null));
+    JsonValue soup = new arc.util.serialization.JsonReader().parse(reply.content);
+    if (soup.child != null) reply.setMessage(soup.getString("message", null));
   }
 }

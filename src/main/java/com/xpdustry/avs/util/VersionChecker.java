@@ -55,14 +55,14 @@ public class VersionChecker {
       String message = reply.error != null ? reply.error.toString() : reply.httpStatus + ": " + reply.message;
       logger.err("avs.updater.error", message);
       return;
-    } else if (reply.result.isBlank()) {
+    } else if (reply.content.isBlank()) {
       logger.err("avs.updater.reply.empty");
       return;
     }
     
     // Extract the version
     String tagName;
-    try { tagName = new arc.util.serialization.JsonReader().parse(reply.result).getString(keyToFind); } 
+    try { tagName = new arc.util.serialization.JsonReader().parse(reply.content).getString(keyToFind); } 
     catch (Exception e) {
       logger.err("avs.updater.reply.no-tagname-found");
       logger.err("avs.general-error", e.getLocalizedMessage());

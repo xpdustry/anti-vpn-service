@@ -102,7 +102,7 @@ public class Loader {
     logger.none();
     logger.info("avs.loading.error");
     logger.info("avs.loading.report");
-    logger.errNormal("##################################################\n");
+    logger.errNormal("##################################################\n ");
     return true;
   }
   
@@ -154,7 +154,7 @@ public class Loader {
     Fi bundles = AVSConfig.subDir(AVSConfig.bundlesDirectory.getString());
     bundles.mkdirs();
     L10NBundle.appendBundles(bundles);
-    logger.info("avs.loading.bundle-loaded", L10NBundle.bundles.size, L10NBundle.defaultLocale);
+    logger.info("avs.loading.bundle-loaded", L10NBundle.bundles.size, L10NBundle.getDefaultLocale());
     return L10NBundle.isLoaded();
   }
   

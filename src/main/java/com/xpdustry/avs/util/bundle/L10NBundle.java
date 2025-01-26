@@ -42,11 +42,12 @@ public class L10NBundle {
   /** Store a cache to make the next requests, with the same locale, faster */
   protected static final ObjectMap<Locale, Bundle> cache = new ObjectMap<>();
   protected static final Logger logger = new Logger("Bundle");
+  protected static Locale defaultLocale;
+  protected static Bundle defaultBundle;
+  protected static MessageFormat defaultFormatter;
   
   public static final Seq<Bundle> bundles = new Seq<>();
-  public static Locale defaultLocale;
-  public static Bundle defaultBundle;
-  public static MessageFormat defaultFormatter;
+  
   /** Will use the default bundle to get the key, when not found in other bundles. */
   public static boolean useDefaultWhenKeyNotFound = true;
   /** If enabled, will use a cache to avoid searching again the right bundle for the locale. */
@@ -119,11 +120,20 @@ public class L10NBundle {
     // Sort bundles
     bundles.sort(b -> b.locale.hashCode());
     
-    // Set default bundle, if not already or locale is not the same
+    // Set default bundle if not already, or locale is not the same
+    setDefaultLocale(defaultLocale);
+    
+    logger.debug("avs.bundle.loading.done");
+  }
+  
+  /** Set the new default locale, search a bundle for it and re-apply the bundle hierarchy. */
+  public static void setDefaultLocale(Locale locale) {
+    defaultLocale = locale;
+    
     if (defaultBundle == null || !defaultBundle.locale.equals(defaultLocale)) 
       defaultBundle = findBundle(bundles, defaultLocale);
     if (defaultBundle == null) {
-      logger.warn("avs.bundle.default-not-found", Strings.locale2String(defaultLocale));
+      logger.warn("avs.bundle.default-not-found", defaultLocale);
       defaultLocale = Locale.getDefault();
       defaultBundle = findBundle(bundles, defaultLocale);
       if (defaultBundle == null) defaultBundle = new Bundle(defaultLocale);
@@ -132,8 +142,6 @@ public class L10NBundle {
     // Set hierarchy
     logger.debug("avs.bundle.loading.hierarchy.aplying");
     setBundleHierarchy(bundles, defaultBundle);
-    
-    logger.debug("avs.bundle.loading.done");
   }
   
   /**
@@ -192,7 +200,8 @@ public class L10NBundle {
         
         Bundle[] founds = findCandidateBundles(bundles, b.locale);
         int i = 0;
-        logger.debugNormal("Founds: @", Strings.listToSentence(Seq.with(founds), bb -> bb == null ? "null" : bb.locale.toString()));
+        logger.debugNormal("Founds: @", Strings.listToSentence(Seq.with(founds), 
+            bb -> bb == null ? "null" : bb.locale.toString()));
   
         for (; i<founds.length; i++) {
           if (founds[i] == null) break;
@@ -309,7 +318,7 @@ public class L10NBundle {
   /**
    * @return The default bundle. <br>
    *         If it's null, this will search a bundle with {@link #defaultLocale}.
-   *         And if still null, this will set it to a dummy one. <br>
+   *         And if still null, this will return a dummy one with the {@link #defaultLocale}. <br>
    *         In short, this method ensure that the default bundle and locale are never null.
    * 
    * @apiNote if bundles are not loaded, this return a dummy bundle
@@ -324,7 +333,14 @@ public class L10NBundle {
     return defaultBundle;
   }
   
-  /** Get the default locale and ensure that {@link #defaultLocale} is never null by using {@link Locale#getDefault()}. */
+  public static boolean isDefaultBundleSet() {
+    return defaultBundle != null;
+  }
+  
+  /** 
+   * @return default locale and ensure that {@link #defaultLocale} is never null 
+   * by using {@link Locale#getDefault()}. 
+   */
   public static Locale getDefaultLocale() {
     if (defaultLocale == null) defaultLocale = Locale.getDefault();
     return defaultLocale;

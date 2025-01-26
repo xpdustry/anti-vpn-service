@@ -31,18 +31,16 @@ import com.xpdustry.avs.util.network.AdvancedHttp;
 
 import arc.util.serialization.JsonValue;
 
-
-/** 
- * You have 1k queries/day with a free account and up to 200k queries/day with the highest, €249/month, plan.
- * 
- * @apiNote This provider is not very accurate and doesn't provide much information.
+/**
+ * You have 100 queries/day without an account, 1k queries/day with a free account
+ * and up to 2M queries/day with the highest, $200/month, plan.
  */
-public class IPHub extends com.xpdustry.avs.service.providers.type.OnlineServiceProvider {
-  public IPHub() {
-    super("iphub", "IPHub");
-    needTokens = true;
-    url = "http://v2.api.iphub.info/ip/{0}";
-    tokenHeaderName = "X-Key";
+public class IPApiIs extends com.xpdustry.avs.service.providers.type.OnlineServiceProvider {
+  public IPApiIs() {
+    super("ipapi", "ipapi.is");
+    canUseTokens = true;
+    url = "https://api.ipapi.is/?q={0}";
+    urlWithToken = "https://api.ipapi.is/?q={0}&key={1}";
     reavailabilityCheck = CronExpression.createWithoutSeconds("0 * * * *");
     reuseCheck = CronExpression.createWithoutSeconds("0 1 * * *");
   }
@@ -58,39 +56,44 @@ public class IPHub extends com.xpdustry.avs.service.providers.type.OnlineService
       
     } else if ((tmp = soup.get("error")) != null) {
       result.reply.setMessage(tmp.asString());
+      if ((tmp = soup.get("message")) != null) 
+        result.reply.setMessage(tmp.asString());
+      
       String message = result.reply.message.toLowerCase();
       
-      result.reply.status = message.contains("empty api key") ? AdvancedHttp.Status.INVALID_TOKEN :
-                            message.contains("invalid api key") ? AdvancedHttp.Status.INVALID_TOKEN :
-                            message.contains("exceeded your rate limit") ? AdvancedHttp.Status.QUOTA_LIMIT : 
+      result.reply.status = message.contains("too many api requests") ? AdvancedHttp.Status.QUOTA_LIMIT :
+                            message.contains("please register at") ? AdvancedHttp.Status.INVALID_TOKEN :
                             AdvancedHttp.Status.ERROR;
       return;
-    }
-    
-    // Some errors are in the ISP key
-    String isp = soup.getString("isp");
-
-    if (isp.equalsIgnoreCase("private or bogon ip address")) {
-      result.reply.setMessage(isp);
+      
+    } else if (soup.getBoolean("is_bogon")) {
       result.reply.status = AdvancedHttp.Status.ERROR;
       return;
     }
     
-    result.result.infos.location = soup.getString("countryName");
-    result.result.infos.ASN = soup.getString("asn"); 
-    result.result.infos.ISP = isp;
-    result.result.infos.locale = com.xpdustry.avs.util.Strings.string2Locale(soup.getString("countryCode"));
-    result.result.type.vpn = soup.getInt("block") == 1; //block=2 can be a false positive
-  }
 
-  @Override
-  public void handleError(AdvancedHttp.Reply reply) {
-    if (//reply.httpStatus == 403/*FORBIDDEN*/ ||
-        reply.httpStatus == 429/*TO_MANY_REQUESTS*/)
-      reply.status = AdvancedHttp.Status.QUOTA_LIMIT;
-    
-    // Try to get the error message
-    JsonValue soup = new arc.util.serialization.JsonReader().parse(reply.content);
-    if (soup.child != null)  reply.setMessage(soup.getString("error", null));
+    // Fill informations about address
+    tmp = soup.get("location");
+    if (tmp != null) {
+      result.result.infos.location = tmp.getString("country") + ", "
+                                   + tmp.getString("state") + ", " 
+                                   + tmp.getString("city");
+      result.result.infos.locale = com.xpdustry.avs.util.Strings.string2Locale(tmp.getString("country_code"));
+      result.result.infos.longitude = tmp.getFloat("longitude");
+      result.result.infos.latitude = tmp.getFloat("latitude"); 
+    }
+    tmp = soup.get("asn");
+    if (tmp != null) {
+      result.result.infos.ASN = tmp.getString("asn");
+      result.result.infos.ISP = tmp.getString("org");      
+    }
+
+    // Fill vpn infos
+    result.result.type.vpn = soup.getBoolean("is_vpn");
+    result.result.type.proxy = soup.getBoolean("is_proxy");
+    result.result.type.tor= soup.getBoolean("is_tor");
+    result.result.type.dataCenter = soup.getBoolean("is_datacenter");
+    result.result.type.other = //soup.getBoolean("is_abuser") || //can make false positives
+                               soup.getBoolean("is_crawler");
   }
 }

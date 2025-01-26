@@ -72,7 +72,8 @@ public class RecentRequestedCache extends com.xpdustry.avs.service.providers.typ
       logger.info("avs.provider.editable.recent-cache.cleanup.disabled");
       cleanupTimer.cancel();
     } else {
-      logger.info("avs.provider.editable.recent-cache.cleanup.scheduled", spacing);
+      logger.info("avs.provider.editable.recent-cache.cleanup.scheduled", 
+          com.xpdustry.avs.util.Strings.duration2str(logger, (long) (spacing*60*1000), false, 2));
       if (cleanupTimer.isScheduled()) cleanupTimer.cancel();
       Timer.schedule(cleanupTimer, spacing * 60, spacing * 60);
     }

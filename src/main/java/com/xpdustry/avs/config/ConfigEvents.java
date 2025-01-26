@@ -44,7 +44,7 @@ public class ConfigEvents {
       
     if (L10NBundle.bundles.find(b -> Strings.locale2String(b.locale).equalsIgnoreCase((String) v)) == null) {
       String list;
-      if (L10NBundle.defaultBundle.locale.getLanguage().equals("en"))
+      if (L10NBundle.getDefaultBundle().locale.getLanguage().equals("en"))
            list = Strings.listToSentence(L10NBundle.bundles, b -> Strings.locale2String(b.locale));
       else list = L10NBundle.bundles.toString(", ", b -> Strings.locale2String(b.locale));
       

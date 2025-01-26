@@ -33,7 +33,7 @@ import arc.util.Http;
 
 
 public class AwaitHttp extends Http {
-  public static int readWriteTimeout = 3000; // in ms
+  public static int readWriteTimeout = 2000; // in ms
   
   // region with headers
   

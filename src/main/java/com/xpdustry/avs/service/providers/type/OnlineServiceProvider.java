@@ -27,14 +27,20 @@
 package com.xpdustry.avs.service.providers.type;
 
 import java.text.MessageFormat;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.misc.address.AddressValidity;
+import com.xpdustry.avs.util.CronExpression;
+import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 
 import arc.Events;
-import arc.struct.ObjectMap;
+import arc.struct.OrderedMap;
 import arc.struct.Seq;
 import arc.struct.StringMap;
 
@@ -63,23 +69,61 @@ public abstract class OnlineServiceProvider extends AddressProvider
    * Can be used with {@link #urlWithToken}.
    */
   protected String tokenHeaderName;
- 
-  protected final ObjectMap<String, Integer> tokens = new ObjectMap<>();
-  protected boolean canUseTokens = false;
-  protected boolean needTokens = false;
   /** 
    * Define whether the service is trusted when reporting that the IP valid, 
    * so the IP will be not checked by other services. 
    */
   protected boolean isTrusted = false; 
-  protected int unavailableCooldown = 0;
-  
+  /**
+   * Define if the service can use tokens.
+   */
+  protected boolean canUseTokens = false;
+  /**
+   * Define if the service need tokens to work.
+   */
+  protected boolean needTokens = false; 
+  /**
+   * Programmed period between before considering a service as re-available, 
+   * when not, if {@link AdvancedHttp.Status#isFatalError()} is {@code true}.
+   * @apiNote the time check is done when {@link #isProviderAvailable()} is called, 
+   *          so before every ip address checks when {@link #checkAddress(String)} is called.
+   * @apiNote {@link AdvancedHttp.Status#ERROR} is ignored.
+   */
+  protected CronExpression reavailabilityCheck;
+  /**
+   * Programmed period between before reusing a service or a token, when ran out of queries,
+   * after received a {@link AdvancedHttp.Status#QUOTA_LIMIT} or {@link AdvancedHttp.Status#INVALID_TOKEN}.
+   * @apiNote {@link AdvancedHttp.Status#ERROR} is ignored.
+   */
+  protected CronExpression reuseCheck;
+
+  /**
+   * Time before service's re-availability. {@code null} if currently available.
+   */
+  private ZonedDateTime unavailability;
+  private final OrderedMap<String, ZonedDateTime> tokens = new OrderedMap<>();
+
   public OnlineServiceProvider(String name) { super(name); }
   public OnlineServiceProvider(String name, String displayName) { super(name, displayName); }
   
   @SuppressWarnings("unchecked")
   @Override
   public boolean loadMiscSettings() {
+    // check properties
+    if (reavailabilityCheck == null || reuseCheck == null) {
+      logger.err("avs.provider.online.missing-cooldown.msg1");
+      logger.err("avs.provider.online.missing-cooldown.msg2");
+      return false;
+    } else if (canUseTokens() && tokenHeaderName == null && urlWithToken == null) {
+      logger.err("avs.provider.online.missing-token.msg1");
+      logger.err("avs.provider.online.missing-token.msg2");
+      return false;
+    } else if (!tokensNeeded() && url == null) {
+      logger.err("avs.provider.online.missing-url.msg1");
+      logger.err("avs.provider.online.missing-url.msg2");
+      return false;
+    }
+    
     // No tokens needed. skip tokens loading
     if (!canUseTokens()) {
       logger.info("avs.provider.online.loaded");
@@ -94,7 +138,7 @@ public abstract class OnlineServiceProvider extends AddressProvider
       else logger.info("avs.provider.online.tokens.loaded" + (tokens.size > 1 ? "-several" : ""), tokens.size);
       
       this.tokens.clear();
-      tokens.each(t -> !t.isBlank(), t -> this.tokens.put(t, 0));
+      tokens.each(t -> !t.isBlank(), t -> this.tokens.put(t, null));
       return true;
       
     } catch(RuntimeException e) {
@@ -138,9 +182,10 @@ public abstract class OnlineServiceProvider extends AddressProvider
   }
 
   @Override
-  public ObjectMap<String, Integer> waitingTokens() {
-    ObjectMap<String, Integer> tmp = new ObjectMap<>();
-    tokens.each((k, v) -> {if (v > 0) tmp.put(k, v);});
+  public Seq<String> waitingTokens() {
+    Seq<String> tmp = new Seq<>();
+    ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneOffset.UTC);
+    tokens.each((k, v) -> {if (now.isAfter(v)) tmp.add(k);});
     return tmp;
   }
   
@@ -149,11 +194,13 @@ public abstract class OnlineServiceProvider extends AddressProvider
     if(!super.isProviderAvailable()) 
       return false;
     
-    else if (unavailableCooldown() > 0) {
-      if (--unavailableCooldown <= 0) 
-        Events.fire(new AVSEvents.OnlineProviderServiceNowAvailable(this));
+    else if (unavailability() != null) {
+      ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneOffset.UTC);
+      if (now.isAfter(unavailability())) makeAvailable();
       else {
-        logger.debug("avs.provider.online.unavailable", unavailableCooldown());
+        long duration = Duration.between(now, unavailability()).toMillis();
+        logger.debug("avs.provider.online.unavailable", 
+                     Strings.duration2str(logger, duration, false, 2));
         return false;
       }
       
@@ -169,6 +216,14 @@ public abstract class OnlineServiceProvider extends AddressProvider
 
     refreshTokens();
     return true;
+  }
+  
+  protected void refreshTokens() {
+    if (!canUseTokens()) return;
+    ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneOffset.UTC);
+    tokens.each((k, v) -> {
+      if (v != null && now.isAfter(v)) makeTokenAvailable(k);
+    });
   }
 
   @Override
@@ -198,40 +253,46 @@ public abstract class OnlineServiceProvider extends AddressProvider
   @Override
   public boolean willUseTokens() {
     if (canUseTokens() && !tokens.isEmpty()) {
-      for (ObjectMap.Entry<String, Integer> token : tokens.entries()) {
-        if (token.value <= 0) return true;
+      for (OrderedMap.Entry<String, ZonedDateTime> token : tokens.entries()) {
+        if (token.value == null) return true;
       }
     }
     return false;
   }
-  
-  protected void refreshTokens() {
-    tokens.each((k, v) -> {
-      if (v > 0) {
-        tokens.put(k, v-1);
-        if (v-1 <= 0) Events.fire(new AVSEvents.OnlineProviderTokenNowAvailable(this, k));
-      }
-    });
-  }
 
   @Override
-  public int unavailableCooldown() {
-    return unavailableCooldown;
-  }
+  public ZonedDateTime unavailability() {
+    return unavailability;
+  } 
 
   @Override
   public void makeAvailable() {
-    if (unavailableCooldown > 0) {
-      unavailableCooldown = 0;
+    if (unavailability() != null) {
+      unavailability = null;
+      logger.info("avs.provider.online.available");
       Events.fire(new AVSEvents.OnlineProviderServiceNowAvailable(this));     
     }
   }
   
   @Override
+  public void makeUnavailable() {
+    makeUnavailable(reuseCheck); 
+  }
+  
+  protected void makeUnavailable(CronExpression cooldown) {
+    ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneOffset.UTC);
+    unavailability = cooldown.nextTimeAfter(now);
+    Duration duration = Duration.between(now, unavailability);
+    
+    logger.warn("avs.provider.online.in-waiting-list", 
+                Strings.duration2str(logger, duration.toMillis(), false, 2));
+    Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this, duration));      
+  }
+  
+  @Override
   public boolean addToken(String token) {
-    token = token.strip();
     if (!canUseTokens() || tokens.containsKey(token)) return false;
-    tokens.put(token, 0);
+    tokens.put(token, null);
     Events.fire(new AVSEvents.OnlineProviderAddedTokenEvent(this, token));
     save();
     return true;
@@ -239,7 +300,6 @@ public abstract class OnlineServiceProvider extends AddressProvider
   
   @Override
   public boolean removeToken(String token) {
-    token = token.strip();
     if (!canUseTokens() || !tokens.containsKey(token)) return false;
     tokens.remove(token);
     Events.fire(new AVSEvents.OnlineProviderRemovedTokenEvent(this, token));
@@ -249,11 +309,26 @@ public abstract class OnlineServiceProvider extends AddressProvider
   
   @Override
   public boolean makeTokenAvailable(String token) {
-    token = token.strip();
     if (!canUseTokens() || !tokens.containsKey(token)) return false;
-    Integer last = tokens.put(token, 0);
-    if (last == null || last > 0)
+    if (tokens.put(token, null) != null) {
+      logger.info("avs.provider.online.token.available", token);
       Events.fire(new AVSEvents.OnlineProviderTokenNowAvailable(this, token));
+    }  
+    return true;
+  }
+  
+  @Override
+  public boolean makeTokenUnavailable(String token) {
+    if (!canUseTokens() || !tokens.containsKey(token)) return false;
+
+    ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneOffset.UTC),
+                  next = reuseCheck.nextTimeAfter(now);
+    Duration duration = Duration.between(now, next);
+
+    tokens.put(token, next);
+    logger.warn("avs.provider.online.token.in-waiting-list", 
+                Strings.duration2str(logger, duration.toMillis(), false, 2));
+    Events.fire(new AVSEvents.OnlineProviderTokenNowUnavailable(this, token, duration));
     return true;
   }
   
@@ -268,12 +343,14 @@ public abstract class OnlineServiceProvider extends AddressProvider
     }
     
     if (willUseTokens()) {
-      if (AVSConfig.randomTokens.getBool() && tokens.size > 1) { 
-        if (tokens.keys().toSeq().shuffle().contains(t -> !checkAddressWithToken(reply, t, tokens.get(t))))
+      ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), ZoneOffset.UTC);
+      
+      if (AVSConfig.randomTokens.getBool()) { 
+        if (tokens.orderedKeys().copy().shuffle().contains(t -> !checkAddressWithToken(reply, t, tokens.get(t), now)))
           return;
       } else {
-        for (ObjectMap.Entry<String, Integer> token : tokens.entries()) {
-          if (!checkAddressWithToken(reply, token.key, token.value)) return;
+        for (OrderedMap.Entry<String, ZonedDateTime> token : tokens.entries()) {
+          if (!checkAddressWithToken(reply, token.key, token.value, now)) return;
         }  
       }
 
@@ -295,9 +372,12 @@ public abstract class OnlineServiceProvider extends AddressProvider
   }
   
   /** @return whether to continue the iteration or not */
-  protected boolean checkAddressWithToken(AddressProviderReply reply, String token, int tokenTimeout) {
-    if (tokenTimeout > 0) {
-      logger.debug("avs.provider.online.token.unavailable", tokenTimeout);
+  protected boolean checkAddressWithToken(AddressProviderReply reply, String token, 
+                                          ZonedDateTime unavailability, ZonedDateTime now) {
+    if (unavailability != null) {
+      long duration = Duration.between(now, unavailability).toMillis();
+      logger.debug("avs.provider.online.token.unavailable", 
+                   Strings.duration2str(logger, duration, false, 2));
       return true;
     }
     
@@ -316,18 +396,6 @@ public abstract class OnlineServiceProvider extends AddressProvider
   }
 
   protected ServiceResult request(String ip, @arc.util.Nullable String token) {
-    if (token != null) {
-      if (tokenHeaderName == null && urlWithToken == null) {
-        logger.err("avs.provider.online.missing-token.msg1");
-        logger.err("avs.provider.online.missing-token.msg2");
-        return null;
-      }      
-    } else if (url == null) {
-      logger.err("avs.provider.online.missing.msg1");
-      logger.err("avs.provider.online.missing.msg2");
-      return null;
-    }
-    
     if (tokenHeaderName != null) {
       if (token == null) headers.remove(tokenHeaderName);
       else headers.put(tokenHeaderName, token);   
@@ -346,47 +414,36 @@ public abstract class OnlineServiceProvider extends AddressProvider
       catch (Exception e) {
         logger.err("avs.provider.online.error", ip, e.toString());
         result.setError(); 
-        int v = AVSConfig.serviceCheckCooldown.getInt();
-        if (v > 0) {
-          unavailableCooldown = v;
-          logger.warn("avs.provider.online.in-waiting-list", v);
-          Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this));        
-        }
+        makeUnavailable();
         return result;
       }
     } else handleError(reply);
     
-    // Token specific
+    
     if ((reply.status == AdvancedHttp.Status.INVALID_TOKEN ||
         reply.status == AdvancedHttp.Status.QUOTA_LIMIT) && token != null) {
       logger.err("avs.provider.online.token." + 
                 (reply.status == AdvancedHttp.Status.QUOTA_LIMIT ? "use-limit" : "invalid"), ip, token);
       logger.err("avs.http-status", reply.httpStatus, reply.message);
       result.setError();
-      int v = AVSConfig.tokenCheckCooldown.getInt();
-      if (v > 0) {
-        tokens.put(token, v);
-        logger.warn("avs.provider.online.token.in-waiting-list", v);
-        Events.fire(new AVSEvents.OnlineProviderTokenNowUnavailable(this, token));        
-      }
+      makeTokenUnavailable(token);
+
+    } else if (reply.status == AdvancedHttp.Status.QUOTA_LIMIT) {
+      logger.err("avs.provider.online.service-limit", ip);
+      logger.err("avs.http-status", reply.httpStatus, reply.message);
+      result.setError();
+      makeUnavailable();  
       
-    // General case
     } else if (reply.error != null || reply.status == AdvancedHttp.Status.ERROR) {
       logger.err("avs.provider.online.error", ip, reply.message);
       if (token != null) logger.warn("avs.provider.online.token.skipped");
       result.setError();
     
-    // Service specific
     } else if (reply.status.isFatalError()) {
       logger.err("avs.provider.online.service-error", ip);
       logger.err("avs.http-status", reply.httpStatus, reply.message);
       result.setError();
-      int v = AVSConfig.serviceCheckCooldown.getInt();
-      if (v > 0) {
-        unavailableCooldown = v;
-        logger.warn("avs.provider.online.in-waiting-list", v);
-        Events.fire(new AVSEvents.OnlineProviderServiceNowUnavailable(this));        
-      }
+      makeUnavailable(reavailabilityCheck);     
     }
     
     return result;

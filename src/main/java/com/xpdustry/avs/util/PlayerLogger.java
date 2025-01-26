@@ -82,4 +82,9 @@ public class PlayerLogger extends Logger {
   protected boolean hasKeyImpl(String key) {
     return L10NBundlePlayer.has(key, player);
   }
+  
+  @Override
+  public java.util.Locale getLocale() {
+    return formatter.getLocale();
+  }
 }

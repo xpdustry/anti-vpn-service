@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ public class RestrictedModeConfig extends com.xpdustry.avs.config.abstracts.Abst
   public static final FieldList<Command> commands = new FieldList<>("commands", 
       Default.commands, n -> AVSCommandManager.subCommands.find(c -> c.name.equals(n)), c -> c.name);
   
-  public RestrictedModeConfig() { super("restrict", true); }
+  private RestrictedModeConfig() { super("restrict", true); }
   public static RestrictedModeConfig instance() { return INSTANCE; }
 
   @Override

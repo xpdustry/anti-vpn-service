@@ -26,6 +26,7 @@
 
 package com.xpdustry.avs.service.providers.online;
 
+import com.xpdustry.avs.util.CronExpression;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 
 import arc.util.serialization.JsonValue;
@@ -42,11 +43,13 @@ public class IP2Location extends com.xpdustry.avs.service.providers.type.OnlineS
     canUseTokens = true;
     url = "https://api.ip2location.io/?ip={0}&format=json";
     urlWithToken = "https://api.ip2location.io/?key={1}&ip={0}&format=json";
+    reavailabilityCheck = CronExpression.createWithoutSeconds("0 */4 * * *");
+    reuseCheck = CronExpression.createWithoutSeconds("0 1 1 * *");
   }
 
   @Override
   public void handleReply(ServiceResult result) {
-    JsonValue soup = new arc.util.serialization.JsonReader().parse(result.reply.result);
+    JsonValue soup = new arc.util.serialization.JsonReader().parse(result.reply.content);
     JsonValue tmp;
 
     if (soup.child == null) {
@@ -81,7 +84,7 @@ public class IP2Location extends com.xpdustry.avs.service.providers.type.OnlineS
                                  + soup.getString("city_name");
     result.result.infos.ASN = soup.getString("asn");
     result.result.infos.ISP = soup.getString("isp", soup.getString("as", result.result.infos.ISP));
-    result.result.infos.locale = java.util.Locale.forLanguageTag(soup.getString("country_code"));
+    result.result.infos.locale = com.xpdustry.avs.util.Strings.string2Locale(soup.getString("country_code"));
     result.result.infos.longitude = soup.getFloat("longitude");
     result.result.infos.latitude = soup.getFloat("latitude");
     
@@ -99,7 +102,7 @@ public class IP2Location extends com.xpdustry.avs.service.providers.type.OnlineS
                                  tmp.getBoolean("is_enterprise_private_network", false);  
       result.result.type.dataCenter = tmp.getBoolean("is_data_center", false);
       result.result.type.other = tmp.getBoolean("is_web_crawler", false) || 
-                                 tmp.getBoolean("is_spammer", false) ||
+                                 //tmp.getBoolean("is_spammer", false) || //can make false positives
                                  tmp.getBoolean("is_scanner", false) ||
                                  tmp.getBoolean("is_botnet", false);
     }

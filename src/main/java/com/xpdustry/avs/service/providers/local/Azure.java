@@ -54,7 +54,8 @@ public class Azure extends com.xpdustry.avs.service.providers.type.CloudDownload
   
   public Azure() {
     super("azure", "Azure Cloud");
-    this.providerType = ProviderType.proxy;
+    providerType = ProviderType.proxy;
+    url = urls.toString("\n");
   }
 
   @Override
@@ -71,7 +72,7 @@ public class Azure extends com.xpdustry.avs.service.providers.type.CloudDownload
         return;
       }
       
-      Matcher matcher = pattern.matcher(reply.result);
+      Matcher matcher = pattern.matcher(reply.content);
       if (matcher.find() && matcher.groupCount() > 0) {
         String foundUrl = matcher.group(1);
         

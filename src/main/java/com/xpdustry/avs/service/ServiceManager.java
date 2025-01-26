@@ -28,6 +28,7 @@ package com.xpdustry.avs.service;
 
 import java.util.concurrent.ThreadPoolExecutor;
 
+import com.xpdustry.avs.Loader;
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.service.providers.type.AddressProviderReply;
@@ -258,7 +259,7 @@ public class ServiceManager {
   }
   
   public static void shutdownPlugin() {
-    if (!isReady()) return; // do nothing if already shutdown
+    if (!isReady() || !Loader.done()) return; // do nothing if already shutdown or not initialized
     ready = false;
     AntiVpnService.stop();
     logger.info("avs.manager.dispose.waiting-for");

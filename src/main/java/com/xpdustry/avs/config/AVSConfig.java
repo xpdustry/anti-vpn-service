@@ -136,8 +136,6 @@ public class AVSConfig extends com.xpdustry.avs.config.abstracts.AbstractConfig 
     errorMessage = new Field("error-message", ""),
     clientKickDuration = new Field("kick-duration", 30),
     connectLimit = new Field("connect-limit", arc.util.OS.cores, ConfigEvents::onConnectLimitChanged),
-    tokenCheckCooldown = new Field("token-cooldown", 50),
-    serviceCheckCooldown = new Field("service-cooldown", 30),
     startupDownload = new Field("startup-download", true),
     autosaveSpacing = new Field("autosave-spacing", 60 * 15, ConfigEvents::onAutosaveSpacingChanged),
     resetCommandEnabled = new Field("reset-command", false, false, true),

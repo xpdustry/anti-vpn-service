@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,12 +29,10 @@ package com.xpdustry.avs.util;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
 import arc.files.Fi;
-import arc.func.Func2;
 import arc.func.Intf;
 import arc.struct.Seq;
 import arc.util.serialization.JsonValue;
@@ -119,7 +117,7 @@ public class Strings extends arc.util.Strings {
    * and automatic columns number calculated with the table's {@code width}.
    */
   public static Seq<String> tableify(Seq<String> lines, int width, 
-                                     Func2<String, Integer, String> justifier) {
+                                     arc.func.Func2<String, Integer, String> justifier) {
     int spacing = 2, // Additional spacing between columns
         columns = Math.max(1, width / (bestLength(lines) + 2)); // Estimate the columns
     Seq<String> result = new Seq<>(lines.size / columns + 1);
@@ -385,7 +383,8 @@ public class Strings extends arc.util.Strings {
    * 
    * @apiNote if {@code leftColor} and {@code leftColor} are empty or null, will format without colors
    */
-  public static String formatWithColor(MessageFormat format, String text, String leftColor, String rightColor, Object... args) {
+  public static String formatWithColor(java.text.MessageFormat format, String text, 
+                                       String leftColor, String rightColor, Object... args) {
     text = escapeBraces.matcher(text.replace("'", "''")).replaceAll("'$1'");
     if (leftColor == null) leftColor = "";
     if (rightColor == null) rightColor = "";
@@ -426,5 +425,71 @@ public class Strings extends arc.util.Strings {
     try { new java.io.File(path).getCanonicalPath(); }
     catch (Exception e) { return false; }
     return true;
+  }
+  
+  /** Like {@link arc.util.Strings#format(String, Object...)} but you can specify the {@link StringBuilder} */
+  public static void format(StringBuilder out, String text, Object... args){
+    if (args.length > 0) {
+      int argi = 0;
+      for (int i=0; i<text.length(); i++) {
+        char c = text.charAt(i);
+        if (c == '@' && argi < args.length) out.append(args[argi++]);
+        else out.append(c);
+      }
+    } else out.append(text);
+  }
+  
+
+  private static final Object[][] TIME_PERIODS = {
+    {"year",   1000L*60*60*24*365},
+    {"month",  1000L*60*60*24*30},
+//    {"week",   1000L*60*60*24*7}, // Weeks are omitted, for more readability
+    {"day",    1000L*60*60*24},
+    {"hour",   1000L*60*60},
+    {"minute", 1000L*60},
+    {"second", 1000L},
+    {"millis", 1L},
+  };
+
+  /**
+   * Convert {@code millis} duration to localized human readable format (e.g. 123456 -> 2 minutes and 3 seconds),
+   * using the logger system.
+   * 
+   * @param logger the logger to get duration keys according to the locale
+   * @param millis milliseconds to convert to duration
+   * @param narrow use short text or not. E.g. "5 months" if {@code false}, "5m" if {@code true}
+   * @param rounds round to n units. {@code 0} to not round. 
+   */
+  public static String duration2str(Logger logger, long millis, boolean narrow, int rounds) { 
+    millis = Math.abs(millis);
+    if (rounds <= 0) rounds = -1;
+    
+    Seq<String> parts = new Seq<>(TIME_PERIODS.length);
+    long period, count;
+
+    for (int i=0; i<TIME_PERIODS.length && rounds>0; i++) {
+      period = (long) TIME_PERIODS[i][1];
+      
+      if (millis >= period) {
+        count = millis / period;
+        millis %= period;
+        rounds--;
+
+        parts.add(format(logger.getKey("avs.time." + (String) TIME_PERIODS[i][0] + '.' + 
+                                      (narrow ? "narrow" : count > 1 ? "plural" : "singular")), 
+                         count));
+      }
+    }
+    
+    if (parts.isEmpty()) 
+      return format(logger.getKey("avs.time." + (String)TIME_PERIODS[TIME_PERIODS.length][0] + ".singular"), millis);
+    
+    StringBuilder builder = new StringBuilder(parts.get(0));
+    String or = logger.getKey("avs.time.or"), and = logger.getKey("avs.time.and");
+    
+    for (int i=1; i<parts.size; i++)
+      builder.append(i >= parts.size-1 ? and : or).append(parts.get(i));
+    
+    return builder.toString();
   }
 }

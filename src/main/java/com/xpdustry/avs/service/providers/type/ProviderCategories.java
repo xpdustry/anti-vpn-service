@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -114,19 +114,23 @@ public class ProviderCategories {
     /** Define if the service can be trusted if it's saying that the address is valid */
     public boolean isTrusted();
     
+    /** @return the url format that will be used, with tokens if one available, else the url without tokens. */
     public String getURL();
     
-    /** Address check cooldown before service reuse */
-    public int unavailableCooldown();
-    /** Remove the service from waiting list */
+    /** @return the time before the service will be reused. {@code null} if is currently available */
+    public java.time.ZonedDateTime unavailability();
+    /** Make the service now available for use */
     public void makeAvailable();
+    /** Make the service now unavailable for use */
+    public void makeUnavailable();
     
     /** Number of loaded tokens */
     public int loadedTokens();
+    /** @return the loaded tokens */
     public Seq<String> getTokens();
-    /** Tokens that are in waiting list with the cooldown */
-    public arc.struct.ObjectMap<String, Integer> waitingTokens();
-    
+    /** Tokens that are in waiting list */
+    public Seq<String> waitingTokens();
+
     /** @return if the service absolutely needs tokens to work */
     public boolean tokensNeeded();
     /** @return if the service can work with or without tokens */
@@ -138,7 +142,9 @@ public class ProviderCategories {
     public boolean addToken(String token);
     /** @return whether the token has been removed */
     public boolean removeToken(String token);
-    /** @return whether the token unavailability has been reset */
+    /** Make the token available for use */
     public boolean makeTokenAvailable(String token);
+    /** Make the token unavailable for use  */
+    public boolean makeTokenUnavailable(String token);
   }
 }
