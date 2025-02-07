@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.util;
+package com.xpdustry.avs.util.json;
 
 import java.io.IOException;
 
@@ -39,8 +39,8 @@ public class JsonWriterBuilder implements BaseJsonWriter {
   private String name;
 
   public JsonValue getJson() {
-    if (current != null && base != current) 
-      throw new IllegalStateException("Builder must be closed before getting the result");
+    //if (current != null && base != current) //Useless
+    //  throw new IllegalStateException("Builder must be closed before getting the result");
     return base;
   }
   
@@ -56,6 +56,7 @@ public class JsonWriterBuilder implements BaseJsonWriter {
   public BaseJsonWriter name(String name) throws IOException {
     if (current == null || current.isArray())
       throw new IllegalStateException("Current item must be an object.");
+    if (name == null) throw new NullPointerException("name cannot be null");
       
     this.name = name;
     return this;
@@ -86,7 +87,6 @@ public class JsonWriterBuilder implements BaseJsonWriter {
     addValue(jval);
     return this;
   }
-
   
   @Override
   public BaseJsonWriter object() throws IOException {
@@ -138,17 +138,17 @@ public class JsonWriterBuilder implements BaseJsonWriter {
   }
   
   @Override
-  public BaseJsonWriter object(String name) throws IOException{
+  public BaseJsonWriter object(String name) throws IOException {
       return name(name).object();
   }
 
   @Override
-  public BaseJsonWriter array(String name) throws IOException{
+  public BaseJsonWriter array(String name) throws IOException {
       return name(name).array();
   }
 
   @Override
-  public BaseJsonWriter set(String name, Object value) throws IOException{
+  public BaseJsonWriter set(String name, Object value) throws IOException {
       return name(name).value(value);
   }
 

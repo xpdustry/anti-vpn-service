@@ -1,4 +1,4 @@
-1.2:
+### 1.2:
  - changed files structure
  - added L10N bundle standard
  - changed loading system
@@ -18,16 +18,19 @@
  - fixed bug with random online provider when it's defined as not trusted
  - fixed others minor bugs
  - added more providers
- - using time, instead of checks number, for waiting list
+ - changed waiting list for a cooldown system using cron expressions
  - added a verification of provider's properties on loading
+ - added a description for each providers
 
-1.0:
+### 1.0:
  - first release
 
-TODO: 
- - make a rule to whitelist all ips of specific a UUID
- - make a description for each providers
+--- 
+
+### TODO: 
+ - ~~make a rule to whitelist all ips of specific a UUID~~ (will be done in [Better-Security](https://github.com/xpdustry/Better-Security/))
  - make metrics (probably an other plugin)
  - make a provider type that load addresses ranges from a file
  - make providers creatable with a config file
+ - **PRIORITY:** make a documentation
 

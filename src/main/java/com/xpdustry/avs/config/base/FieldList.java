@@ -24,47 +24,35 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.config.abstracts;
+package com.xpdustry.avs.config.base;
 
-import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.struct.Seq;
 
 
-public abstract class AbstractFieldList<T> extends AbstractField<Seq<T>> {
-  public final Class<?> valueType;
-  /** Cache the value to avoid coding/decoding it every times. */
-  public Seq<T> values;
+public class FieldList<T> extends CachedField<Seq<T>> {
+  public final Class<?> elementType;
 
-  public AbstractFieldList(AbstractConfig master, String name, Class<?> valueType, Seq<T> defaultValue) {
-    this(master, name, valueType, defaultValue, null);
+  public FieldList(AbstractConfig master, String name, Class<?> elementType, Seq<T> defaultValue) {
+    this(master, name, elementType, defaultValue, null);
   }
   
-  public AbstractFieldList(AbstractConfig master, String name, Class<?> valueType, Seq<T> defaultValue, 
+  public FieldList(AbstractConfig master, String name, Class<?> elementType, Seq<T> defaultValue, 
                            ChangeValider<Seq<T>> validate) {
     super(master, name, defaultValue, validate);
-    this.valueType = valueType;
+    if (elementType == null) throw new NullPointerException(name() + ": elementType cannot be null");
+    
+    this.elementType = elementType;
   }
 
-  @Override
-  protected Seq<T> getValue() {
-    if (values == null) load();
-    return values;
-  }
-  
-  @Override
-  protected void putValue(Seq<T> value) {
-    values = value;
-  }
-  
   @SuppressWarnings("unchecked")
   public void load() {
-    values = master.config.getJson(name(), Seq.class, valueType, this::defaultValue);
-    //changed = true;
+    cached = master.config.getJson(name(), Seq.class, elementType, this::defaultValue);
   }
   
   public void save() {
-    master.config.putJson(name(), valueType, values);
+    master.config.putJson(name(), elementType, cached);
   }
   
   public boolean add(T value) { return add(value, master.logger); }
@@ -73,7 +61,6 @@ public abstract class AbstractFieldList<T> extends AbstractField<Seq<T>> {
     if (!v.addUnique(value)) return false;
     
     boolean accept = validateChange(v, logger);
-    
     if (!accept) v.pop();
     return accept;
   }
@@ -85,8 +72,13 @@ public abstract class AbstractFieldList<T> extends AbstractField<Seq<T>> {
     if (index == -1) return false;
     v.remove(index);
     
-    boolean accept = validateChange(v, logger);    
+    boolean accept = validateChange(v, logger);  
     if (!accept) v.insert(index, value);
     return accept;
+  }
+  
+  @Override
+  public String toString() {
+    return master.config.getJson().toJson(cached);
   }
 }

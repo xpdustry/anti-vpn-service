@@ -51,8 +51,12 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
   public CloudDownloadedProvider(String name) { super(name); }
   public CloudDownloadedProvider(String name, String displayName) { super(name, displayName); }
   
+  private boolean loading;
+  
   @Override
   public boolean refresh() {
+    if (!loading && (!isEnabled() || !isLoaded())) return false;
+    
     Events.fire(new AVSEvents.CloudProviderRefreshingEvent(this));
     
     Seq<Subnet> list = new Seq<>();
@@ -105,6 +109,8 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
       list.clear();      
     }
     
+    Events.fire(new AVSEvents.CloudProviderRefreshedEvent(this));
+    
     return saveMiscSettings();    
   }
 
@@ -124,7 +130,10 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
       return super.loadMiscSettings();
     }
     
-    return refresh();
+    loading = true;
+    boolean b = refresh();
+    loading = false;
+    return b;
   }
 
   @Override

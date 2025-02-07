@@ -28,8 +28,8 @@ package com.xpdustry.avs.command.list;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.config.RestrictedModeConfig;
-import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.struct.Seq;
 
@@ -40,7 +40,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
-      printSettings(restrictedMode ? RestrictedModeConfig.settings.values : 
+      printSettings(restrictedMode ? RestrictedModeConfig.settings.get() : 
                                      AVSConfig.instance().all.map(f -> (AVSConfig.Field) f), logger);
       return;
     }
@@ -58,7 +58,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     if (field == null) {
       logger.err("avs.command.config.field.not-found", args[0]);
       return;
-    } else if (restrictedMode && !RestrictedModeConfig.settings.values.contains(field)) {
+    } else if (restrictedMode && !RestrictedModeConfig.settings.get().contains(field)) {
       logger.err("avs.command.config.field.restricted");
       return;
     } else if (args.length == 1) {
@@ -92,7 +92,10 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     } else if (field.isString()) {
       if (value.equals("\"\"")) v = "";
       else v = value;
-    } else logger.errNormal("ho no! invalid configuration!"); // what?
+    } else {
+      logger.err("avs.command.config.field.unkown-type", field.name());
+      return;
+    }
     
     if (v == null) {
       logger.err("avs.command.config.field.value.invalid", value, field.name(), 
@@ -119,7 +122,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     list = list.select(f -> !f.isDev);
     
     StringBuilder builder = new StringBuilder();
-    arc.func.Cons<Seq<AVSConfig.Field>> printer = (l) -> {
+    arc.func.Cons<Seq<AVSConfig.Field>> printer = l -> {
       l.each(f -> {
         builder.append(Strings.format(valueF, f.name(), Strings.objToStr(f.get()))).append('\n');
         for (String line : f.desc(logger).split("\n"))

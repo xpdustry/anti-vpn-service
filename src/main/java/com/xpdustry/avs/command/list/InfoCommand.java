@@ -28,9 +28,9 @@ package com.xpdustry.avs.command.list;
 
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.providers.type.AddressProviderReply;
-import com.xpdustry.avs.util.Logger;
-import com.xpdustry.avs.util.PlayerLogger;
 import com.xpdustry.avs.util.Strings;
+import com.xpdustry.avs.util.logging.Logger;
+import com.xpdustry.avs.util.logging.PlayerLogger;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 
 import arc.struct.ObjectMap;

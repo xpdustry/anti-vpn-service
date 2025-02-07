@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.util;
+package com.xpdustry.avs.util.logging;
 
 import arc.struct.ObjectMap;
 

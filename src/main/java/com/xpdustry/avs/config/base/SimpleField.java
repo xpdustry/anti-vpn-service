@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,27 +24,35 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.config.abstracts;
+package com.xpdustry.avs.config.base;
 
-import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.util.logging.Logger;
 
 
-public abstract class AbstractBasicField extends AbstractField<Object> {
-  public AbstractBasicField(AbstractConfig master, String name, Object defaultValue) {
+public class SimpleField extends Field<Object> {
+  public SimpleField(AbstractConfig master, String name, Object defaultValue) {
     super(master, name, defaultValue, null);
   }
-  public AbstractBasicField(AbstractConfig master, String name, Object defaultValue, 
+  public SimpleField(AbstractConfig master, String name, Object defaultValue, 
                             ChangeValider<Object> validate) {
     super(master, name, defaultValue, validate);
   }
 
   protected void checkType(Object o) {
-    if (o == null) throw new NullPointerException(name + ": value to check is null");
+    if (o == null) throw new NullPointerException(name() + ": value to check is null");
+    Class<?> type = o.getClass();
+    if (!master.config.isBasicType(o))
+      throw new IllegalArgumentException(name() + ": incompatible type " + type.getName() +
+                                                  ". SimpleField only support primitive types and String.");
     if (o.getClass() != defaultValue.getClass())
-      throw new IllegalArgumentException(name + ": incompatible type " + o.getClass().getName() + 
-                                         ". Must be a " + defaultValue.getClass().getName());
+      throw new IllegalArgumentException(name() + ": incompatible type " + type.getName() + 
+                                                  ". Must be a " + defaultValue.getClass().getName() + ".");
   }
 
+  //public boolean is(Class<?> clazz) {
+  //  return clazz.isInstance(defaultValue);
+  //}
+  
   public boolean isInt(){
     return defaultValue instanceof Integer;
   }

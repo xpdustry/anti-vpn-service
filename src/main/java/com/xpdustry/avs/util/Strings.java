@@ -32,6 +32,8 @@ import java.io.Writer;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import com.xpdustry.avs.util.logging.Logger;
+
 import arc.files.Fi;
 import arc.func.Intf;
 import arc.struct.Seq;
@@ -401,17 +403,20 @@ public class Strings extends arc.util.Strings {
     return str;
   }
   
-  public static <T> String listToSentence(Iterable<T> list) { return listToSentence(list, String::valueOf); }
+  public static <T> String listToSentence(Logger logger, Iterable<T> list) { 
+    return listToSentence(logger, list, String::valueOf);
+  }
   /** Convert a list to a human readable sentence. E.g. [1, 2, 3, 4, 5] -> "1, 2, 3, 4 and 5" */
-  public static <T> String listToSentence(Iterable<T> list, arc.func.Func<T, String> stringifier) {
+  public static <T> String listToSentence(Logger logger, Iterable<T> list, arc.func.Func<T, String> stringifier) {
     java.util.Iterator<T> iter = list.iterator();
     if (!iter.hasNext()) return "";
     
     StringBuilder builder = new StringBuilder(stringifier.get(iter.next()));
+    String or = logger.getKey("avs.or"), and = logger.getKey("avs.and");
     
     while (iter.hasNext()) {
       T tmp = iter.next();
-      builder.append(iter.hasNext() ? ", " : " and ");
+      builder.append(iter.hasNext() ? or : and);
       builder.append(stringifier.get(tmp));
     }
     
@@ -485,7 +490,7 @@ public class Strings extends arc.util.Strings {
       return format(logger.getKey("avs.time." + (String)TIME_PERIODS[TIME_PERIODS.length][0] + ".singular"), millis);
     
     StringBuilder builder = new StringBuilder(parts.get(0));
-    String or = logger.getKey("avs.time.or"), and = logger.getKey("avs.time.and");
+    String or = logger.getKey("avs.or"), and = logger.getKey("avs.and");
     
     for (int i=1; i<parts.size; i++)
       builder.append(i >= parts.size-1 ? and : or).append(parts.get(i));

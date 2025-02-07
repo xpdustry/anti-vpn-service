@@ -87,7 +87,7 @@ public abstract class EditableAddressProvider extends CachedAddressProvider
    *         else {@link CachedAddressProvider#getCacheFile()} 
    */
   @Override
-  protected com.xpdustry.avs.util.DynamicSettings getCacheFile() {
+  protected com.xpdustry.avs.util.json.DynamicSettings getCacheFile() {
     return inCache ? super.getCacheFile() : getSettings();
   }
 }

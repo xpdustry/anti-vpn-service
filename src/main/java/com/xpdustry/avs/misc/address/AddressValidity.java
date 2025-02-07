@@ -26,8 +26,8 @@
 
 package com.xpdustry.avs.misc.address;
 
-import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
+import com.xpdustry.avs.util.logging.Logger;
 import com.xpdustry.avs.util.network.Subnet;
 
 

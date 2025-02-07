@@ -29,8 +29,8 @@ package com.xpdustry.avs.command.list;
 import com.xpdustry.avs.command.AVSCommandManager;
 import com.xpdustry.avs.command.Command;
 import com.xpdustry.avs.config.RestrictedModeConfig;
-import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.struct.Seq;
 
@@ -41,7 +41,7 @@ public class HelpCommand extends com.xpdustry.avs.command.Command {
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
-      Seq<Command> list = restrictedMode ? RestrictedModeConfig.commands.values : 
+      Seq<Command> list = restrictedMode ? RestrictedModeConfig.commands.get() : 
                                            AVSCommandManager.subCommands;
 
       if (list.isEmpty()) {
@@ -64,7 +64,7 @@ public class HelpCommand extends com.xpdustry.avs.command.Command {
     if (command == null) {
       logger.err("avs.command.not-found", args[0]);
       return;
-    } else if (restrictedMode && !RestrictedModeConfig.commands.values.contains(command)) {
+    } else if (restrictedMode && !RestrictedModeConfig.commands.get().contains(command)) {
       logger.err("avs.command.restricted");
       return;
     }

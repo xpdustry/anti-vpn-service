@@ -29,8 +29,8 @@ package com.xpdustry.avs.service.providers;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.service.providers.type.AddressProvider;
 import com.xpdustry.avs.service.providers.type.ProviderCategories;
-import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.func.Cons2;
 import arc.func.Cons3;
@@ -57,7 +57,7 @@ public enum ProviderAction {
   delToken(Category.online, CallbackKeeper::onlineDelTokenAction),
   listTokens(Category.online, CallbackKeeper::onlineListTokensAction),
   ;
-  
+
   public static final Seq<ProviderAction> all = Seq.with(values());
   public static final String actionDescKeyFormat = "avs.provider.action.@.@",
                              actionArgsKeyFormat = actionDescKeyFormat + ".args";
@@ -95,7 +95,12 @@ public enum ProviderAction {
     this.run2 = run;
   }
 
-
+  /*private void add() {
+    if (all.contains(a -> a.name.equals(name)))
+      throw new IllegalStateException("duplicate '" + name +"' action");
+    all.add(this);
+  }*/
+  
   public boolean argRequired() {
     return run2 != null && run == null;
   }
@@ -103,10 +108,10 @@ public enum ProviderAction {
   private void check(AddressProvider provider, boolean withArgs) {
     if (withArgs && !argRequired())
       throw new IllegalArgumentException("no arguments are expected. "
-                                       + "Use the other .exec() method instead");
+                                       + "Use the other .run() method instead");
     else if (!withArgs && argRequired())
       throw new IllegalArgumentException("an argument is expected. "
-                                       + "Use the other .exec() method instead");
+                                       + "Use the other .run() method instead");
     else if (!category.clazz.isInstance(provider))
       throw new IllegalArgumentException("incompatible provider type " + provider.getClass().getName()
                                        + ". Must implement " + category.clazz.getName());
@@ -131,7 +136,11 @@ public enum ProviderAction {
     return logger.getKey(Strings.format(actionArgsKeyFormat, category.name, name));
   }
   
-  
+  @Override
+  public String toString() {
+    return name;
+  }
+
   public static ProviderAction get(String name) {
     return all.find(a -> a.name.equals(name));
   }
@@ -142,7 +151,7 @@ public enum ProviderAction {
   
   public static Seq<ProviderAction> getAll(AddressProvider provider) {
     Seq<ProviderAction> result = new Seq<>();
-    Category.getAll(provider).each(c ->  result.addAll(getAll(c)));
+    Category.getAll(provider).each(c -> result.addAll(getAll(c)));
     return result;
   }
 
@@ -177,6 +186,12 @@ public enum ProviderAction {
                                          + "inherited from ProviderCategories.Basic");
       this.clazz = clazz;
     }
+    
+    /*private void add() {
+      if (all.contains(a -> a.name.equals(name)))
+        throw new IllegalStateException("duplicate '" + name +"' action category");
+      all.add(this);
+    }*/
     
     public String getDesc(Logger logger) {
       return logger.getKey(Strings.format(categoryKeyFormat, name));

@@ -1,9 +1,9 @@
 /*
-a * This file is part of Anti-VPN-Service (AVS). The plugin securing your server against VPNs.
+ * This file is part of Anti-VPN-Service (AVS). The plugin securing your server against VPNs.
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,11 +30,10 @@ import java.net.InetAddress;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.address.AddressValidity;
-import com.xpdustry.avs.util.DynamicSettings;
+import com.xpdustry.avs.util.json.DynamicSettings;
 import com.xpdustry.avs.util.network.Subnet;
 
 import arc.struct.Seq;
-import arc.util.serialization.Json;
 
 
 public class CachedAddressProvider extends AddressProvider implements ProviderCategories.Cacheable {  
@@ -146,16 +145,14 @@ public class CachedAddressProvider extends AddressProvider implements ProviderCa
   
   
   protected DynamicSettings getCacheFile() {
-    if (this.file == null) {
-      arc.files.Fi file = folder == null ? AVSConfig.subDir(name + ".bin"):
+    if (file == null) {
+      arc.files.Fi file_ = folder == null ? AVSConfig.subDir(name + ".bin"):
                           AVSConfig.subDir(folder).child(name + ".bin");
       
-      this.file = new DynamicSettings(file/*, true*/);
-      Json json = new Json();
-      com.xpdustry.avs.misc.JsonSerializer.apply(json);
-      this.file.setJson(json);
+      file = new DynamicSettings(file_/*, true*/);
+      com.xpdustry.avs.misc.JsonSerializer.apply(file.getJson());
     }
     
-    return this.file;
+    return file;
   }
 }

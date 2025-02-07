@@ -29,7 +29,7 @@ package com.xpdustry.avs.misc;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.providers.type.CloudDownloadedProvider;
 import com.xpdustry.avs.service.providers.type.ProviderCategories;
-import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.Events;
 
@@ -53,17 +53,28 @@ public class CloudAutoRefresher {
     
     for (int i=0; i<AntiVpnService.allProviders.size; i++) {
       if (AntiVpnService.allProviders.get(i) instanceof ProviderCategories.Cloudable) {
-        if (!((ProviderCategories.Cloudable)AntiVpnService.allProviders.get(i)).refresh())
+        ProviderCategories.Cloudable p = (ProviderCategories.Cloudable) AntiVpnService.allProviders.get(i);
+        
+        if (!p.isEnabled()) 
+          logger.warn("avs.refresher.provider.disabled", p.name(), p.displayName());
+        else if (!p.isLoaded()) {
+          logger.err("avs.refresher.provider.not-loaded", p.name(), p.displayName());
           error = true;
+        } else if (!p.isAvailable())
+          logger.warn("avs.refresher.provider.unavailable", p.name(), p.displayName());
+        else if (!p.refresh()) {
+          logger.err("avs.refresher.provider.failed", p.name(), p.displayName());
+          error = true;
+        }
       }
     }
     
     logger.none();
     if (error) {
-      Events.fire(new AVSEvents.CloudAutoRefresherFinishedEvent());
+      Events.fire(new AVSEvents.CloudAutoRefresherDoneEvent(true));
       logger.warn("avs.refresher.done-errors");
     } else {
-      Events.fire(new AVSEvents.CloudAutoRefresherFinishedWithErrorsEvent());
+      Events.fire(new AVSEvents.CloudAutoRefresherDoneEvent(false));
       logger.info("avs.refresher.done");
     }
     logger.none();

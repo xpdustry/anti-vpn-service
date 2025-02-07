@@ -57,10 +57,10 @@ public class RescueBundle extends Bundle {
       "avs.bundle.loading.hierarchy.error", "Error while applying bundles hierarchy!",
       "avs.bundle.loading.done", "Loading done",
       "avs.bundle.warn.bundle-locale.msg1", "Bundles files with no language, in locale code, are not allowed.",
-      "avs.bundle.warn.bundle-locale.msg2", "The file name should be: prefix_xx_XX.properties. Where xx and XX are the language and country.",
+      "avs.bundle.warn.bundle-locale.msg2", "The file naming should be: bundle_xx_XX.properties. Where xx and XX are the language and country.",
       "avs.bundle.warn.empty", "The bundle for locale '{0}' is empty.",
-      "avs.bundle.not-found", "Unable to find a bundle for locale {0}. Using default one...",
-      "avs.bundle.default-not-found", "Unable to a find bundle for the default locale '{0}'. Using machine local...",
+      "avs.bundle.not-found", "Unable to find a bundle for locale {0}. Using default...",
+      "avs.bundle.default-not-found", "Unable to a find bundle for the default locale '{0}'. Using host locale...",
       "avs.command.error-detected", "An error was detected during the Anti VPN service startup. Commands have been disabled."
     ));
   }

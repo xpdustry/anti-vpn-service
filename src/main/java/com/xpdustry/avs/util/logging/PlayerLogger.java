@@ -24,10 +24,11 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.util;
+package com.xpdustry.avs.util.logging;
 
 import java.text.MessageFormat;
 
+import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.bundle.L10NBundlePlayer;
 
 import arc.util.Log;

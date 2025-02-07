@@ -26,6 +26,7 @@
 
 package com.xpdustry.avs.util;
 
+import com.xpdustry.avs.util.logging.Logger;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 
 

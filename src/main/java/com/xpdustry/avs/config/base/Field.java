@@ -24,23 +24,25 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.config.abstracts;
+package com.xpdustry.avs.config.base;
 
-import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.util.logging.Logger;
 
 
-public abstract class AbstractField<T> {
+public class Field<T> implements IField<T> {
   public final String name;
   public final T defaultValue;
   protected final ChangeValider<T> validate;
   protected final AbstractConfig master;
-  
-  public AbstractField(AbstractConfig master, String name, T defaultValue) {
+
+  public Field(AbstractConfig master, String name, T defaultValue) {
     this(master, name, defaultValue, null); 
   }
-  public AbstractField(AbstractConfig master, String name, T defaultValue, ChangeValider<T> validate) {
+  public Field(AbstractConfig master, String name, T defaultValue, ChangeValider<T> validate) {
+    if (name == null || name.isEmpty()) throw new NullPointerException(name() + ": name cannot be null");
+    if (defaultValue == null) throw new NullPointerException(name() + ": defaultValue cannot be null");
+    
     this.name = name;
-    if (defaultValue == null) throw new NullPointerException(name + ": defaultValue cannot be null");
     this.defaultValue = defaultValue;
     this.validate = validate;
     this.master = master;
@@ -48,20 +50,22 @@ public abstract class AbstractField<T> {
     master.all.add(this);
   }
   
+  @Override
   public String name() {
     return name;
   }
   
+  @Override
   public T defaultValue() {
     return defaultValue;
   }
   
+  @Override
   public String desc(Logger logger) {
-    return logger.getKey(arc.util.Strings.format(descKeyFormat(), name()));
+    return logger.getKey(arc.util.Strings.format(master.fieldDescBundleKey(this), name()));
   }
   
-  protected abstract String descKeyFormat();
-  
+  @Override
   public T get() {
     // Allows getting values ​​if configuration is loading.
     if (!master.isLoading && !master.isLoaded()) 
@@ -70,36 +74,40 @@ public abstract class AbstractField<T> {
     if (master.config == null) return (T) defaultValue();
     return getValue();
   }
-  
-  /** Override this if a different way is used to get the value */
-  @SuppressWarnings("unchecked")
-  protected T getValue() {
-    return (T) master.config.getOrPut(name(), defaultValue());
-  }
-  
+
+  @Override
   public boolean set(T value) { return set(value, master.logger); }
   public boolean set(T value, Logger logger) {
     if (!master.isLoaded()) 
       throw new IllegalStateException("master config is not loaded");
     
-    T old = get();
-    putValue(value);
-    
     boolean accept = validateChange(value, logger);
-    if (!accept) putValue(old); // restore to old
+    if (accept) putValue(value);
     return accept;
   }
   
-  /** Override this if a different way is used to put the value */
-  protected void putValue(T value) {
-    master.config.put(name(), value);
+  /** Can be overrides if a different way is used to get the value */
+  @SuppressWarnings("unchecked")
+  protected T getValue() {
+    T defaults = defaultValue();
+    return (T) (master.config.isBasicType(defaults) ? master.config.getOrPut(name(), defaults) :
+                master.config.getJson(name(), (Class<T>) defaults.getClass(), () -> defaults));
   }
   
-  protected void setDefault(Logger logger) {
+  /** Can be overrides if a different way is used to put the value */
+  protected void putValue(T value) {
+    if (master.config.isBasicType(value))
+         master.config.put(name(), value);
+    else master.config.putJson(name(), value);
+  }
+  
+  @Override
+  public void setDefault(Logger logger) {
     putValue(defaultValue());
     validateChange(defaultValue(), logger);
   }
   
+  @Override
   public boolean validateChange(Logger logger) {
     return validateChange(get(), logger);
   }
@@ -114,8 +122,8 @@ public abstract class AbstractField<T> {
   @Override
   public boolean equals(Object o) {
     if (o == this) return true;
-    if (o == null || !(o instanceof AbstractField)) return false;
-    return name().equals(((AbstractField) o).name());
+    if (o == null || !(o instanceof Field)) return false;
+    return name().equals(((Field) o).name());
   }
   
   /** Return the value converted to string */

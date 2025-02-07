@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,8 @@ package com.xpdustry.avs.command;
 import com.xpdustry.avs.Loader;
 import com.xpdustry.avs.command.list.*;
 import com.xpdustry.avs.config.RestrictedModeConfig;
-import com.xpdustry.avs.util.Logger;
-import com.xpdustry.avs.util.PlayerLogger;
+import com.xpdustry.avs.util.logging.Logger;
+import com.xpdustry.avs.util.logging.PlayerLogger;
 
 import arc.struct.Seq;
 import arc.util.CommandHandler;
@@ -98,7 +98,7 @@ public class AVSCommandManager {
       if (command == null) {
         plogger.err("avs.command.not-found", args[0]);
         return;
-      } else if (!RestrictedModeConfig.commands.values.contains(command)) {
+      } else if (!RestrictedModeConfig.commands.get().contains(command)) {
         plogger.err("avs.command.restricted");
         return;
       }

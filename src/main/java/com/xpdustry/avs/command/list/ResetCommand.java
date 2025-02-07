@@ -37,7 +37,7 @@ public class ResetCommand extends com.xpdustry.avs.command.Command {
   public ResetCommand() { super("reset"); }
 
   @Override
-  public void run(String[] args, com.xpdustry.avs.util.Logger logger, boolean restrictedMode) {
+  public void run(String[] args, com.xpdustry.avs.util.logging.Logger logger, boolean restrictedMode) {
     if (!com.xpdustry.avs.config.AVSConfig.resetCommandEnabled.getBool() || resetConfirmed) {
       logger.err("avs.command.reset.disabled");
       return;

@@ -26,7 +26,7 @@
 
 package com.xpdustry.avs.command;
 
-import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.util.Strings;
 

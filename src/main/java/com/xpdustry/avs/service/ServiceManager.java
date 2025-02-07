@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,10 +32,10 @@ import com.xpdustry.avs.Loader;
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.service.providers.type.AddressProviderReply;
-import com.xpdustry.avs.util.DynamicSettings;
-import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.bundle.L10NBundlePlayer;
+import com.xpdustry.avs.util.json.DynamicSettings;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.Core;
 import arc.Events;
@@ -51,7 +51,7 @@ import mindustry.net.Packets.KickReason;
 
 public class ServiceManager {
   private static ThreadPoolExecutor threadPool = 
-      (ThreadPoolExecutor) Threads.boundedExecutor("ClientValidator", AVSConfig.connectLimit.getInt());
+      (ThreadPoolExecutor) Threads.boundedExecutor("AVS-ClientValidator", AVSConfig.connectLimit.getInt());
   private static Logger logger = new Logger();
   private static Cons2<NetConnection, Object> connectPacketServerListener;
   private static boolean ready = false;
@@ -139,7 +139,7 @@ public class ServiceManager {
         con.kick(KickReason.idInUse);
         return;
         
-      // After check version of client
+      // After, check of client version
       } else if (packet.versionType == null ||
                  ((packet.version == -1 || !packet.versionType.equals(Version.type)) &&
                    Version.build != -1 && !Vars.netServer.admins.allowsCustomClients())) {
@@ -161,7 +161,7 @@ public class ServiceManager {
       
       // And submit a new task to the thread pool, to avoid blocking the server
       try {
-        threadPool.submit(() -> {
+        threadPool.execute(() -> {
           try {
             Events.fire(new AVSEvents.ClientCheckEvent(con, packet));
             

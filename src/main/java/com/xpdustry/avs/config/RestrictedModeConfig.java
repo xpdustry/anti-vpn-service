@@ -28,65 +28,54 @@ package com.xpdustry.avs.config;
 
 import com.xpdustry.avs.command.AVSCommandManager;
 import com.xpdustry.avs.command.Command;
-import com.xpdustry.avs.config.abstracts.ChangeValider;
+import com.xpdustry.avs.command.list.*;
+import com.xpdustry.avs.config.base.*;
+import com.xpdustry.avs.misc.ProviderActionSeq;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.service.providers.type.AddressProvider;
 
 import arc.files.Fi;
-import arc.func.Func;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 
 
-public class RestrictedModeConfig extends com.xpdustry.avs.config.abstracts.AbstractConfig {
+public class RestrictedModeConfig extends AbstractConfig {
   private static final RestrictedModeConfig INSTANCE = new RestrictedModeConfig();
-  
-  public static final Field<Boolean> enabled = new Field<>("enabled", true);
-  public static final FieldList<AddressProvider> providers =  new FieldList<>("providers", 
-      Default.providers,  n -> AntiVpnService.allProviders.find(p -> p.name.equals(n)), f -> f.name);
-  public static final FieldList<AVSConfig.Field> settings = new FieldList<>("settings", 
-      Default.settings, n -> (AVSConfig.Field) AVSConfig.instance().all.find(f -> f.name.equals(n)), s -> s.name);
-  public static final FieldList<Command> commands = new FieldList<>("commands", 
-      Default.commands, n -> AVSCommandManager.subCommands.find(c -> c.name.equals(n)), c -> c.name);
   
   private RestrictedModeConfig() { super("restrict", true); }
   public static RestrictedModeConfig instance() { return INSTANCE; }
 
   @Override
-  protected String msgBundleKey(String key) {
+  protected String configBundleKey(String key) {
     return "avs." + name + "." + key;
+  }
+
+  @Override
+  protected String fieldDescBundleKey(IField<?> field) {
+    return "avs." + name + ".field." + field.name();
   }
   
   @Override
   protected Fi getFile() {
     return AVSConfig.subDir(AVSConfig.settingsDirectory.getString()).child(name + ".json");
   }
-  
+
   @Override
   protected void loadMisc() {
-    all.each(s -> s.get());   
-
-    // Set default provider actions
-    for (ObjectMap.Entry<AddressProvider, Seq<ProviderAction>> e : Default.actions.entries()) {
-      if (e.key.actions.isEmpty()) {
-        e.key.actions = e.value.copy();
-        if (!e.key.save()) {
-          config = null;
-          return;
-        }
-      }
-    }
+    com.xpdustry.avs.misc.JsonSerializer.apply(config.getJson());
+    
+    all.each(s -> s instanceof CachedField, s -> ((CachedField<?>) s).load());
   }
   
   public boolean save() {
     try { 
-      all.each(s -> s instanceof FieldList, s -> ((FieldList<?>) s).save());
-      logger.info(msgBundleKey("saved"));
+      all.each(s -> s instanceof CachedField, s -> ((CachedField<?>) s).save());
+      logger.info(configBundleKey("saved"));
       return true;
     
     } catch (Exception e) {
-      logger.info(msgBundleKey("save-failed"), config.getFile().path());
+      logger.info(configBundleKey("save-failed"), config.getFile().path());
       logger.err("avs.general-error", e.toString());
       return false;
     }
@@ -94,6 +83,8 @@ public class RestrictedModeConfig extends com.xpdustry.avs.config.abstracts.Abst
   
   
   public static class Default {
+    public static final boolean enabled = true;
+    
     public static final Seq<AddressProvider> providers = AntiVpnService.allProviders.select(a ->
         a instanceof com.xpdustry.avs.service.providers.custom.Whitelist ||
         a instanceof com.xpdustry.avs.service.providers.custom.Blacklist
@@ -107,57 +98,27 @@ public class RestrictedModeConfig extends com.xpdustry.avs.config.abstracts.Abst
     );
     
     public static final Seq<Command> commands = AVSCommandManager.subCommands.select(c -> 
-        c instanceof com.xpdustry.avs.command.list.ConfigCommand ||
-        c instanceof com.xpdustry.avs.command.list.ProviderCommand ||
-        c instanceof com.xpdustry.avs.command.list.InfoCommand ||
-        c instanceof com.xpdustry.avs.command.list.HelpCommand
+        c instanceof ConfigCommand ||
+        c instanceof ProviderCommand ||
+        c instanceof InfoCommand ||
+        c instanceof HelpCommand
     );
     
-    public static final ObjectMap<AddressProvider, Seq<ProviderAction>> actions = 
-        providers.asMap(p -> p, p -> ProviderAction.getAll(ProviderAction.Category.cached)
-                                                   .addAll(ProviderAction.add, ProviderAction.remove));  
-  }
-
-  
-  public static class Field<T> extends com.xpdustry.avs.config.abstracts.AbstractField<T> {
-    public static final String bundleDescFormat = "avs." + INSTANCE.name + ".field.@";
-    
-    public Field(String name, T defaultValue) { super(INSTANCE, name, defaultValue); }
-    public Field(String name, T defaultValue, ChangeValider<T> validate) {
-      super(INSTANCE, name, defaultValue, validate);
-    }
-
-    @Override
-    protected String descKeyFormat() { return bundleDescFormat; }
+    public static final ObjectMap<AddressProvider, ProviderActionSeq> actions = providers.asMap(p -> p, 
+        p -> new ProviderActionSeq(ProviderAction.getAll(ProviderAction.Category.cached)
+                                                 .addAll(ProviderAction.add, ProviderAction.remove)));  
   }
   
-  public static class FieldList<T> extends com.xpdustry.avs.config.abstracts.AbstractFieldListSerialized<T> {
-    public FieldList(String name, Seq<T> defaultValue, Func<String, T> loader, Func<T, String> saver) {
-      super(INSTANCE, name, defaultValue, loader, saver);
-    }
-    public FieldList(String name, Seq<T> defaultValue, ChangeValider<Seq<T>> validate, 
-                     Func<String, T> loader, Func<T, String> saver) {
-      super(INSTANCE, name, defaultValue, validate, loader, saver);
-    }
+  
+  public static final Field<Boolean> enabled = 
+      new Field<>(INSTANCE, "enabled", Default.enabled);
+  public static final FieldList<AVSConfig.Field> settings =
+      new FieldList<>(INSTANCE, "settings", AVSConfig.Field.class, Default.settings, ConfigEvents::onSettingsChanged);
+  public static final FieldList<AddressProvider> providers = 
+      new FieldList<>(INSTANCE, "providers", AddressProvider.class, Default.providers, ConfigEvents::onProvidersChanged);
+  public static final FieldList<Command> commands =
+      new FieldList<>(INSTANCE, "commands", Command.class, Default.commands, ConfigEvents::onCommandsChanged);
+  public static final FieldMap<AddressProvider, ProviderActionSeq> actions = 
+      new FieldMap<>(INSTANCE, "actions", AddressProvider.class, ProviderActionSeq.class, Default.actions, ConfigEvents::onActionsChanged);
 
-    @Override
-    protected String descKeyFormat() { return Field.bundleDescFormat; }
-    @Override
-    public void load() {
-      super.load();
-      
-      if (values.contains((T) null)) {
-        values.clear();
-        throw new NullPointerException(name + ": found invalid item(s) in values");    
-      }
-    }
-    @Override
-    public void save() {
-      if (values.contains((T) null)) 
-        throw new NullPointerException(name + ": found invalid item(s) in values");
-      super.save();
-    }
-    @Override
-    public String toString() { return "[\n" + values.toString(",\n", saver) + "\n]"; }
-  }
 }

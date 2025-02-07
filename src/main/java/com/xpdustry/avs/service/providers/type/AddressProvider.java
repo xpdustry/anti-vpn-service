@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,23 +28,15 @@ package com.xpdustry.avs.service.providers.type;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
-import com.xpdustry.avs.service.providers.ProviderAction;
-import com.xpdustry.avs.util.DynamicSettings;
-import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.util.json.DynamicSettings;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.Events;
-import arc.struct.Seq;
-import arc.util.serialization.Json;
 
 
 public abstract class AddressProvider implements ProviderCategories.Basic {
-  /** 
-   * Field to save allowed actions, of this provider, 
-   * by the {@link com.xpdustry.avs.command.list.ProviderCommand}.
-   * @apiNote this is just a secured interface for user, this doesn't block anything.
-   */
-  public Seq<ProviderAction> actions = new Seq<>();
-  
+  protected static final String DESC_BUNDLE_KEY_PREFIX = "avs.provider.description.";
+
   /** Settings of this provider */
   private DynamicSettings settings;
   private boolean loaded = false;
@@ -74,12 +66,23 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
     this.logger = this.defaultLogger;
   }
   
+  @Override
   public String name() {
     return name;
   }
   
+  @Override
   public String displayName() {
     return displayName;
+  }
+  
+  @Override
+  public String description() {
+    return description(logger);
+  }
+  
+  public String description(Logger logger) {
+    return logger.getKey(DESC_BUNDLE_KEY_PREFIX + name());
   }
   
   /** Will temporary replace the provider's logger by the given one, while running the function */
@@ -93,7 +96,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   public boolean load() {
     loaded = false;
     Events.fire(new AVSEvents.ProviderLoadingEvent(this));
-    loaded = loadSettings() && loadMiscSettings();
+    loaded = loadSettings();
     return loaded;
   }
 
@@ -101,17 +104,16 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   public boolean reload() {
     loaded = false;
     Events.fire(new AVSEvents.ProviderReloadingEvent(this));
-    loaded = reloadSettings() && reloadMiscSettings();
+    loaded = reloadSettings();
     return loaded;
   }
 
   @Override
   public boolean save() {
     Events.fire(new AVSEvents.ProviderSavingEvent(this));
-    return saveSettings() && saveMiscSettings();
+    return saveSettings();
   }
 
-  @SuppressWarnings("unchecked")
   private boolean loadSettings() {
     DynamicSettings file = getSettings();
     
@@ -119,29 +121,12 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
       file.load();
       
       enabled = file.getBool("enabled", enabled);
-      if (file.has("actions")) {
-        actions = file.getJson("actions", Seq.class, ProviderAction.class, () -> actions);
-        
-        if (actions.contains((ProviderAction) null)) {
-          logger.err("avs.provider.load-failed", file.getFile().path());
-          logger.err("avs.provider.invalid-actions");
-          actions.removeAll(a -> a == null);
-          return false;
-        }
-        
-        // Check if allowed actions are the right
-        if (!ProviderAction.getAll(this).containsAll(actions)) {
-          actions.clear();
-          logger.err("avs.provider.load-failed", file.getFile().path());
-          logger.err("avs.provider.not-compatible-actions");
-          return false;
-        }
-      }
-      
+
+      if (!loadMiscSettings()) return false;
       logger.debug("avs.provider.loaded");
       return true;
       
-    } catch (RuntimeException e) { 
+    } catch (Exception e) { 
       logger.err("avs.provider.load-failed", file.getFile().path());
       logger.err("avs.general-error", e.toString()); 
       return false;
@@ -150,8 +135,23 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   
   private boolean reloadSettings() {
     logger.debug("avs.provider.reload");
-    getSettings().clear();
-    return loadSettings();
+    DynamicSettings file = getSettings();
+    
+    try { 
+      file.clear();
+      file.load();
+      
+      enabled = file.getBool("enabled", enabled);
+
+      if (!reloadMiscSettings()) return false;
+      logger.debug("avs.provider.loaded");
+      return true;
+      
+    } catch (Exception e) { 
+      logger.err("avs.provider.load-failed", file.getFile().path());
+      logger.err("avs.general-error", e.toString()); 
+      return false;
+    }
   }
   
   private boolean saveSettings() {
@@ -159,13 +159,12 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
     
     try { 
       file.put("enabled", enabled);
-      if (!actions.isEmpty())
-        file.putJson("actions", ProviderAction.class, actions);
       
+      if (!saveMiscSettings()) return false;
       logger.debug("avs.provider.saved");
       return true;
       
-    } catch(RuntimeException e) {
+    } catch(Exception e) {
       logger.err("avs.provider.save-failed", file.getFile().path());
       logger.err("avs.general-error", e.toString());
       return false;
@@ -207,7 +206,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   }
   
   @Override
-  public boolean isProviderAvailable() {
+  public boolean isAvailable() {
     if (!isEnabled()) {
       logger.debug("avs.provider.disabled");
       return false;
@@ -225,7 +224,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   public AddressProviderReply checkAddress(String address) {
     AddressProviderReply reply = new AddressProviderReply(address);
     
-    if (!isProviderAvailable()) {
+    if (!isAvailable()) {
       reply.type = AddressProviderReply.ReplyType.UNAVAILABLE;
       return reply;
     }
@@ -256,9 +255,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
     if (settings == null) {
       arc.files.Fi file = AVSConfig.subDir(AVSConfig.providersDirectory.getString()).child(name + ".json");
       settings = new DynamicSettings(file, true);
-      Json json = new Json();
-      com.xpdustry.avs.misc.JsonSerializer.apply(json);
-      settings.setJson(json);
+      com.xpdustry.avs.misc.JsonSerializer.apply(settings.getJson());
     }
     
     return settings;

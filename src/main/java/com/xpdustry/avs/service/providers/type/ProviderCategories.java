@@ -38,6 +38,8 @@ public class ProviderCategories {
     public String name();
     /** The name that should be used for printing */
     public String displayName();
+    /** Provider's description */
+    public String description();
     
     /** Load the provider content */
     public boolean load();
@@ -51,7 +53,7 @@ public class ProviderCategories {
     /** @return if the provider is enabled or not */
     public boolean isEnabled();
     /** @return if the provider can be used now */
-    public boolean isProviderAvailable();
+    public boolean isAvailable();
     
     /** Enable the provider */
     public void enable();

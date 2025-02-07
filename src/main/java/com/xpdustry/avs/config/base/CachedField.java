@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,41 +24,42 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs;
-
-import com.xpdustry.avs.command.AVSCommandManager;
-import com.xpdustry.avs.util.logging.Logger;
-
-import arc.util.CommandHandler;
+package com.xpdustry.avs.config.base;
 
 
-public class Main extends mindustry.mod.Plugin {
-  private static final Logger logger = new Logger(true);
+/** Same as {@link Field}, but cache the field value instead of saving it directly to the config. */
+public class CachedField<T> extends Field<T> {
+  protected T cached;
+  protected boolean loaded;
   
-  public void init() {
-    long start = System.currentTimeMillis();
-    logger.infoNormal("\n&lg----------------------------------------------------------------");
-    logger.info("avs.loading.started");
-    logger.none();
+  public CachedField(AbstractConfig master, String name, T defaultValue) {
+    super(master, name, defaultValue);
+  }
+  public CachedField(AbstractConfig master, String name, T defaultValue, ChangeValider<T> validate) {
+    super(master, name, defaultValue, validate);
+  }
 
-    Loader.load(getClass());
-
-    if (Loader.done()) {
-      logger.none();
-      logger.info("avs.loading.finished", Math.max(1, (System.currentTimeMillis()-start)/1000));
-      logger.infoNormal("&lg----------------------------------------------------------------\n ");      
+  @Override
+  protected T getValue() {
+    if (!loaded) {
+      loaded = true;
+      load();
     }
+    return cached;
+  }
+  
+  @Override
+  protected void putValue(T value) {
+    cached = value;
   }
 
-  /** Register any commands to be used on the server side, e.g. from the console. */
-  @Override
-  public void registerServerCommands(CommandHandler handler) {
-    AVSCommandManager.registerServer(handler);
+  public void load() {
+    cached = super.getValue();
+    loaded = true;
+    //changed = true;
   }
-
-  /** Register any commands to be used on the client side, e.g. sent from an in-game player.. */
-  @Override
-  public void registerClientCommands(CommandHandler handler){
-    AVSCommandManager.registerClient(handler);
+  
+  public void save() {
+    super.putValue(cached);
   }
 }

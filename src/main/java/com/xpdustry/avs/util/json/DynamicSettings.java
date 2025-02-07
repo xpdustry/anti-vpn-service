@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.util;
+package com.xpdustry.avs.util.json;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -35,12 +35,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import com.xpdustry.avs.util.Strings;
+import com.xpdustry.avs.util.logging.Logger;
+
 import arc.files.Fi;
 import arc.func.Prov;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.io.ReusableByteInStream;
-import arc.util.io.Streams;
 import arc.util.serialization.*;
 
 
@@ -71,7 +73,7 @@ public class DynamicSettings {
   protected ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
   protected ReusableByteInStream byteInputStream = new ReusableByteInStream();
   protected BaseJsonReader reader;
-  protected Json json;
+  protected Json2 json;
   
   public DynamicSettings(Fi file) { this(file, false); }
   public DynamicSettings(Fi file, boolean simpleJson) {
@@ -79,13 +81,17 @@ public class DynamicSettings {
     this.simpleJson = simpleJson;
     this.reader = simpleJson ? new JsonReader() : new UBJsonReader();
     
-    setJson(new Json());
+    setJson(new Json2());
     files.add(this);
   }
 
-  public void setJson(Json json){
+  public void setJson(Json2 json){
       this.json = json;
       if (simpleJson) this.json.setOutputType(JsonWriter.OutputType.json);
+  }
+  
+  public Json2 getJson() {
+    return json;
   }
 
   /** 
@@ -148,7 +154,14 @@ public class DynamicSettings {
     if (needGlobalSave()) {
       writeLogStatic("Global autosave...");
       logger.info("avs.settings.autosave.started");
-      files.each(s -> s.autosave());
+      for (DynamicSettings s : files) {
+        try { s.autosave(); } 
+        catch (RuntimeException e) {
+          logger.err("avs.settings.autosave.failed", s.getFile());
+          logger.err("avs.general-error", e);
+          return;
+        }
+      }
       logger.info("avs.settings.autosave.finished");      
     }
   }
@@ -276,8 +289,6 @@ public class DynamicSettings {
                   throw new IOException("Trailing settings data; expected EOF, but got: " + end);
               }         
           }
-
-          Streams.close(stream);
       }
       
       writeLog("Loaded " + values.size + " values");
@@ -318,7 +329,7 @@ public class DynamicSettings {
             
             OutputStreamWriter out = new OutputStreamWriter(stream);
             Strings.jsonPrettyPrint(content, out, JsonWriter.OutputType.json);
-            out.flush();
+            out.flush(); //idk why, but it's not writing entirely
 
           } else {
               stream.writeInt(values.size);
@@ -351,16 +362,12 @@ public class DynamicSettings {
                       throw new IOException("Unknown value type: " + value.getClass().getName());
                   }
               }
-              
-              stream.flush();
           }
-        
-          Streams.close(stream);
 
       }catch(Throwable e){
           writeLog("Error while writing values; The file is corrupt");
           throw new IOException("Error while writing file: " + file, e);
-      }
+      } 
 
       writeLog("Saved " + values.size + " values; " + file.length() + " bytes");
   }
@@ -410,71 +417,86 @@ public class DynamicSettings {
       return modified;
   }
 
-  public synchronized void putJson(String name, Object value){
+  public void putJson(String name, Object value){
       putJson(name, null, value);
   }
 
-  public synchronized <T> void putJson(String name, Class<T> elementType, Object value){
-      try {
-          if (simpleJson) {
+  
+  public synchronized <E> void putJson(String name, Class<E> elementType, Object value){
+      putJson(name, elementType, null, value);
+  }
+  
+  public synchronized <K, E> void putJson(String name, Class<E> elementType, Class<K> keyType, Object value){
+      try{
+          if(simpleJson){
+              // Value is already a json object, no need to serialize it
+              if (value instanceof JsonValue){
+                put(name, value);
+                return;
+              }
+              
               JsonWriterBuilder builder = new JsonWriterBuilder();
-    
+
               json.setWriter(builder);
-              json.writeValue(value, value == null ? null : value.getClass(), elementType);
+              json.writeValue(value, value == null ? null : value.getClass(), elementType, keyType);
     
               put(name, builder.getJson());
           
-          } else {
+          }else{
               byteStream.reset();
               
               json.setWriter(new UBJsonWriter(byteStream));
-              json.writeValue(value, value == null ? null : value.getClass(), elementType);  
+              json.writeValue(value, value == null ? null : value.getClass(), elementType, keyType);  
               
               put(name, byteStream.toByteArray());
           }
     
           modified = true;  
           
-      } catch(Throwable e) {
+      }catch(Throwable e){
           writeLog("Failed to put JSON key=" + name + ":\n" + Strings.getStackTrace(e));
           throw new RuntimeException(e);
       }
   }
 
+  public <T> T getJson(String name, Class<T> type, Prov<T> def){
+      return getJson(name, type, null, def);
+  }
+  
+  public <T, E> T getJson(String name, Class<T> type, Class<E> elementType, Prov<T> def){
+      return getJson(name, type, elementType, null, def);
+  }
+  
   /**
-   * @apiNote if the key is not found, {@code def} is put and returned.
+   * @apiNote if the key is not found, {@code def} is puts and returned.
    */
-  public synchronized <L, T> L getJson(String name, Class<L> type, Class<T> elementType, Prov<L> def){
-      if(!has(name)) {
+  public synchronized <T, K, E> T getJson(String name, Class<T> type, Class<E> elementType, Class<K> keyType, Prov<T> def){
+      if(!has(name)){
           // put and return the default value
-          L fall = def.get();
+          T fall = def.get();
           putJson(name, elementType, fall);
           return fall;
       }
     
       try{
           JsonValue jvalue;
-          if (simpleJson) jvalue = (JsonValue) get(name, null);
-          else {
-            byteInputStream.setBytes(getBytes(name));
-            jvalue = reader.parse(byteInputStream);
+          if(simpleJson) jvalue = (JsonValue) get(name, null);
+          else{
+              byteInputStream.setBytes(getBytes(name));
+              jvalue = reader.parse(byteInputStream);
           }
           
-          if (jvalue == null) return def.get();
+          if(jvalue == null) return def.get();
           
-          L decoded = json.readValue(type, elementType, jvalue);
+          T decoded = json.readValue(type, elementType, jvalue, keyType);
           // if null, then the json was not decoded correctly 
-          if (decoded == null) throw new IllegalStateException("failed to decode json");
+          if(decoded == null) throw new IllegalStateException("failed to decode json");
           return decoded;
           
       }catch(Throwable e){
           writeLog("Failed to read JSON key=" + name + " type=" + type + ":\n" + Strings.getStackTrace(e));
           throw new RuntimeException(e);
       }
-  }
-
-  public <L> L getJson(String name, Class<L> type, Prov<L> def){
-      return getJson(name, type, null, def);
   }
 
   public float getFloat(String name, float def){
@@ -540,14 +562,20 @@ public class DynamicSettings {
       map.each((k, v) -> put(k, v));
   }
 
+  /** @return if the object's type is integer, decimal, boolean, string or bytes like */
+  public boolean isBasicType(Object object) {
+    return object instanceof Float || object instanceof Integer || object instanceof Boolean ||
+           object instanceof String || object instanceof byte[] || (simpleJson && object instanceof JsonValue);
+  }
+  
   /** Stores an object in the preference map. */
   public synchronized void put(String name, Object object){
-      if(object instanceof Float || object instanceof Integer || object instanceof Boolean ||
-         object instanceof String || object instanceof byte[] || (simpleJson && object instanceof JsonValue)){
+      if(isBasicType(object)){
           values.put(name, object);
           modified = true;
       }else{
-          throw new IllegalArgumentException("Invalid object stored: " + (object == null ? null : object.getClass()) + ".");
+          throw new IllegalArgumentException("Invalid object stored: " + 
+                                             (object == null ? null : object.getClass()) + ".");
       }
   }
 

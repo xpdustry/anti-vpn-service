@@ -85,7 +85,7 @@ public abstract class OnlineServiceProvider extends AddressProvider
   /**
    * Programmed period between before considering a service as re-available, 
    * when not, if {@link AdvancedHttp.Status#isFatalError()} is {@code true}.
-   * @apiNote the time check is done when {@link #isProviderAvailable()} is called, 
+   * @apiNote the time check is done when {@link #isAvailable()} is called, 
    *          so before every ip address checks when {@link #checkAddress(String)} is called.
    * @apiNote {@link AdvancedHttp.Status#ERROR} is ignored.
    */
@@ -190,8 +190,8 @@ public abstract class OnlineServiceProvider extends AddressProvider
   }
   
   @Override
-  public boolean isProviderAvailable() {
-    if(!super.isProviderAvailable()) 
+  public boolean isAvailable() {
+    if(!super.isAvailable()) 
       return false;
     
     else if (unavailability() != null) {

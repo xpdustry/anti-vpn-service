@@ -27,28 +27,33 @@
 package com.xpdustry.avs.config;
 
 import com.xpdustry.avs.Loader;
+import com.xpdustry.avs.command.Command;
 import com.xpdustry.avs.misc.CloudAutoRefresher;
+import com.xpdustry.avs.misc.ProviderActionSeq;
 import com.xpdustry.avs.service.ServiceManager;
-import com.xpdustry.avs.util.DynamicSettings;
-import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.service.providers.ProviderAction;
+import com.xpdustry.avs.service.providers.type.AddressProvider;
 import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.bundle.L10NBundle;
+import com.xpdustry.avs.util.json.DynamicSettings;
+import com.xpdustry.avs.util.logging.Logger;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 import com.xpdustry.avs.util.network.AwaitHttp;
 
+import arc.struct.ObjectMap;
+import arc.struct.Seq;
 
-/** Used by {@link AVSConfig} to notify a changed value */
+
+/** Used by {@link AVSConfig} and {@link RestrictedModeConfig} to notify a changed value */
 public class ConfigEvents {
-  public static boolean onDefaultLocaleChanged(Object v, Logger logger) {
+  ////AVSConfig part
+  
+  static boolean onDefaultLocaleChanged(Object v, Logger logger) {
     if (!Loader.done()) return false;
       
     if (L10NBundle.bundles.find(b -> Strings.locale2String(b.locale).equalsIgnoreCase((String) v)) == null) {
-      String list;
-      if (L10NBundle.getDefaultBundle().locale.getLanguage().equals("en"))
-           list = Strings.listToSentence(L10NBundle.bundles, b -> Strings.locale2String(b.locale));
-      else list = L10NBundle.bundles.toString(", ", b -> Strings.locale2String(b.locale));
-      
-      logger.err("avs.bundle.availables", v, list);
+      logger.err("avs.bundle.availables", v, 
+                 Strings.listToSentence(logger, L10NBundle.bundles, b -> Strings.locale2String(b.locale)));
       return false;
     }
     
@@ -56,11 +61,11 @@ public class ConfigEvents {
     return true;
   }
   
-  public static boolean onConnectLimitChanged(Object v, Logger l) {
+  static boolean onConnectLimitChanged(Object v, Logger l) {
     return ServiceManager.setPoolSize();
   }
   
-  public static boolean onAutosaveSpacingChanged(Object v, Logger logger) {
+  static boolean onAutosaveSpacingChanged(Object v, Logger logger) {
     int s = (int) v;
     DynamicSettings.setAutosaveSpacing(Math.max(s, 1));
     
@@ -72,13 +77,13 @@ public class ConfigEvents {
     return true;
   }
  
-  public static boolean onCleanupRecentsChanged(Object v, Logger logger) {
+  static boolean onCleanupRecentsChanged(Object v, Logger logger) {
     ((com.xpdustry.avs.service.providers.custom.RecentRequestedCache) 
         com.xpdustry.avs.service.providers.type.OnlineServiceProvider.cacheProvider).scheduleCleanup(((int) v));
     return true;
   }
   
-  public static boolean onCloudRefreshTimeoutChanged(Object v, Logger logger) {
+  static boolean onCloudRefreshTimeoutChanged(Object v, Logger logger) {
     int s = (int) v;
     CloudAutoRefresher.spacing(Math.max(s, 1));
     
@@ -98,48 +103,115 @@ public class ConfigEvents {
     return valid;
   }
   
-  public static boolean onPluginDirectoryChanged(Object v, Logger l) {
-    String s = (String) v;
-    return s.isEmpty() || validatePath(s, l);
+  static boolean onPluginDirectoryChanged(Object v, Logger l) {
+    return ((String) v).isEmpty() || validatePath(v, l);
   }
   
-  public static boolean onBundlesDirectoryChanged(Object v, Logger l) {
+  static boolean onBundlesDirectoryChanged(Object v, Logger l) {
     return validatePath(v, l);
   }
   
-  public static boolean onCacheDirectoryChanged(Object v, Logger l) {
+  static boolean onCacheDirectoryChanged(Object v, Logger l) {
     return validatePath(v, l);
   }
   
-  public static boolean onSettingsDirectoryChanged(Object v, Logger l) {
+  static boolean onSettingsDirectoryChanged(Object v, Logger l) {
     return validatePath(v, l);
   }
 
-  public static boolean onProviderDirectoryChanged(Object v, Logger l) {
+  static boolean onProviderDirectoryChanged(Object v, Logger l) {
     return validatePath(v, l);
   }
   
-  public static boolean onConfigFileChanged(Object v, Logger l) {
+  static boolean onConfigFileChanged(Object v, Logger l) {
     return validatePath(v, l);
   }
   
-  public static boolean onAllowUntrustedSourceChanged(Object v, Logger l) {
+  static boolean onAllowUntrustedSourceChanged(Object v, Logger l) {
     AdvancedHttp.allowUntrustedSourceHttpCode = (boolean) v;
     return true;
   }
   
-  public static boolean onSocketTimeoutChanged(Object v, Logger l) {
+  static boolean onSocketTimeoutChanged(Object v, Logger l) {
     AwaitHttp.readWriteTimeout = (int) v;
     return true;
   }
   
-  public static boolean onUseDefaultBundleChanged(Object v, Logger l) {
+  static boolean onUseDefaultBundleChanged(Object v, Logger l) {
     L10NBundle.useDefaultWhenKeyNotFound = (boolean) v;
     return true;
   }
   
-  public static boolean onBundleCacheChanged(Object v, Logger l) {
+  static boolean onBundleCacheChanged(Object v, Logger l) {
     L10NBundle.useCache = (boolean) v;
     return true;
   }
+  
+  ////
+  
+  //// RestrictedModeConfig part
+  
+  static boolean onSettingsChanged(Seq<AVSConfig.Field> settings, Logger logger) {
+    for (AVSConfig.Field c : settings) {
+      if (c == null) {
+        logger.err("avs.restrict.field.settings.invalid");
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  static boolean onProvidersChanged(Seq<AddressProvider> providers, Logger logger) {
+    for (AddressProvider c : providers) {
+      if (c == null) {
+        logger.err("avs.restrict.field.providers.invalid");
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  static boolean onCommandsChanged(Seq<Command> commands, Logger logger) {
+    for (Command c : commands) {
+      if (c == null) {
+        logger.err("avs.restrict.field.commands.invalid");
+        return false;
+      }
+      
+      // Some commands are critical and should not be allowed in restricted mode
+      if (c instanceof com.xpdustry.avs.command.list.ResetCommand ||
+          c instanceof com.xpdustry.avs.command.list.RestrictCommand)
+        logger.warn("avs.restrict.field.commands.critial", c.name);
+    }
+    
+    return true;
+  }
+  
+  static boolean onActionsChanged(ObjectMap<AddressProvider, ProviderActionSeq> actions, Logger logger) {
+    for (ObjectMap.Entry<AddressProvider, ProviderActionSeq> e : actions) {
+      Seq<ProviderAction> valid = ProviderAction.getAll(e.key);
+      Seq<ProviderAction> a = new Seq<>();
+      
+      for (int i=0; i<e.value.size; i++) {
+        ProviderAction pa = e.value.get(i);
+        
+        if (pa == null) {
+          logger.err("avs.restrict.field.actions.invalid", e.key.name);
+          return false;
+        }
+        
+        if (!valid.contains(pa)) a.add(pa);
+      }
+      
+      if (!a.isEmpty()) {
+        logger.err("avs.restrict.field.actions.not-compatible", e.key.name, 
+                   Strings.listToSentence(logger, a, pa -> pa.name));
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  ////
 }

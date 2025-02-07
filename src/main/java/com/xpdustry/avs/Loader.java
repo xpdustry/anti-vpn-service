@@ -31,10 +31,10 @@ import com.xpdustry.avs.config.RestrictedModeConfig;
 import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.ServiceManager;
-import com.xpdustry.avs.util.DynamicSettings;
-import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.VersionChecker;
 import com.xpdustry.avs.util.bundle.L10NBundle;
+import com.xpdustry.avs.util.json.DynamicSettings;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.Events;
 import arc.files.Fi;
@@ -137,11 +137,16 @@ public class Loader {
     logger.none();
     AntiVpnService.load();
     if (!AntiVpnService.isOperational()) return false;
+    
     RestrictedModeConfig.instance().load();
     if (!RestrictedModeConfig.instance().isLoaded()) return false;
+    RestrictedModeConfig.instance().notifyValuesChanged();
+    
     if (AVSConfig.cloudRefreshTimeout.getInt() > 0)
-      com.xpdustry.avs.misc.CloudAutoRefresher. start();    
+      com.xpdustry.avs.misc.CloudAutoRefresher. start();   
+    
     AntiVpnService.save();
+    
     if (AVSConfig.autosaveSpacing.getInt() > 0)
       DynamicSettings.startAutosave("AVS-Autosave");
     DynamicSettings.globalAutosave();

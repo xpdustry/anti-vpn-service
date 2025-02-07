@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,41 +24,22 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs;
+package com.xpdustry.avs.config.base;
 
-import com.xpdustry.avs.command.AVSCommandManager;
 import com.xpdustry.avs.util.logging.Logger;
 
-import arc.util.CommandHandler;
 
-
-public class Main extends mindustry.mod.Plugin {
-  private static final Logger logger = new Logger(true);
+public interface IField<T> {
+  String name();
+  T defaultValue();
+  String desc(Logger logger);
   
-  public void init() {
-    long start = System.currentTimeMillis();
-    logger.infoNormal("\n&lg----------------------------------------------------------------");
-    logger.info("avs.loading.started");
-    logger.none();
-
-    Loader.load(getClass());
-
-    if (Loader.done()) {
-      logger.none();
-      logger.info("avs.loading.finished", Math.max(1, (System.currentTimeMillis()-start)/1000));
-      logger.infoNormal("&lg----------------------------------------------------------------\n ");      
-    }
-  }
-
-  /** Register any commands to be used on the server side, e.g. from the console. */
-  @Override
-  public void registerServerCommands(CommandHandler handler) {
-    AVSCommandManager.registerServer(handler);
-  }
-
-  /** Register any commands to be used on the client side, e.g. sent from an in-game player.. */
-  @Override
-  public void registerClientCommands(CommandHandler handler){
-    AVSCommandManager.registerClient(handler);
-  }
+  T get();
+  boolean set(T value);
+  void setDefault(Logger logger);
+  
+  boolean validateChange(Logger logger);
+  
+  boolean equals(Object o);
+  String toString();
 }

@@ -24,10 +24,10 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.config.abstracts;
+package com.xpdustry.avs.config.base;
 
-import com.xpdustry.avs.util.DynamicSettings;
-import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.util.json.DynamicSettings;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.files.Fi;
 import arc.struct.Seq;
@@ -37,7 +37,7 @@ import arc.util.Strings;
 public abstract class AbstractConfig {
   public final String name;
   public final boolean plainJson;
-  public final Seq<AbstractField<?>> all = new Seq<>();
+  public final Seq<IField<?>> all = new Seq<>();
   
   protected DynamicSettings config;  
   protected boolean isLoading;
@@ -53,7 +53,7 @@ public abstract class AbstractConfig {
     this.logger = new Logger(Strings.capitalize(name));
   }
   
-  public AbstractField<?> get(String name) {
+  public IField<?> get(String name) {
     return all.find(f -> f.name().equals(name));
   }
   
@@ -62,7 +62,8 @@ public abstract class AbstractConfig {
       try { f.validateChange(logger); }
       catch (Exception e) { // probably invalid value in config file
         // notify, remove the field and use the default value
-        logger.err(msgBundleKey("invalid-field"), f.name());
+        logger.err(configBundleKey("invalid-field"), f.name());
+        logger.err("avs.error", e.toString());
         f.setDefault(logger);
       }
     });
@@ -76,17 +77,22 @@ public abstract class AbstractConfig {
     return config != null && !isLoading;
   }
   
-  protected abstract String msgBundleKey(String key);
+  /** Used format the key to get a config message from bundle */
+  protected abstract String configBundleKey(String key);
+  
+  /** Used to format the key to get the field description from bundle */
+  protected abstract String fieldDescBundleKey(IField<?> field);
   
   public void load() {
     isLoading = true;
     
-    logger.info(msgBundleKey("loading"));
+    logger.info(configBundleKey("loading"));
     Fi file = getFile();
-    logger.debug(msgBundleKey("file"), file.absolutePath());
+    logger.debug(configBundleKey("file"), file.absolutePath());
     
     config = new DynamicSettings(file, true);
     config.load();
+    
     loadMisc();
 
     isLoading = false;

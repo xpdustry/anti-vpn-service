@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,29 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.config.abstracts;
+package com.xpdustry.avs.misc;
+
+import com.xpdustry.avs.config.RestrictedModeConfig;
+import com.xpdustry.avs.service.providers.ProviderAction;
+
+import arc.struct.Seq;
+import arc.util.serialization.Json;
+import arc.util.serialization.JsonValue;
 
 
-public interface ChangeValider<T> {
-  boolean accept(T value, com.xpdustry.avs.util.Logger logger);
+/** Just a class for serialization. Will be used by {@link RestrictedModeConfig} */
+@SuppressWarnings({ "rawtypes", "unchecked" })
+public class ProviderActionSeq extends Seq<ProviderAction> implements Json.Serializer<ProviderActionSeq> {
+  public ProviderActionSeq() {}
+  public ProviderActionSeq(Seq<ProviderAction> array){ super(array); }
+  
+  @Override
+  public void write(Json json, ProviderActionSeq object, Class knownType) {
+    json.writeValue(object.copy(), Seq.class, ProviderAction.class);
+  }
+  
+  @Override
+  public ProviderActionSeq read(Json json, JsonValue jsonData, Class type) {
+    return new ProviderActionSeq(json.readValue(Seq.class, ProviderAction.class, jsonData));
+  }
 }

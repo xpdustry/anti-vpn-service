@@ -33,7 +33,7 @@ import com.xpdustry.avs.service.providers.custom.*;
 import com.xpdustry.avs.service.providers.local.*;
 import com.xpdustry.avs.service.providers.online.*;
 import com.xpdustry.avs.service.providers.type.*;
-import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.Events;
 import arc.struct.Seq;

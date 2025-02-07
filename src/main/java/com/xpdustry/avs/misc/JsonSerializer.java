@@ -30,29 +30,43 @@ import com.xpdustry.avs.command.AVSCommandManager;
 import com.xpdustry.avs.command.Command;
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.address.*;
+import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.providers.ProviderAction;
+import com.xpdustry.avs.service.providers.type.AddressProvider;
+import com.xpdustry.avs.util.json.Json2;
 import com.xpdustry.avs.util.network.Subnet;
 
 import arc.util.serialization.Json;
 import arc.util.serialization.JsonValue;
+import arc.util.serialization.SerializationException;
 
 
+@SuppressWarnings("rawtypes")
 public class JsonSerializer {
-  @SuppressWarnings("rawtypes")
-  public static void apply(Json json) {
-    json.setSerializer(Subnet.class, new Json.Serializer<>() {
+  public static void apply(Json2 json) {
+    json.setSerializer(Subnet.class, new Json2.JsonObjectSerializer<>() {
       @Override
-      public void write(Json json, Subnet object, Class knownType) {
-        json.writeValue(object.toString());
+      public void write(Json2 json, Subnet object, Class knownType, Class elementType, Class keyType) {
+        json.writeValue(toKey(json, object, Subnet.class));
       }
 
       @Override
-      public Subnet read(Json json, JsonValue jsonData, Class type) {
-        return jsonData.isNull() ? null : Subnet.createInstance(jsonData.asString());
+      public Subnet read(Json2 json, JsonValue jsonData, Class type, Class elementType, Class keyType) {
+        return jsonData.isNull() ? null : fromKey(json, jsonData.asString(), Subnet.class);
+      }
+
+      @Override
+      public String toKey(Json2 json, Subnet object, Class knownType) {
+        return object.toString();
+      }
+
+      @Override
+      public Subnet fromKey(Json2 json, String key, Class type) {
+        return Subnet.createInstance(key);
       }
     });
     
-    json.setSerializer(AddressInfos.class, new Json.Serializer<>() {
+    json.setSerializer(AddressInfos.class, new Json2.Serializer<>() {
       @Override
       public void write(Json json, AddressInfos object, Class knownType) {
         json.writeObjectStart();
@@ -83,7 +97,7 @@ public class JsonSerializer {
       
     });
     
-    json.setSerializer(AddressStats.class, new Json.Serializer<>() {
+    json.setSerializer(AddressStats.class, new Json2.Serializer<>() {
       @Override
       public void write(Json json, AddressStats object, Class knownType) {
         json.writeObjectStart();
@@ -101,7 +115,7 @@ public class JsonSerializer {
       }
     });
     
-    json.setSerializer(AddressType.class, new Json.Serializer<>() {
+    json.setSerializer(AddressType.class, new Json2.Serializer<>() {
       @Override
       public void write(Json json, AddressType object, Class knownType) {
         json.writeValue(object.toBinary());
@@ -113,7 +127,7 @@ public class JsonSerializer {
       }
     });
     
-    json.setSerializer(AddressValidity.class, new Json.Serializer<>() {
+    json.setSerializer(AddressValidity.class, new Json2.Serializer<>() {
       @Override
       public void write(Json json, AddressValidity object, Class knownType) {
         json.writeObjectStart();
@@ -129,7 +143,7 @@ public class JsonSerializer {
       public AddressValidity read(Json json, JsonValue jsonData, Class type_) {
         Subnet subnet = json.readValue("address", Subnet.class, jsonData);
         if (subnet == null) 
-          throw new IllegalArgumentException("malformed AddressValidity object; \"address\" is missing");
+          throw new SerializationException("malformed AddressValidity object; \"address\" is missing");
 
         AddressInfos infos = json.readValue("infos", AddressInfos.class, jsonData);
         AddressValidity valid = new AddressValidity(subnet, infos);
@@ -142,48 +156,101 @@ public class JsonSerializer {
       }
     });
     
-    json.setSerializer(ProviderAction.class, new Json.Serializer<>() {
+    
+    //// Used by RestrictedModeConfig
+    
+    json.setSerializer(ProviderActionSeq.class, new ProviderActionSeq());
+    
+    json.setSerializer(ProviderAction.class, new Json2.JsonObjectSerializer<>() {
       @Override
-      public void write(Json json, ProviderAction object, Class knownType) {
-        json.writeValue(object.category.name + '.' + object.name);
+      public void write(Json2 json, ProviderAction object, Class knownType, Class elementType, Class keyType) {
+        json.writeValue(toKey(json, object, ProviderAction.class));
       }
 
       @Override
-      public ProviderAction read(Json json, JsonValue jsonData, Class type) {
-        String name = jsonData.asString();
-        int dot = name.indexOf('.');
-        if (dot < 1) throw new IllegalArgumentException("malformed ProviderAction value");
-        
-        String category = name.substring(0, dot);
-        String action = name.substring(dot+1);
-        return ProviderAction.all.find(a -> a.category.name.equals(category) && a.name.equals(action));
+      public ProviderAction read(Json2 json, JsonValue jsonData, Class type, Class elementType, Class keyType) {
+        return fromKey(json, jsonData.asString(), ProviderAction.class);
+      }
+
+      @Override
+      public String toKey(Json2 json, ProviderAction object, Class knownType) {
+        return object.name;
+      }
+
+      @Override
+      public ProviderAction fromKey(Json2 json, String key, Class type) {
+        ProviderAction a = ProviderAction.get(key);
+        if (a == null) throw new SerializationException("no provider action named '"+key+"' found.");
+        return a;
       }
     });
     
-    json.setSerializer(AVSConfig.Field.class, new Json.Serializer<>() {
+    json.setInheritSerializer(AddressProvider.class, new Json2.JsonObjectSerializer<>() {
       @Override
-      public void write(Json json, AVSConfig.Field object, Class knownType) {
-        json.writeValue(object.name);
+      public void write(Json2 json, AddressProvider object, Class knownType, Class elementType, Class keyType) {
+        json.writeValue(toKey(json, object, AddressProvider.class));
       }
 
       @Override
-      public AVSConfig.Field read(Json json, JsonValue jsonData, Class type) {
-        String name = jsonData.asString();
-        return (AVSConfig.Field) AVSConfig.instance().all.find(f -> f.name().equals(name));
+      public AddressProvider read(Json2 json, JsonValue jsonData, Class type, Class elementType, Class keyType) {
+        return fromKey(json, jsonData.asString(), AddressProvider.class);
+      }
+
+      @Override
+      public String toKey(Json2 json, AddressProvider object, Class knownType) {
+        return object.name;
+      }
+
+      @Override
+      public AddressProvider fromKey(Json2 json, String key, Class type) {
+        AddressProvider provider = AntiVpnService.allProviders.find(p -> p.name.equals(key));
+        if (provider == null) throw new SerializationException("no address provider named '"+key+"' found.");
+        return provider;
+      }
+    }); 
+
+    json.setSerializer(AVSConfig.Field.class, new Json2.JsonObjectSerializer<>() {
+      @Override
+      public void write(Json2 json, AVSConfig.Field object, Class knownType, Class elementType, Class keyType) {
+        json.writeValue(toKey(json, object, AVSConfig.Field.class));
+      }
+
+      @Override
+      public AVSConfig.Field read(Json2 json, JsonValue jsonData, Class type, Class elementType, Class keyType) {
+        return fromKey(json, jsonData.asString(), AVSConfig.Field.class);
+      }
+
+      @Override
+      public String toKey(Json2 json, AVSConfig.Field object, Class knownType) {
+        return object.name;
+      }
+
+      @Override
+      public AVSConfig.Field fromKey(Json2 json, String key, Class type) {
+        return (AVSConfig.Field) AVSConfig.instance().all.find(f -> f.name().equals(key));
       }
     });
     
-    json.setSerializer(Command.class, new Json.Serializer<>() {
+    json.setInheritSerializer(Command.class, new Json2.JsonObjectSerializer<>() {
       @Override
-      public void write(Json json, Command object, Class knownType) {
-        json.writeValue(object.name);
+      public void write(Json2 json, Command object, Class knownType, Class elementType, Class keyType) {
+        json.writeValue(toKey(json, object, Command.class));
       }
 
       @Override
-      public Command read(Json json, JsonValue jsonData, Class type) {
-        String name = jsonData.asString();
-        return AVSCommandManager.subCommands.find(c -> c.name.equals(name));
+      public Command read(Json2 json, JsonValue jsonData, Class type, Class elementType, Class keyType) {
+        return fromKey(json, jsonData.asString(), Command.class);
       }
-    });
+
+      @Override
+      public String toKey(Json2 json, Command object, Class knownType) {
+        return object.name;
+      }
+
+      @Override
+      public Command fromKey(Json2 json, String key, Class type) {
+        return AVSCommandManager.subCommands.find(c -> c.name.equals(key));
+      }
+    }); 
   }
 }

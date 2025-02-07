@@ -90,6 +90,14 @@ public class AVSEvents {
       this.provider = provider;
     }
   }
+  public static class CloudProviderRefreshedEvent {
+    public final CloudDownloadedProvider provider;
+    
+    public CloudProviderRefreshedEvent(CloudDownloadedProvider provider) {
+      this.provider = provider;
+    }
+  }
+  
   
   public static class EditableProviderAddedAddressEvent {
     public final EditableAddressProvider provider;
@@ -298,7 +306,12 @@ public class AVSEvents {
   }
   
   public static class CloudAutoRefresherStartedEvent {}
-  public static class CloudAutoRefresherFinishedEvent {}
-  public static class CloudAutoRefresherFinishedWithErrorsEvent {}
+  public static class CloudAutoRefresherDoneEvent {
+    public final boolean errors; 
+    
+    public CloudAutoRefresherDoneEvent(boolean errors) {
+      this.errors = errors;
+    }
+  }
   
 }

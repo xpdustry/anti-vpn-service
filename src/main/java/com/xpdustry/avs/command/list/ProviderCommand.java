@@ -30,8 +30,8 @@ import com.xpdustry.avs.config.RestrictedModeConfig;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.service.providers.type.AddressProvider;
-import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.struct.Seq;
 
@@ -42,21 +42,31 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
   @Override
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
-      Seq<AddressProvider> list = restrictedMode ? RestrictedModeConfig.providers.values : 
+      Seq<AddressProvider> list = restrictedMode ? RestrictedModeConfig.providers.get() : 
                                                    AntiVpnService.allProviders;
 
       if (list.isEmpty()) {
         logger.warn("avs.command.provider.nothing");
         return;
       }
-      
-      String format = logger.getKey("avs.command.provider.format");
+            
+      String valueF = logger.getKey("avs.command.provider.value"),
+             descF =  logger.getKey("avs.command.provider.desc"),
+             nextF = logger.getKey("avs.command.provider.next"),
+             enabled = logger.getKey("avs.command.provider.enabled"),
+             disabled = logger.getKey("avs.command.provider.disabled"),
+             unavailable = logger.getKey("avs.command.provider.unavailable");
       StringBuilder builder = new StringBuilder();
       
-      builder.append(logger.getKey("avs.command.provider.availables")).append('\n');
-      list.each(p -> 
-          builder.append(Strings.format(format, p.isEnabled() ? "&lg" : "&lr", p.name, p.displayName)).append('\n'));
-      logger.infoNormal(builder.toString());
+      list.each(p -> {
+        builder.append(Strings.format(valueF, p.name(), p.displayName(), 
+                                      !p.isEnabled() ? disabled : !p.isAvailable() ? unavailable : enabled))
+               .append('\n');
+        for (String line : p.description(logger).split("\n"))
+          builder.append(Strings.format(descF, line)).append('\n');
+        logger.infoNormal(builder.toString() + nextF);
+        builder.setLength(0);
+      });
       return;
     }
     
@@ -78,17 +88,20 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
     if (provider == null) {
       logger.err("avs.command.provider.not-found", args[0]);
       return;
-    } else if (restrictedMode && !RestrictedModeConfig.providers.values.contains(provider)) {
+    } else if (restrictedMode && !RestrictedModeConfig.providers.get().contains(provider)) {
       logger.err("avs.command.provider.restricted");
       return;
-    } else if (args.length == 1) {
+    }
+    
+    Seq<ProviderAction> actions = RestrictedModeConfig.actions.get(provider);
+    
+    if (args.length == 1) {
       String format = logger.getKey("avs.command.provider.action.format");
       StringBuilder builder = new StringBuilder();
       
       builder.append(logger.getKey("avs.command.provider.action.availables")).append('\n');
       addProviderActions(builder, format, 
-          restrictedMode && !provider.actions.isEmpty() ? provider.actions : 
-                                                          ProviderAction.getAll(provider), 
+          restrictedMode && actions != null && !actions.isEmpty() ? actions : ProviderAction.getAll(provider), 
           logger);
       logger.infoNormal(builder.toString());
       return;
@@ -102,7 +115,7 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
     } else if (!ProviderAction.Category.getAll(provider).contains(c -> c == action.category)) {
       logger.err("avs.command.provider.action.not-compatible");
       return;
-    } else if (restrictedMode && !provider.actions.isEmpty() && !provider.actions.contains(action)) {
+    } else if (restrictedMode && actions != null && !actions.isEmpty() && !actions.contains(action)) {
       logger.err("avs.command.provider.action.restricted");
       return;
     }

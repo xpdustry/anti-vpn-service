@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,8 @@ package com.xpdustry.avs.util.bundle;
 import java.text.MessageFormat;
 import java.util.Locale;
 
-import com.xpdustry.avs.util.Logger;
 import com.xpdustry.avs.util.Strings;
+import com.xpdustry.avs.util.logging.Logger;
 
 import arc.files.Fi;
 import arc.struct.ObjectMap;
@@ -200,9 +200,9 @@ public class L10NBundle {
         
         Bundle[] founds = findCandidateBundles(bundles, b.locale);
         int i = 0;
-        logger.debugNormal("Founds: @", Strings.listToSentence(Seq.with(founds), 
-            bb -> bb == null ? "null" : bb.locale.toString()));
-  
+        logger.debugNormal("Founds: @", Strings.listToSentence(logger, Seq.with(founds), 
+                           bb -> bb == null ? "null" : bb.locale.toString()));
+
         for (; i<founds.length; i++) {
           if (founds[i] == null) break;
           if (i > 0) founds[i-1].setParent(founds[i]);

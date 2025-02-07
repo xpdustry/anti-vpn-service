@@ -24,8 +24,9 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.util;
+package com.xpdustry.avs.util.logging;
 
+import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.bundle.*;
 
 import arc.util.Log;

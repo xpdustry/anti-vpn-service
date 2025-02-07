@@ -28,12 +28,12 @@ package com.xpdustry.avs.config;
 
 import arc.files.Fi;
 
-import com.xpdustry.avs.config.abstracts.ChangeValider;
-import com.xpdustry.avs.util.Logger;
+import com.xpdustry.avs.config.base.*;
 import com.xpdustry.avs.util.Strings;
+import com.xpdustry.avs.util.logging.Logger;
 
 
-public class AVSConfig extends com.xpdustry.avs.config.abstracts.AbstractConfig {
+public class AVSConfig extends AbstractConfig {
   private static final AVSConfig INSTANCE = new AVSConfig();
   private static Fi workingDirectory;
   /** Limit to prevent a config redirection loop */
@@ -70,8 +70,13 @@ public class AVSConfig extends com.xpdustry.avs.config.abstracts.AbstractConfig 
   }
 
   @Override
-  protected String msgBundleKey(String key) {
+  protected String configBundleKey(String key) {
     return "avs." + name + ".msg." + key;
+  }
+
+  @Override
+  protected String fieldDescBundleKey(IField<?> field) {
+    return "avs." + name + "." + field.name();
   }
   
   @Override
@@ -96,9 +101,7 @@ public class AVSConfig extends com.xpdustry.avs.config.abstracts.AbstractConfig 
   }
   
   
-  public static class Field extends com.xpdustry.avs.config.abstracts.AbstractBasicField {
-    public static final String bundleDescFormat = "avs." + INSTANCE.name + ".@";
-    
+  public static class Field extends SimpleField {
     public final boolean isDev, readOnly;
     
     Field(String name, Object defaultValue) { this(name, defaultValue, null, false, false); }
@@ -107,13 +110,11 @@ public class AVSConfig extends com.xpdustry.avs.config.abstracts.AbstractConfig 
     Field(String name, Object defaultValue, ChangeValider<Object> validate) { this(name, defaultValue, validate, false, false); }
     Field(String name, Object defaultValue, ChangeValider<Object> validate, boolean isDev) { this(name, defaultValue, validate, isDev, false); }
     Field(String name, Object defaultValue, ChangeValider<Object> validate, boolean isDev, boolean readOnly) {
-      super(AVSConfig.instance(), name, defaultValue, validate);
+      super(INSTANCE, name, defaultValue, validate);
       this.isDev = isDev;
       this.readOnly = readOnly;
     }
-    
-    @Override
-    protected String descKeyFormat() { return bundleDescFormat; }
+
     @Override
     protected Object getValue() { return master.config().get(name(), defaultValue()); }
     /** Handle {@link #readOnly} */
