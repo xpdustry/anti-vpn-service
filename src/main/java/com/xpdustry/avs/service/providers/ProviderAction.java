@@ -26,7 +26,6 @@
 
 package com.xpdustry.avs.service.providers;
 
-import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.service.providers.type.AddressProvider;
 import com.xpdustry.avs.service.providers.type.ProviderCategories;
 import com.xpdustry.avs.util.Strings;
@@ -38,24 +37,24 @@ import arc.struct.Seq;
 
 
 public enum ProviderAction {
-  enable(Category.common, CallbackKeeper::commonEnableAction),
-  disable(Category.common, CallbackKeeper::commonDisableAction),
+  enable(Category.common, ActionCallbacks::enable),
+  disable(Category.common, ActionCallbacks::disable),
   reload(Category.common, (a, l) -> a.reload()),
   
-  list(Category.cached, CallbackKeeper::cachedListAction),
-  search(Category.cached, CallbackKeeper::cachedSearchAction),
-  info(Category.cached, CallbackKeeper::cachedInfoAction),
+  list(Category.cached, ActionCallbacks::list),
+  search(Category.cached, ActionCallbacks::search),
+  info(Category.cached, ActionCallbacks::info),
   
-  refresh(Category.cloud, CallbackKeeper::cloudRefreshAction),
+  refresh(Category.cloud, ActionCallbacks::refresh),
   
-  add(Category.editable, CallbackKeeper::editableAddAction),
-  remove(Category.editable, CallbackKeeper::editableRemoveAction),
+  add(Category.editable, ActionCallbacks::add),
+  remove(Category.editable, ActionCallbacks::remove),
   clear(Category.editable, (a, l) -> ((ProviderCategories.Editable) a).clear()),
 
   //check(Category.online, CallbackKeper::onlineCheckAction),
-  addToken(Category.online, CallbackKeeper::onlineAddTokenAction),
-  delToken(Category.online, CallbackKeeper::onlineDelTokenAction),
-  listTokens(Category.online, CallbackKeeper::onlineListTokensAction),
+  addToken(Category.online, ActionCallbacks::addToken),
+  delToken(Category.online, ActionCallbacks::delToken),
+  listTokens(Category.online, ActionCallbacks::listTokens),
   ;
 
   public static final Seq<ProviderAction> all = Seq.with(values());
@@ -226,209 +225,6 @@ public enum ProviderAction {
       }
 
       return result;
-    }
-  }
-
-  
-  /** 
-   * Private class to store {@link ProviderAction} callbacks, 
-   * for a better visual in action definition 
-   */
-  private static class CallbackKeeper {
-    private static String key(ProviderAction action, String key) {
-      return Strings.format(actionDescKeyFormat + ".@", action.category.name, action.name, key);
-    }
-    
-    
-    private static void commonEnableAction(ProviderCategories.Basic provider, Logger logger) {
-      if (provider.isEnabled()) logger.err(key(enable, "already"));
-      else provider.enable();
-    }
-    
-    private static void commonDisableAction(ProviderCategories.Basic provider, Logger logger) {
-      if (!provider.isEnabled()) logger.err(key(disable, "already"));
-      else provider.disable();
-    }
-    
-    private static void cachedListAction(ProviderCategories.Basic provider, Logger logger) {
-      Seq<String> result = ((ProviderCategories.Cacheable) provider).list().map(s -> s.toString());
-      
-      if (result.isEmpty()) {
-        logger.warn(key(list, "empty"));
-        return;
-      }
-      
-      StringBuilder builder = new StringBuilder(logger.getKey(key(list, "head"))).append('\n');
-
-      if (result.size > 10) {
-        boolean toolong = false;
-        int rest = 0, max = 100;
-        
-        if (result.size > max) {
-          rest = result.size - max;
-          result.setSize(max);
-          toolong = true;
-        }
-        
-        Seq<String> table = Strings.tableify(result, 70);
-        if (toolong) table.add(logger.formatKey(key(list, "and-more"), rest));
-        
-        table.each(l -> builder.append("&lk|&fr ").append(l.strip()).append('\n'));
-                
-      } else result.each(s -> builder.append("&lk|&fr ").append(s).append('\n'));
-
-      logger.infoNormal(builder.toString());
-    }
-    
-    private static void cachedSearchAction(ProviderCategories.Basic provider, String arg, Logger logger) {
-      try { AddressValidity.checkAddress(arg); }
-      catch (IllegalArgumentException e) {
-        logger.err(key(search, "invalid"), arg);
-        return;
-      }
-      
-      Seq<AddressValidity> result = ((ProviderCategories.Cacheable) provider).matches(arg);
-      
-      if (result.isEmpty()) {
-        logger.err(key(search, "not-found"), arg);
-        return;
-      }
-      
-      StringBuilder builder = new StringBuilder();
-      
-      builder.append(logger.formatKey(key(search, "matches"), result.size, arg)).append('\n');
-      if (result.size > 10) {
-        boolean toolong = false;
-        int rest = 0, max = 100;
-        
-        if (result.size > max) {
-          rest = result.size - max;
-          result.setSize(max);
-          toolong = true;
-        }
-        
-        Seq<String> table = Strings.tableify(result.map(v -> v.subnet.toString()), 70);
-        if (toolong) table.add(logger.formatKey(key(list, "and-more"), rest));
-        
-        table.each(l -> builder.append("&lk|&fr ").append(l.strip()).append('\n'));
-      
-      } else result.each(v -> builder.append("&lk|&fr ").append(v.subnet.toString()).append('\n'));
-      
-      logger.infoNormal(builder.toString());
-    }
-    
-    private static void cachedInfoAction(ProviderCategories.Basic provider, String arg, Logger logger) {
-      try { AddressValidity.checkSubnet(arg); }
-      catch (IllegalArgumentException e) {
-        logger.err(key(info, "invalid"), arg);
-        return;
-      }
-      
-      AddressValidity result = ((ProviderCategories.Cacheable) provider).get(arg);
-      
-      if (result == null) {
-        logger.err(key(info, "not-found"), arg);
-        return;
-      }
-      
-      StringBuilder builder = new StringBuilder();
-      
-      builder.append(logger.formatKey(key(info, "match"), arg)).append('\n');
-      result.toFormattedString(builder, logger, false);
-      logger.infoNormal(builder.toString());
-    }
-    
-    private static void cloudRefreshAction(ProviderCategories.Basic provider, Logger logger) {
-      logger.info(key(refresh, "wait"));
-      ((ProviderCategories.Cloudable) provider).refresh();
-    }
-    
-    private static void editableAddAction(ProviderCategories.Basic provider, String arg, Logger logger) {
-      String[] args = arg.split(" ");
-      
-      try { AddressValidity.checkSubnet(args[0]); }
-      catch (IllegalArgumentException e) {
-        logger.err(key(info, "invalid"), arg);
-        return;
-      }
-      
-      AddressValidity address = new AddressValidity(args[0]);
-      if (args.length > 1) {
-        for (int i=1; i<args.length; i++) {
-          switch (args[i].toLowerCase()) {
-            case "other": address.type.other = true; break;
-            case "vpn": address.type.vpn = true; break;
-            case "proxy": address.type.proxy = true; break;
-            case "tor": address.type.tor = true; break;
-            case "relay": address.type.relay = true; break;
-            case "datacenter": address.type.dataCenter = true; break;
-            default: logger.err(key(add, "invalid-type")); return;
-          }
-        }
-      }
-      
-      if (((ProviderCategories.Editable) provider).add(address))
-           logger.info(key(add, "added"));
-      else logger.err(key(add, "present"));
-    }
-    
-    private static void editableRemoveAction(ProviderCategories.Basic provider, String arg, Logger logger) {
-      try { AddressValidity.checkSubnet(arg); }
-      catch (IllegalArgumentException e) {
-        logger.err(key(info, "invalid"), arg);
-        return;
-      }
-      
-      if (((ProviderCategories.Editable) provider).remove(new AddressValidity(arg)))
-        logger.info(key(remove, "removed"));
-      else logger.err(key(remove, "not-in"));
-    }
-    
-/*
-    private static void onlineCheckAction(ProviderCategories.Basic provider, String arg, Logger logger) {
-      
-    }
-*/
-    
-    private static void onlineAddTokenAction(ProviderCategories.Basic provider, String arg, Logger logger) {
-      if (!((ProviderCategories.Onlinable) provider).canUseTokens()) {
-        logger.err(key(listTokens, "no-use"));
-        return;
-      }
-      
-      if (((ProviderCategories.Onlinable) provider).addToken(arg))
-        logger.info(key(addToken, "added"));
-      else logger.err(key(addToken, "present"));
-    }
-    
-    private static void onlineDelTokenAction(ProviderCategories.Basic provider, String arg, Logger logger) {
-      if (!((ProviderCategories.Onlinable) provider).canUseTokens()) {
-        logger.err(key(listTokens, "no-use"));
-        return;
-      }
-      
-      if (((ProviderCategories.Onlinable) provider).removeToken(arg))
-        logger.info(key(delToken, "added"));
-      else logger.err(key(delToken, "not-in"));
-    }
-    
-    private static void onlineListTokensAction(ProviderCategories.Basic provider, Logger logger) {
-      if (!((ProviderCategories.Onlinable) provider).canUseTokens()) {
-        logger.warn(key(listTokens, "no-use"));
-        return;
-      }
-      
-      Seq<String> result = ((ProviderCategories.Onlinable) provider).getTokens();
-      
-      if (result.isEmpty()) {
-        logger.warn(key(list, "empty"));
-        return;
-      }
-      
-      StringBuilder builder = new StringBuilder(logger.getKey(key(listTokens, "head"))).append('\n');
-      result.each(t -> builder.append("&lk|&fr ").append(t).append('\n'));
-      
-      logger.infoNormal(builder.toString());
     }
   }
 }

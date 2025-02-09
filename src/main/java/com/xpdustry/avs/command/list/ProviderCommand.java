@@ -56,7 +56,7 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
              enabled = logger.getKey("avs.command.provider.enabled"),
              disabled = logger.getKey("avs.command.provider.disabled"),
              unavailable = logger.getKey("avs.command.provider.unavailable");
-      StringBuilder builder = new StringBuilder();
+      StringBuilder builder = new StringBuilder(logger.getKey("avs.command.provider.availables"));
       
       list.each(p -> {
         builder.append(Strings.format(valueF, p.name(), p.displayName(), 

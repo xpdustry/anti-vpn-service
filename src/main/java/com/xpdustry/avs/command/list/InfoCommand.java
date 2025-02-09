@@ -50,6 +50,8 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
     Seq<Helper> queries = new Seq<>();
     String query = String.join(" ", args);
     
+    logger.info("avs.command.info.wait");
+    
     if (args.length == 0) {
       if (logger instanceof PlayerLogger) {
         mindustry.gen.Player player = ((PlayerLogger) logger).player;
@@ -93,14 +95,13 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
           com.xpdustry.avs.misc.address.AddressValidity.checkAddress(query); 
           queries.add(new Helper(query, null));
         } catch (Exception ignored) {}
-        
-        logger.info("avs.command.info.matches", queries.size);
       }
+      
+      logger.info("avs.command.info.matches", queries.size);
     }
     
     
     if (!queries.isEmpty()) {
-      logger.info("avs.command.info.wait");
       queries.each(h -> h.setReply(AntiVpnService.checkAddressOnline(h.address)));
       logger.infoNormal("");
       for (int i=0; i<queries.size; i++) 

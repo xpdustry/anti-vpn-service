@@ -77,6 +77,11 @@ public class FieldList<T> extends CachedField<Seq<T>> {
     return accept;
   }
   
+  public void clear() {
+    // No need to validate change since the list will be clear
+    get().clear();
+  }
+  
   @Override
   public String toString() {
     return master.config.getJson().toJson(cached);

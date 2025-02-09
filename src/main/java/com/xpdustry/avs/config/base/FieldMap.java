@@ -84,6 +84,11 @@ public class FieldMap<K, V> extends CachedField<ObjectMap<K, V>> {
     return accept;
   }
   
+  public void clear() {
+    // No need to validate change since the map will be clear
+    get().clear();
+  }
+  
   @Override
   public String toString() {
     return master.config.getJson().toJson(cached);
