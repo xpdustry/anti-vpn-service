@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,12 +38,16 @@ public abstract class Command {
   
   /** The command name. Will be used to get args, description and help page, in the bundle */
   public final String name;
+  /** Define if the command should only be executed on the server console. */
+  public final boolean consoleOnly;
+  
   protected final Logger defaultLogger;
   
-  
-  public Command(String name) {
+  public Command(String name) { this(name, false); }
+  public Command(String name, boolean consoleOnly) {
     this.name = name;
     this.defaultLogger = new Logger("Command/" + arc.util.Strings.capitalize(name));
+    this.consoleOnly = consoleOnly;
   }
   
   public String getArgs() { return getArgs(defaultLogger); }

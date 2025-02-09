@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,8 @@ public class ResetCommand extends com.xpdustry.avs.command.Command {
   private static Timer.Task resetTask;
   private static boolean resetRequested = false,
                          resetConfirmed = false;
-  
-  public ResetCommand() { super("reset"); }
+
+  public ResetCommand() { super("reset", true); }
 
   @Override
   public void run(String[] args, com.xpdustry.avs.util.logging.Logger logger, boolean restrictedMode) {
@@ -45,14 +45,17 @@ public class ResetCommand extends com.xpdustry.avs.command.Command {
       logger.err("avs.command.reset.no-args-pls");
       return;
     }
-    //TODO: check if is the same player who started the reset
-    
+
     if (resetRequested) {
+      if (args.length == 0) {
+        logger.err("avs.command.reset.waiting");
+        return;
+      }
+
       resetRequested = false;
       if (resetTask != null) resetTask.cancel();
-      
-      if (args.length == 0) logger.err("avs.command.reset.invalid-usage");
-      else if (args[0].equals("no")) logger.info("avs.command.reset.canceled");
+
+      if (args[0].equals("no")) logger.info("avs.command.reset.canceled");
       else if (!args[0].equals("yes")) logger.err("avs.command.reset.invalid-usage");
       else {
         logger.info("avs.command.reset.confirmed");
@@ -62,7 +65,7 @@ public class ResetCommand extends com.xpdustry.avs.command.Command {
 
     } else {
       // Warn the user
-      logger.infoNormal("");
+      logger.none();
       logger.info("avs.command.reset.warn1");
       logger.info("avs.command.reset.warn2");
       logger.info("avs.command.reset.warn3");

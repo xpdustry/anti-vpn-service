@@ -176,6 +176,9 @@ public class ConfigEvents {
       if (c == null) {
         logger.err("avs.restrict.field.commands.invalid");
         return false;
+      } else if (c.consoleOnly) {
+        logger.err("avs.restrict.field.commands.console-only", c.name);
+        return false;
       }
       
       // Some commands are critical and should not be allowed in restricted mode

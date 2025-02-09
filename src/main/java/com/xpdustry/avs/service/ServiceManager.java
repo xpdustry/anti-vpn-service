@@ -246,7 +246,10 @@ public class ServiceManager {
   protected static void registerResetEvent() {
     Events.on(AVSEvents.AVSResetEvent.class, e -> {
       // Only the reset command have the right
-      if (!com.xpdustry.avs.command.list.ResetCommand.isResetConfirmed()) return;
+      if (!com.xpdustry.avs.command.list.ResetCommand.isResetConfirmed()) {
+        logger.warn("avs.manager.reset.denied");
+        return;
+      }
       
       // Register an app listener to delete plugin files after saving
       Core.app.addListener(new arc.ApplicationListener() {

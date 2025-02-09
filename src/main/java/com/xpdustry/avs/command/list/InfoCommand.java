@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -102,8 +102,8 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
     
     
     if (!queries.isEmpty()) {
-      queries.each(h -> h.setReply(AntiVpnService.checkAddressOnline(h.address)));
-      logger.infoNormal("");
+      queries.each(h -> h.reply = AntiVpnService.checkAddressOnline(h.address));
+      logger.none();
       for (int i=0; i<queries.size; i++) 
         logger.infoNormal("[" + i + "] " + queries.get(i).toString(logger, !restrictedMode));
     }
@@ -118,10 +118,6 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
     Helper(String address, PlayerInfo info) {
       this.address = address;
       this.info = info;
-    }
-    
-    void setReply(AddressProviderReply reply) {
-      this.reply = reply;
     }
     
     String toString(Logger logger, boolean addLocation) {

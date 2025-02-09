@@ -98,6 +98,9 @@ public class AVSCommandManager {
       if (command == null) {
         plogger.err("avs.command.not-found", args[0]);
         return;
+      } else if (command.consoleOnly) {
+        plogger.err("avs.command.console-only");
+        return;
       } else if (!RestrictedModeConfig.commands.get().contains(command)) {
         plogger.err("avs.command.restricted");
         return;
