@@ -158,8 +158,9 @@ public class Loader {
     logger.debug("avs.loading.custom-bundles");
     Fi bundles = AVSConfig.subDir(AVSConfig.bundlesDirectory.getString());
     bundles.mkdirs();
-    L10NBundle.appendBundles(bundles);
+    L10NBundle.appendBundles(bundles, false);
     logger.info("avs.loading.bundle-loaded", L10NBundle.bundles.size, L10NBundle.getDefaultLocale());
+    L10NBundle.applyBundles();
     return L10NBundle.isLoaded();
   }
   

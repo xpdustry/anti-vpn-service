@@ -61,55 +61,57 @@ public class L10NBundle {
     if (useCache) cache.clear();
   }
   
+  public static void clearBundles() {
+    clearCache();
+    bundles.clear();
+  }
+  
   public static void load(Class<? extends mindustry.mod.Mod> main, String defaultLocale) {
     load(mindustry.Vars.mods.getMod(main).root.child("bundles"), defaultLocale);
   }
 
+  /** {@link #applyBundles()} must be called after. */
   public static void load(Fi directory, String defaultLocale) {
     load(directory, Strings.string2Locale(defaultLocale));
   }
   
   /**
-   * Load the bundles in the specified directory.
-   * 
-   * @apiNote For bundles loading, normal logging messages are used, 
-   *          in case of English bundle isn't loaded yet.
-   * 
+   * Load the bundles in the specified directory. <br>
+   * {@link #applyBundles()} must be called after.
    */
   public static void load(Fi directory, Locale defaultLocale) {
     loaded = false;
 
-    bundles.clear();
     L10NBundle.defaultLocale = defaultLocale == Locale.ROOT ? Locale.getDefault() : defaultLocale;
     L10NBundle.defaultBundle = null;
-    appendBundles(directory);
+    appendBundles(directory, false);
 
     loaded = true;
   }
   
   /** See {@link #loadBundles(Fi)} for file naming */
-  public static void appendBundles(Fi directory) {
-    logger.debug("avs.bundle.loading.started", directory.toString());
-    appendBundles(loadBundles(directory));
+  public static void appendBundles(Fi directory, boolean applyBundles) {
+    logger.debug("avs.bundle.loading.folder", directory.toString());
+    appendBundles(loadBundles(directory), applyBundles);
   }
   
   /** 
    * Add custom bundles to the list. <br>
    * If a locale is the same as an existing one, they will be merged. 
    * 
+   * @param list the bundle list
+   * @param applyBundles set default bundle and apply hierarchy, after
    * 
    * @apiNote For bundles loading, normal logging messages can be used, 
    *          in case of default bundle isn't loaded yet.
    */
-  public static void appendBundles(Seq<Bundle> list) {
+  public static void appendBundles(Seq<Bundle> list, boolean applyBundles) {
+    if (list.isEmpty()) return;
     logger.debug("avs.bundle.loading.list", list.size);
     
     // Clear the cache before, to avoid bundle confusions
     clearCache();
-    
-    // Nothing to do if it's empty
-    if (list.isEmpty()) return;
-    
+
     // Merge existing bundles
     list.each(b -> {
       Bundle tmp = bundles.find(bb -> b.equals(bb));
@@ -120,21 +122,18 @@ public class L10NBundle {
     // Sort bundles
     bundles.sort(b -> b.locale.hashCode());
     
-    // Set default bundle if not already, or locale, if it's not the same
-    setDefaultLocale(defaultLocale);
+    if (applyBundles) applyBundles();
     
     logger.debug("avs.bundle.loading.done");
   }
   
-  public static void appendBundle(Bundle bundle) {
-   logger.debug("avs.bundle.loading.list", 1);
+  public static void appendBundle(Bundle bundle, boolean applyBundles) {
+    if (bundle == null) return;
+    logger.debug("avs.bundle.loading.one", bundle.locale);
     
     // Clear the cache before, to avoid bundle confusions
     clearCache();
-    
-    // Nothing to do if it's empty
-    if (bundle == null) return;
-    
+
     // Merge if existing
     Bundle tmp = bundles.find(b -> bundle.equals(b));
     if (tmp != null) tmp.merge(bundle);
@@ -143,16 +142,13 @@ public class L10NBundle {
     // Sort bundles
     bundles.sort(b -> b.locale.hashCode());
     
-    // Set default bundle if not already, or locale, if it's not the same
-    setDefaultLocale(defaultLocale);
+    if (applyBundles) applyBundles();
     
     logger.debug("avs.bundle.loading.done");
   }
   
-  /** Set the new default locale, search a bundle for it and re-apply the bundle hierarchy. */
-  public static void setDefaultLocale(Locale locale) {
-    defaultLocale = locale;
-    
+  /** Search and set the default bundle, and apply the bundle hierarchy. */
+  public static void applyBundles() {
     if (defaultBundle == null || !defaultBundle.locale.equals(defaultLocale)) 
       defaultBundle = findBundle(bundles, defaultLocale);
     if (defaultBundle == null) {
@@ -287,16 +283,15 @@ public class L10NBundle {
     String c = locale.getCountry();
     String v = locale.getVariant();
     Bundle found = null;
-        
     
     if (found == null && v.length() > 0) 
       found = bundles.find(b -> b.locale.getLanguage().equals(l) &&
-                                 b.locale.getCountry().equals(c) &&
-                                 b.locale.getVariant().equals(v));
+                                b.locale.getCountry().equals(c) &&
+                                b.locale.getVariant().equals(v));
 
     if (found == null && c.length() > 0)
       found = bundles.find(b -> b.locale.getLanguage().equals(l) &&
-                                  b.locale.getCountry().equals(c));
+                                b.locale.getCountry().equals(c));
 
     if (found == null && l.length() > 0)
       found = bundles.find(b -> b.locale.getLanguage().equals(l));
@@ -319,14 +314,14 @@ public class L10NBundle {
         
     if (v.length() > 0) {
       found = bundles.find(b -> b.locale.getLanguage().equals(l) &&
-                                 b.locale.getCountry().equals(c) &&
-                                 b.locale.getVariant().equals(v));
+                                b.locale.getCountry().equals(c) &&
+                                b.locale.getVariant().equals(v));
       if (found != null) candidates[i++] = found;
     }
     
     if (c.length() > 0) {
       found = bundles.find(b -> b.locale.getLanguage().equals(l) &&
-                                  b.locale.getCountry().equals(c));
+                                b.locale.getCountry().equals(c));
       if (found != null) candidates[i++] = found;
     }
 
@@ -358,6 +353,11 @@ public class L10NBundle {
   
   public static boolean isDefaultBundleSet() {
     return defaultBundle != null;
+  }
+  
+  /** Set the new default locale. */
+  public static void setDefaultLocale(Locale locale) {
+    defaultLocale = locale;
   }
   
   /** 
