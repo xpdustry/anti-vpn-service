@@ -70,13 +70,8 @@ public class AVSConfig extends AbstractConfig {
   }
 
   @Override
-  protected String configBundleKey(String key) {
-    return "avs." + name + ".msg." + key;
-  }
-
-  @Override
-  protected String fieldDescBundleKey(IField<?> field) {
-    return "avs." + name + "." + field.name();
+  protected String getFieldDescKey(IField<?> field) {
+    return "avs." + name + '.' + field.name();
   }
   
   @Override

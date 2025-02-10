@@ -106,19 +106,19 @@ public class Bundle {
    * @param key the key for the desired string
    * @return the string for the given key or the key surrounded by {@code ???} if it cannot be found
    */
-  public String get(String key){
+  public String get(String key) {
     String result = getOrNull(key);
     return result == null ? "???" + key + "???" : result;
   }
   
   /** @return the string for this given key, or def. */
-  public String get(String key, String def){
+  public String get(String key, String def) {
     String result = getOrNull(key);
     return result == null ? def : result;
   }
 
   /** @return the string for this given key, or {@code null} */
-  public String getOrNull(String key){
+  public String getOrNull(String key) {
     String result = properties.get(key);
     if (result == null && parent != null) return parent.getOrNull(key);
     return result;
@@ -130,12 +130,12 @@ public class Bundle {
    * @param args the arguments to be replaced in the string associated to the given key.
    * @return the string for the given key formatted with the given arguments
    */
-  public String format(String key, Object... args){
+  public String format(String key, Object... args) {
     return formatter.format(get(key), args);
   }
   
   /** Like {@link #format(String, Object...)}, but with a custom formatter. */
-  public String format(MessageFormat formatter, String key, Object... args){
+  public String format(MessageFormat formatter, String key, Object... args) {
     return Strings.formatWithColor(formatter, get(key), "", "", args);
   }
   
@@ -145,7 +145,7 @@ public class Bundle {
   }
 
   /** Checks whether a specified key is present in this bundle or in his parents. */
-  public boolean has(String key){
+  public boolean has(String key) {
     boolean result = properties.containsKey(key);
     if(!result && parent != null) return parent.has(key);
     return result;

@@ -46,7 +46,7 @@ public class L10NBundle {
   protected static Bundle defaultBundle;
   protected static MessageFormat defaultFormatter;
   
-  public static final Seq<Bundle> bundles = new Seq<>();
+  public static final Seq<Bundle> bundles = Seq.with(new RouterBundle()); // router router
   
   /** Will use the default bundle to get the key, when not found in other bundles. */
   public static boolean useDefaultWhenKeyNotFound = true;
@@ -120,7 +120,30 @@ public class L10NBundle {
     // Sort bundles
     bundles.sort(b -> b.locale.hashCode());
     
-    // Set default bundle if not already, or locale is not the same
+    // Set default bundle if not already, or locale, if it's not the same
+    setDefaultLocale(defaultLocale);
+    
+    logger.debug("avs.bundle.loading.done");
+  }
+  
+  public static void appendBundle(Bundle bundle) {
+   logger.debug("avs.bundle.loading.list", 1);
+    
+    // Clear the cache before, to avoid bundle confusions
+    clearCache();
+    
+    // Nothing to do if it's empty
+    if (bundle == null) return;
+    
+    // Merge if existing
+    Bundle tmp = bundles.find(b -> bundle.equals(b));
+    if (tmp != null) tmp.merge(bundle);
+    else bundles.add(bundle);
+    
+    // Sort bundles
+    bundles.sort(b -> b.locale.hashCode());
+    
+    // Set default bundle if not already, or locale, if it's not the same
     setDefaultLocale(defaultLocale);
     
     logger.debug("avs.bundle.loading.done");

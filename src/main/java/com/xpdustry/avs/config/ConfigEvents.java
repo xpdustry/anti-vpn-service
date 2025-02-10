@@ -154,7 +154,7 @@ public class ConfigEvents {
   static boolean onSettingsChanged(Seq<AVSConfig.Field> settings, Logger logger) {
     for (AVSConfig.Field c : settings) {
       if (c == null) {
-        logger.err("avs.restrict.field.settings.invalid");
+        logger.err("avs.restrict.settings.invalid");
         return false;
       }
     }
@@ -164,7 +164,7 @@ public class ConfigEvents {
   static boolean onProvidersChanged(Seq<AddressProvider> providers, Logger logger) {
     for (AddressProvider c : providers) {
       if (c == null) {
-        logger.err("avs.restrict.field.providers.invalid");
+        logger.err("avs.restrict.providers.invalid");
         return false;
       }
     }
@@ -174,17 +174,17 @@ public class ConfigEvents {
   static boolean onCommandsChanged(Seq<Command> commands, Logger logger) {
     for (Command c : commands) {
       if (c == null) {
-        logger.err("avs.restrict.field.commands.invalid");
+        logger.err("avs.restrict.commands.invalid");
         return false;
       } else if (c.consoleOnly) {
-        logger.err("avs.restrict.field.commands.console-only", c.name);
+        logger.err("avs.restrict.commands.console-only", c.name);
         return false;
       }
       
       // Some commands are critical and should not be allowed in restricted mode
       if (c instanceof com.xpdustry.avs.command.list.ResetCommand ||
           c instanceof com.xpdustry.avs.command.list.RestrictCommand)
-        logger.warn("avs.restrict.field.commands.critial", c.name);
+        logger.warn("avs.restrict.commands.critial", c.name);
     }
     
     return true;
@@ -199,7 +199,7 @@ public class ConfigEvents {
         ProviderAction pa = e.value.get(i);
         
         if (pa == null) {
-          logger.err("avs.restrict.field.actions.invalid", e.key.name);
+          logger.err("avs.restrict.actions.invalid", e.key.name);
           return false;
         }
         
@@ -207,7 +207,7 @@ public class ConfigEvents {
       }
       
       if (!a.isEmpty()) {
-        logger.err("avs.restrict.field.actions.not-compatible", e.key.name, 
+        logger.err("avs.restrict.actions.not-compatible", e.key.name, 
                    Strings.listToSentence(logger, a, pa -> pa.name));
         return false;
       }

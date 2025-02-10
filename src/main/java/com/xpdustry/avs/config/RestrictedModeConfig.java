@@ -47,13 +47,8 @@ public class RestrictedModeConfig extends AbstractConfig {
   public static RestrictedModeConfig instance() { return INSTANCE; }
 
   @Override
-  protected String configBundleKey(String key) {
-    return "avs." + name + "." + key;
-  }
-
-  @Override
-  protected String fieldDescBundleKey(IField<?> field) {
-    return "avs." + name + ".field." + field.name();
+  protected String getFieldDescKey(IField<?> field) {
+    return "avs." + name + '.' + field.name();
   }
   
   @Override
@@ -61,26 +56,6 @@ public class RestrictedModeConfig extends AbstractConfig {
     return AVSConfig.subDir(AVSConfig.settingsDirectory.getString()).child(name + ".json");
   }
 
-  @Override
-  protected void loadMisc() {
-    com.xpdustry.avs.misc.JsonSerializer.apply(config.getJson());
-    
-    all.each(s -> s instanceof CachedField, s -> ((CachedField<?>) s).load());
-  }
-  
-  public boolean save() {
-    try { 
-      all.each(s -> s instanceof CachedField, s -> ((CachedField<?>) s).save());
-      logger.info(configBundleKey("saved"));
-      return true;
-    
-    } catch (Exception e) {
-      logger.info(configBundleKey("save-failed"), config.getFile().path());
-      logger.err("avs.general-error", e.toString());
-      return false;
-    }
-  }
-  
   
   public static class Default {
     public static final boolean enabled = true;
@@ -120,5 +95,4 @@ public class RestrictedModeConfig extends AbstractConfig {
       new FieldList<>(INSTANCE, "commands", Command.class, Default.commands, ConfigEvents::onCommandsChanged);
   public static final FieldMap<AddressProvider, ProviderActionSeq> actions = 
       new FieldMap<>(INSTANCE, "actions", AddressProvider.class, ProviderActionSeq.class, Default.actions, ConfigEvents::onActionsChanged);
-
 }

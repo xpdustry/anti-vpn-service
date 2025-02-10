@@ -62,8 +62,8 @@ public abstract class AbstractConfig {
       try { f.validateChange(logger); }
       catch (Exception e) { // probably invalid value in config file
         // notify, remove the field and use the default value
-        logger.err(configBundleKey("invalid-field"), f.name());
-        logger.err("avs.error", e.toString());
+        logger.err("avs.aconfig.invalid-field", f.name());
+        logger.err("avs.general-error", e.toString());
         f.setDefault(logger);
       }
     });
@@ -76,29 +76,50 @@ public abstract class AbstractConfig {
   public boolean isLoaded() {
     return config != null && !isLoading;
   }
-  
-  /** Used format the key to get a config message from bundle */
-  protected abstract String configBundleKey(String key);
-  
+
   /** Used to format the key to get the field description from bundle */
-  protected abstract String fieldDescBundleKey(IField<?> field);
+  protected abstract String getFieldDescKey(IField<?> field);
   
   public void load() {
     isLoading = true;
     
-    logger.info(configBundleKey("loading"));
+    logger.info("avs.aconfig.loading");
     Fi file = getFile();
-    logger.debug(configBundleKey("file"), file.absolutePath());
+    logger.debug("avs.aconfig.file", file.absolutePath());
     
-    config = new DynamicSettings(file, true);
-    config.load();
-    
-    loadMisc();
+    try {
+      config = new DynamicSettings(file, true);
+      com.xpdustry.avs.misc.JsonSerializer.apply(config.getJson());
+      config.load();
 
+      all.each(s -> s instanceof CachedField, s -> ((CachedField<?>) s).load());
+      loadMisc();
+      
+    } catch (Exception e) {
+      logger.err("avs.aconfig.load-failed");
+      logger.err("avs.general-error", e.toString());
+      config = null;
+      return;
+    }
+    
     isLoading = false;
   }
   
-  /** Override this if other things must also be loaded */
+  /** Only useful for saving the {@link CachedField} fields content. */
+  public boolean save() {
+    try { 
+      all.each(s -> s instanceof CachedField, s -> ((CachedField<?>) s).save());
+      logger.info("avs.aconfig.saved");
+      return true;
+    
+    } catch (Exception e) {
+      logger.err("avs.aconfig.save-failed");
+      logger.err("avs.general-error", e.toString());
+      return false;
+    }
+  }
+  
+  /** Can be overrides to load other things. */
   protected void loadMisc() {}
   
   protected abstract Fi getFile();

@@ -62,7 +62,7 @@ public class Field<T> implements IField<T> {
   
   @Override
   public String desc(Logger logger) {
-    return logger.getKey(arc.util.Strings.format(master.fieldDescBundleKey(this), name()));
+    return logger.getKey(master.getFieldDescKey(this));
   }
   
   @Override
