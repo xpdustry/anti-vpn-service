@@ -81,8 +81,18 @@ public class JsonWriterBuilder implements BaseJsonWriter {
     } else if (object instanceof CharSequence || 
                object instanceof Character) jval = new JsonValue(object.toString());
     else if (object instanceof Boolean) jval = new JsonValue((boolean)object);
-    else if (object instanceof JsonValue) jval = (JsonValue) object;
-    else throw new IOException("Unknown object type.");
+    else if (object instanceof JsonValue) {
+      JsonValue json = (JsonValue) object;
+      if (json.isBoolean()) jval = new JsonValue(json.asBoolean());
+      else if (json.isLong()) jval = new JsonValue(json.asLong());
+      else if (json.isDouble()) jval = new JsonValue(json.asDouble());
+      else if (json.isString()) jval = new JsonValue(json.asString());
+      else if (json.isNull()) jval = new JsonValue(JsonValue.ValueType.nullValue);
+      else {
+        jval = new JsonValue(json.type());
+        jval.child = json.child;
+      }
+    } else throw new IOException("Unknown object type.");
     
     addValue(jval);
     return this;

@@ -1,5 +1,5 @@
 /*
- * This file is part of Simple Blacklist. The plugin securing your server against unwanted nicknames.
+ * This file is part of Anti-VPN-Service (AVS). The plugin securing your server against VPNs.
  *
  * MIT License
  *
@@ -115,8 +115,8 @@ public class Strings extends arc.util.Strings {
     return tableify(lines, width, Strings::lJust);
   }
   /** 
-   * Create a table with given {@code lines} 
-   * and automatic columns number calculated with the table's {@code width}.
+   * Create a table with given {@code lines}.<br>
+   * Columns number is automatic calculated with the table's {@code width}.
    */
   public static Seq<String> tableify(Seq<String> lines, int width, 
                                      arc.func.Func2<String, Integer, String> justifier) {

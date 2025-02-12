@@ -297,39 +297,15 @@ public class DynamicSettings {
   public synchronized void saveValues(Fi file) throws IOException{
       try(DataOutputStream stream = new DataOutputStream(file.write(false, 8192))){
           if (simpleJson) {
-            JsonValue content = new JsonValue(JsonValue.ValueType.object);
-            
-            for(ObjectMap.Entry<String, Object> entry : values.entries()){
-              Object value = entry.value;
-              JsonValue jvalue;
+            JsonWriterBuilder builder = new JsonWriterBuilder();
 
-              if (value instanceof Boolean) jvalue = new JsonValue((Boolean) value);
-              else if (value instanceof Integer) jvalue = new JsonValue((Integer) value);
-              else if (value instanceof Long) jvalue = new JsonValue((Long) value);
-              else if (value instanceof Float) jvalue = new JsonValue((Float) value);
-              //else if (value instanceof Double) jvalue = new JsonValue((Double) value);
-              else if (value instanceof String) jvalue = new JsonValue((String) value);
-              else if (value instanceof byte[]) {
-                /** 
-                 * There is no byte array in json, so it will be converted to a json object with a 
-                 * key "bytes" and base64 coded value.
-                 */
-                jvalue = new JsonValue(JsonValue.ValueType.object);
-                jvalue.addChild("bytes", new JsonValue(new String(Base64Coder.encode((byte[]) value))));
-              }
-              else if (value instanceof JsonValue) {
-                jvalue = (JsonValue) value;
-                // Because when saving again without any modifications, this can create a recursion
-                jvalue.next = jvalue.prev = jvalue.parent = null;
-              }
-              else throw new IOException("Unknown value type: " + value.getClass().getName());
-              
-              content.addChild(entry.key, jvalue);
-            }
+            builder.object();
+            for (ObjectMap.Entry<String, Object> e : values) builder.set(e.key, e.value);
+            builder.close();
             
             OutputStreamWriter out = new OutputStreamWriter(stream);
-            Strings.jsonPrettyPrint(content, out, JsonWriter.OutputType.json);
-            out.flush(); //idk why, but it's not writing entirely
+            Strings.jsonPrettyPrint(builder.getJson(), out, JsonWriter.OutputType.json);
+            out.flush();
 
           } else {
               stream.writeInt(values.size);
@@ -432,6 +408,7 @@ public class DynamicSettings {
               // Value is already a json object, no need to serialize it
               if (value instanceof JsonValue){
                 put(name, value);
+                modified = true;
                 return;
               }
               
@@ -521,10 +498,6 @@ public class DynamicSettings {
 
   public float getFloat(String name){
       return (float)get(name, 0f);
-  }
-  
-  public Long getLong(String name){
-      return (long)get(name, 0);
   }
 
   public int getInt(String name){
