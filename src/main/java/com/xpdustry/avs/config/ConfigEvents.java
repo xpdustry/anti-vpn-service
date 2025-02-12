@@ -55,10 +55,9 @@ public class ConfigEvents {
       logger.err("avs.bundle.availables", v, 
                  Strings.listToSentence(logger, L10NBundle.bundles, b -> Strings.locale2String(b.locale)));
       return false;
-    }
+    } 
     
-    Loader.loadBundles();
-    return true;
+    return Loader.loadBundles();
   }
   
   static boolean onConnectLimitChanged(Object v, Logger l) {
@@ -96,6 +95,10 @@ public class ConfigEvents {
   }
   
   // dev settings callbacks
+  static boolean onForceDebugChanged(Object v, Logger l) {
+    Logger.forceDebug = (boolean) v;
+    return true;
+  }
   
   private static boolean validatePath(Object v, Logger logger) {
     boolean valid = Strings.isValidPath((String) v);

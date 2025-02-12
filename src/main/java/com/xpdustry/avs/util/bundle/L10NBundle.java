@@ -28,6 +28,7 @@ package com.xpdustry.avs.util.bundle;
 
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.ResourceBundle;
 
 import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.logging.Logger;
@@ -46,7 +47,7 @@ public class L10NBundle {
   protected static Bundle defaultBundle;
   protected static MessageFormat defaultFormatter;
   
-  public static final Seq<Bundle> bundles = Seq.with(new RouterBundle()); // router router
+  public static final Seq<Bundle> bundles = new Seq<>();
   
   /** Will use the default bundle to get the key, when not found in other bundles. */
   public static boolean useDefaultWhenKeyNotFound = true;
@@ -70,34 +71,38 @@ public class L10NBundle {
     load(mindustry.Vars.mods.getMod(main).root.child("bundles"), defaultLocale);
   }
 
-  /** {@link #applyBundles()} must be called after. */
+  /** {@link #applyBundles()} must be called after, to finalize bundle loading. */
   public static void load(Fi directory, String defaultLocale) {
     load(directory, Strings.string2Locale(defaultLocale));
   }
   
   /**
    * Load the bundles in the specified directory. <br>
-   * {@link #applyBundles()} must be called after.
+   * See {@link #loadBundles(Fi)} for file naming. <br>
+   * {@link #applyBundles()} must be called after, to finalize bundle loading.
    */
-  public static void load(Fi directory, Locale defaultLocale) {
+  public static void load(Fi directory, Locale defaultLocale_) {
     loaded = false;
 
-    L10NBundle.defaultLocale = defaultLocale == Locale.ROOT ? Locale.getDefault() : defaultLocale;
-    L10NBundle.defaultBundle = null;
-    appendBundles(directory, false);
+    clearBundles();
+    bundles.add(new RouterBundle()); // router router
+    defaultLocale = defaultLocale_ == Locale.ROOT ? Locale.getDefault() : defaultLocale_;
+    defaultBundle = null;
+    appendBundles(directory);
 
     loaded = true;
   }
   
   /** See {@link #loadBundles(Fi)} for file naming */
-  public static void appendBundles(Fi directory, boolean applyBundles) {
+  public static void appendBundles(Fi directory) {
     logger.debug("avs.bundle.loading.folder", directory.toString());
-    appendBundles(loadBundles(directory), applyBundles);
+    appendBundles(loadBundles(directory));
   }
   
   /** 
    * Add custom bundles to the list. <br>
-   * If a locale is the same as an existing one, they will be merged. 
+   * If a locale is the same as an existing one, they will be merged. <br>
+   * {@link #applyBundles()} must be called after, to finalize bundle loading.
    * 
    * @param list the bundle list
    * @param applyBundles set default bundle and apply hierarchy, after
@@ -105,7 +110,7 @@ public class L10NBundle {
    * @apiNote For bundles loading, normal logging messages can be used, 
    *          in case of default bundle isn't loaded yet.
    */
-  public static void appendBundles(Seq<Bundle> list, boolean applyBundles) {
+  public static void appendBundles(Seq<Bundle> list) {
     if (list.isEmpty()) return;
     logger.debug("avs.bundle.loading.list", list.size);
     
@@ -122,12 +127,11 @@ public class L10NBundle {
     // Sort bundles
     bundles.sort(b -> b.locale.hashCode());
     
-    if (applyBundles) applyBundles();
-    
     logger.debug("avs.bundle.loading.done");
   }
   
-  public static void appendBundle(Bundle bundle, boolean applyBundles) {
+  /** {@link #applyBundles()} must be called after, to finalize bundle loading. */
+  public static void appendBundle(Bundle bundle) {
     if (bundle == null) return;
     logger.debug("avs.bundle.loading.one", bundle.locale);
     
@@ -141,9 +145,7 @@ public class L10NBundle {
     
     // Sort bundles
     bundles.sort(b -> b.locale.hashCode());
-    
-    if (applyBundles) applyBundles();
-    
+
     logger.debug("avs.bundle.loading.done");
   }
   
@@ -214,9 +216,12 @@ public class L10NBundle {
     Seq<Bundle> visited = new Seq<>(bundles.size);
 
     try {
+      // First unset parents
+      bundles.each(b -> b.parent = null);
+      
       bundles.each(b -> {
         if (visited.contains(b)) return;
-        
+
         Bundle[] founds = findCandidateBundles(bundles, b.locale);
         int i = 0;
         logger.debugNormal("Founds: @", Strings.listToSentence(logger, Seq.with(founds), 
@@ -230,7 +235,7 @@ public class L10NBundle {
   
         // Set the default to the last parent. Will be used in last resort to get the key.
         if (useDefaultWhenKeyNotFound && i > 0 && 
-            !b.locale.getLanguage().equals(defaultBundle.locale.getLanguage()) && founds[i-1].parent == null) 
+            !b.locale.getLanguage().equals(defaultBundle.locale.getLanguage()) && founds[i-1].parent == null)
           founds[i-1].setParent(defaultBundle);
       });
       
@@ -357,7 +362,8 @@ public class L10NBundle {
   
   /** Set the new default locale. */
   public static void setDefaultLocale(Locale locale) {
-    defaultLocale = locale;
+    defaultLocale = locale == Locale.ROOT ? Locale.getDefault() : locale;
+    applyBundles();
   }
   
   /** 

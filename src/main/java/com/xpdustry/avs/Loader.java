@@ -33,6 +33,7 @@ import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.ServiceManager;
 import com.xpdustry.avs.util.VersionChecker;
 import com.xpdustry.avs.util.bundle.L10NBundle;
+import com.xpdustry.avs.util.bundle.RescueBundle;
 import com.xpdustry.avs.util.json.DynamicSettings;
 import com.xpdustry.avs.util.logging.Logger;
 
@@ -56,8 +57,10 @@ public class Loader {
     mod = Vars.mods.getMod(modClass);
     if (mod == null) throw new Mods.ModLoadException("the specified mod is not loaded");
     
-    // First, load settings
-    if (loadCheck(() -> loadSettings(Vars.modDirectory.child(mod.meta.name)))) return; 
+    // First, load the english messages
+    if (loadCheck(Loader::loadEnglish)) return;
+    // After, load settings
+    if (loadCheck(Loader::loadSettings)) return; 
     // After, the bundles
     if (loadCheck(Loader::loadBundles)) return; 
     // Complete the settings loading
@@ -110,13 +113,19 @@ public class Loader {
     return loaded;
   }
   
-  public static boolean loadSettings(Fi workingDirectory) {
-    AVSConfig.setWorkingDirectory(workingDirectory);
+  public static boolean loadEnglish() {
+    RescueBundle.instance().file = mod.root.child("bundles").child("bundle_en.properties");
+    RescueBundle.instance().load();
+    return true;
+  }
+  
+  public static boolean loadSettings() {
+    AVSConfig.setWorkingDirectory(Vars.modDirectory.child(mod.meta.name));
     DynamicSettings.logFile = AVSConfig.subDir((String)AVSConfig.settingsDirectory.defaultValue())
-                                       .child(workingDirectory.name() + ".log");
+                                       .child(mod.meta.name + ".log");
     AVSConfig.instance().load();
     DynamicSettings.logFile = AVSConfig.subDir(AVSConfig.settingsDirectory.getString())
-                                       .child(workingDirectory.name() + ".log");
+                                       .child(mod.meta.name + ".log");
     return AVSConfig.instance().isLoaded();
   }
   
@@ -143,7 +152,7 @@ public class Loader {
     RestrictedModeConfig.instance().notifyValuesChanged();
     
     if (AVSConfig.cloudRefreshTimeout.getInt() > 0)
-      com.xpdustry.avs.misc.CloudAutoRefresher. start();   
+      com.xpdustry.avs.misc.CloudAutoRefresher.start();   
     
     AntiVpnService.save();
     
@@ -158,9 +167,9 @@ public class Loader {
     logger.debug("avs.loading.custom-bundles");
     Fi bundles = AVSConfig.subDir(AVSConfig.bundlesDirectory.getString());
     bundles.mkdirs();
-    L10NBundle.appendBundles(bundles, false);
-    logger.info("avs.loading.bundle-loaded", L10NBundle.bundles.size, L10NBundle.getDefaultLocale());
+    L10NBundle.appendBundles(bundles);
     L10NBundle.applyBundles();
+    logger.info("avs.loading.bundle-loaded", L10NBundle.bundles.size, L10NBundle.getDefaultLocale());
     return L10NBundle.isLoaded();
   }
   

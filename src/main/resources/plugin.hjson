@@ -1,0 +1,11 @@
+name: anti-vpn-service
+displayName: Anti VPN Service (AVS)
+author: ZetaMap
+main: com.xpdustry.avs.Main
+description: A powerful service to protect your Mindustry server against players using VPNs.
+version: "1.2"
+minGameVersion: "146"
+java: true,
+repo: xpdustry/Anti-VPN-Service
+softDependencies: [ "slf4md" ] 
+ 

@@ -135,7 +135,7 @@ public class AVSConfig extends AbstractConfig {
     startupDownload = new Field("startup-download", true),
     autosaveSpacing = new Field("autosave-spacing", 60 * 15, ConfigEvents::onAutosaveSpacingChanged),
     resetCommandEnabled = new Field("reset-command", false, false, true),
-    useDefaultBundle = new Field("bundle-default", com.xpdustry.avs.util.bundle.L10NBundle.useDefaultWhenKeyNotFound, ConfigEvents::onUseDefaultBundleChanged),
+    useDefaultBundle = new Field("bundle-fallback", com.xpdustry.avs.util.bundle.L10NBundle.useDefaultWhenKeyNotFound, ConfigEvents::onUseDefaultBundleChanged),
     randomOnlineProviders = new Field("random-online", false),
     randomTokens = new Field("random-tokens", false),
     preventUnavailable = new Field("prevent-unavailable", true),
@@ -144,6 +144,7 @@ public class AVSConfig extends AbstractConfig {
     cloudRefreshTimeout = new Field("cloud-refresh", 360, ConfigEvents::onCloudRefreshTimeoutChanged),
     
     // For devs, better to keep that as default
+    forceDebug = new Field("force-debug", false, ConfigEvents::onForceDebugChanged, true),
     pluginDirectory = new Field("plugin-dir", "", ConfigEvents::onPluginDirectoryChanged, true),
     bundlesDirectory = new Field("bundles-dir", "bundles", ConfigEvents::onBundlesDirectoryChanged, true),
     cacheDirectory = new Field("cache-dir", "cache", ConfigEvents::onCacheDirectoryChanged, true),

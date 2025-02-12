@@ -28,15 +28,19 @@ package com.xpdustry.avs.util.bundle;
 
 
 /**
- * Bundle that contains very important messages, like loading and errors message,
- * in case of default bundle was not loaded.
+ * The first thing that must be load, that contains default text keys for English, and some static ones in case of.
  */
 public class RescueBundle extends Bundle {
   private static final RescueBundle INSTANCE = new RescueBundle();
   public static RescueBundle instance() { return INSTANCE; }
   
+  /** Static path to the bundle file. */
+  public arc.files.Fi file;
+  
   RescueBundle() {
+    // Very important messages
     super(java.util.Locale.ENGLISH, arc.struct.StringMap.of(
+      "avs.general-error", "Error: {0}",
       "avs.loading.started",        "Anti VPN Service (AVS) is loading...",
       "avs.loading.custom-bundles", "Loading custom bundles...",
       "avs.loading.bundle-loaded",  "Loaded {0} locales, default is {1}.",
@@ -74,5 +78,17 @@ public class RescueBundle extends Bundle {
   
   public void remove(String key) {
     properties.remove(key);
+  }
+  
+  /** @throws IllegalStateException if the path to the rescue bundle is null, or if the load failed. */
+  public void load() {
+    if (file == null) throw new IllegalStateException("file path not defined");
+    // In case of, copy old properties
+    arc.struct.ObjectMap<String, String> old = properties.copy();
+    try { load(file); }
+    catch (arc.util.ArcRuntimeException e) { 
+      properties.putAll(old);
+      throw new IllegalStateException("failed to load rescue bundle", e);
+    }
   }
 }

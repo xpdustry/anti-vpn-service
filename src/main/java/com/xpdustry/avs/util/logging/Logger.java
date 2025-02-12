@@ -34,7 +34,7 @@ import arc.util.Log.LogLevel;
 
 
 /** Log messages to console with topic and bundle support */
-public class Logger{
+public class Logger {
   protected static final Object[] empty = {};
   
   public static String pluginTopic = "&lc[AVS]";
@@ -50,6 +50,8 @@ public class Logger{
   private static boolean slf4mdPresentAndEnabled = mindustry.Vars.mods.locateMod("slf4md") != null;
   private static Object slf4jLogger;
   
+  /** Force log level to be always at debug */
+  public static boolean forceDebug = false;
   
   public Logger() { 
     this(""); 
@@ -69,15 +71,23 @@ public class Logger{
     this.tag = this.topic.isEmpty() ? "&fr" : Strings.format(topicFormat, this.topic) + "&fr ";
   }
 
+  /** 
+   * Return {@code true} if the log level is not enough to log the message. <br>
+   * Can be used like that: {@code if (cannotLog(level)) return;}
+   */
+  public boolean cannotLog(LogLevel level) {
+    return Log.level == LogLevel.none || (!forceDebug && Log.level.ordinal() > level.ordinal());
+  }
+  
   // region normal
   
   public void logNormal(LogLevel level, String text, Object... args) {
-    if(Log.level.ordinal() > level.ordinal()) return;
+    if(cannotLog(level)) return;
 
     String tag = disableTopic ? "" : pluginTopic + " " + this.tag;
     text = Log.format(text, args);
     
-    if (slf4mdPresentAndEnabled) {
+    if (!forceDebug && slf4mdPresentAndEnabled) {
       if (slf4jLogger == null) slf4jLogger = org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
       org.slf4j.Logger l = (org.slf4j.Logger) slf4jLogger;
       arc.func.Cons<String> printer;
@@ -96,7 +106,7 @@ public class Logger{
       
     } else {
       synchronized (Logger.class) {
-        for (String line : text.split("\n")) Log.log(level, tag + line, empty);    
+        for (String line : text.split("\n")) Log.logger.log(level, tag + line);   
       }
     }
   }
@@ -199,13 +209,13 @@ public class Logger{
   
   public void log(LogLevel level, String key) {
     // avoid to search the key in the bundle, if the level is not enough to print the message
-    if(Log.level.ordinal() > level.ordinal()) return;
+    if(cannotLog(level)) return;
     logNormal(level, getKey(key));
   }
  
   public void log(LogLevel level, String key, Object... args) {
     // avoid to search the key in the bundle, if the level is not enough to print the message
-    if(Log.level.ordinal() > level.ordinal()) return;
+    if(cannotLog(level)) return;
     logNormal(level, formatKey(key, args));
   }
   

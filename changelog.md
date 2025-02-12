@@ -21,6 +21,7 @@
  - changed waiting list for a cooldown system using cron expressions
  - added a verification of provider's properties on loading
  - added a description for each providers
+ - added option to force debug log level only for avs
 
 ### 1.0:
  - first release

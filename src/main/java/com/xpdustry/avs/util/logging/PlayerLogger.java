@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -48,14 +48,14 @@ public class PlayerLogger extends Logger {
   }
   
   /** Send a message to the player */
-  public void send(String text, Object... args) {
+  public synchronized void send(String text, Object... args) {
     text = Strings.format(text.replace("@", "&lb@&fr"), args);
     player.sendMessage(PlayerColorCodes.apply(text, Log.useColors));
   }  
   
   @Override
   public void logNormal(LogLevel level, String text, Object... args) {
-    if(Log.level.ordinal() > level.ordinal()) return;
+    if(cannotLog(level)) return;
     String prefix = level == LogLevel.debug ? "&lc" :
                     level == LogLevel.info ? "" :
                     level == LogLevel.warn ? "&ly" :
