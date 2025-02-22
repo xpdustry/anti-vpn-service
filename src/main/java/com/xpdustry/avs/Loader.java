@@ -29,12 +29,12 @@ package com.xpdustry.avs;
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.config.RestrictedModeConfig;
 import com.xpdustry.avs.misc.AVSEvents;
+import com.xpdustry.avs.misc.SettingsAutosave;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.ServiceManager;
 import com.xpdustry.avs.util.VersionChecker;
 import com.xpdustry.avs.util.bundle.L10NBundle;
 import com.xpdustry.avs.util.bundle.RescueBundle;
-import com.xpdustry.avs.util.json.DynamicSettings;
 import com.xpdustry.avs.util.logging.Logger;
 
 import arc.Events;
@@ -121,11 +121,7 @@ public class Loader {
   
   public static boolean loadSettings() {
     AVSConfig.setWorkingDirectory(Vars.modDirectory.child(mod.meta.name));
-    DynamicSettings.logFile = AVSConfig.subDir((String)AVSConfig.settingsDirectory.defaultValue())
-                                       .child(mod.meta.name + ".log");
     AVSConfig.instance().load();
-    DynamicSettings.logFile = AVSConfig.subDir(AVSConfig.settingsDirectory.getString())
-                                       .child(mod.meta.name + ".log");
     return AVSConfig.instance().isLoaded();
   }
   
@@ -137,7 +133,7 @@ public class Loader {
   }
   
   public static boolean checkUpdates() {
-    VersionChecker.checkAndPromptToUpgrade(mod.meta.repo, mod.meta.version);
+    VersionChecker.checkAndPromptToUpgrade(mod.meta);
     return true;
   }
   
@@ -157,8 +153,8 @@ public class Loader {
     AntiVpnService.save();
     
     if (AVSConfig.autosaveSpacing.getInt() > 0)
-      DynamicSettings.startAutosave("AVS-Autosave");
-    DynamicSettings.globalAutosave();
+      SettingsAutosave.start("AVS-Autosave");
+    SettingsAutosave.run();
     return true;
   }
   

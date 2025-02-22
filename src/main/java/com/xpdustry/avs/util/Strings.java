@@ -324,42 +324,42 @@ public class Strings extends arc.util.Strings {
    */
   public static void jsonPrettyPrint(JsonValue object, Writer writer, OutputType outputType, int indent) throws IOException {
     if (object.isObject()) {
-      if (object.child == null) writer.append("{}");
+      if (object.child == null) writer.write("{}");
       else {
         indent++;
         boolean newLines = needNewLine(object, 1);
-        writer.append(newLines ? "{\n" : "{ ");
+        writer.write(newLines ? "{\n" : "{ ");
         for (JsonValue child = object.child; child != null; child = child.next) {
-          if(newLines) writer.append("  ".repeat(indent));
-          writer.append(outputType.quoteName(child.name));
-          writer.append(": ");
+          if(newLines) writer.write("  ".repeat(indent));
+          writer.write(outputType.quoteName(child.name));
+          writer.write(": ");
           jsonPrettyPrint(child, writer, outputType, indent);
           if((!newLines || outputType != OutputType.minimal) && child.next != null) writer.append(',');
-          writer.append(newLines ? '\n' : ' ');
+          writer.write(newLines ? '\n' : ' ');
         }
-        if(newLines) writer.append("  ".repeat(indent - 1));
-        writer.append('}');
+        if(newLines) writer.write("  ".repeat(indent - 1));
+        writer.write('}');
       }
     } else if (object.isArray()) {
-      if (object.child == null) writer.append("[]");
+      if (object.child == null) writer.write("[]");
       else {
         indent++;
         boolean newLines = needNewLine(object, 1);
-        writer.append(newLines ? "[\n" : "[ ");
+        writer.write(newLines ? "[\n" : "[ ");
         for (JsonValue child = object.child; child != null; child = child.next) {
-          if (newLines) writer.append("  ".repeat(indent));
+          if (newLines) writer.write("  ".repeat(indent));
           jsonPrettyPrint(child, writer, outputType, indent);
           if ((!newLines || outputType != OutputType.minimal) && child.next != null) writer.append(',');
-          writer.append(newLines ? '\n' : ' ');
+          writer.write(newLines ? '\n' : ' ');
         }
         if (newLines) writer.append("  ".repeat(indent - 1));
-        writer.append(']');
+        writer.write(']');
       }
-    } else if(object.isString()) writer.append(outputType.quoteValue(object.asString()));
-    else if(object.isDouble()) writer.append(Double.toString(object.asDouble()));
-    else if(object.isLong()) writer.append(Long.toString(object.asLong()));
-    else if(object.isBoolean()) writer.append(Boolean.toString(object.asBoolean()));
-    else if(object.isNull())  writer.append("null");
+    } else if(object.isString()) writer.write(outputType.quoteValue(object.asString()));
+    else if(object.isDouble()) writer.write(Double.toString(object.asDouble()));
+    else if(object.isLong()) writer.write(Long.toString(object.asLong()));
+    else if(object.isBoolean()) writer.write(Boolean.toString(object.asBoolean()));
+    else if(object.isNull())  writer.write("null");
     else throw new arc.util.serialization.SerializationException("Unknown object type: " + object);
   }
   

@@ -24,41 +24,44 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.config.base;
+package com.xpdustry.avs.util.config;
 
 import com.xpdustry.avs.util.logging.Logger;
 
 
 public class SimpleField extends Field<Object> {
-  public SimpleField(AbstractConfig master, String name, Object defaultValue) {
-    super(master, name, defaultValue, null);
+  public SimpleField(AConfig master, String name, Object defaultValue) {
+    super(master, name, defaultValue);
   }
-  public SimpleField(AbstractConfig master, String name, Object defaultValue, 
-                            ChangeValider<Object> validate) {
+  public SimpleField(AConfig master, String name, Object defaultValue, ChangeValider<Object> validate) {
     super(master, name, defaultValue, validate);
   }
 
   protected void checkType(Object o) {
-    if (o == null) throw new NullPointerException(name() + ": value to check is null");
-    Class<?> type = o.getClass();
-    if (!master.config.isBasicType(o))
-      throw new IllegalArgumentException(name() + ": incompatible type " + type.getName() +
-                                                  ". SimpleField only support primitive types and String.");
-    if (o.getClass() != defaultValue.getClass())
-      throw new IllegalArgumentException(name() + ": incompatible type " + type.getName() + 
-                                                  ". Must be a " + defaultValue.getClass().getName() + ".");
+    if (o == null) throw new NullPointerException(name + ": value to check is null");
+    if (o.getClass() != type)
+      throw new IllegalArgumentException(name + ": incompatible type " + o.getClass().getName() + 
+                                         ". Must be a " + type.getName() + ".");
   }
 
-  //public boolean is(Class<?> clazz) {
-  //  return clazz.isInstance(defaultValue);
-  //}
+  public boolean is(Class<?> clazz) {
+    return type.isAssignableFrom(clazz);
+  }
   
   public boolean isInt(){
     return defaultValue instanceof Integer;
   }
   
+  public boolean isLong(){
+    return defaultValue instanceof Long;
+  }
+  
   public boolean isFloat(){
     return defaultValue instanceof Float;
+  }
+  
+  public boolean isDouble(){
+    return defaultValue instanceof Double;
   }
   
   public boolean isBool(){
@@ -69,7 +72,7 @@ public class SimpleField extends Field<Object> {
     return defaultValue instanceof String;
   }  
 
-  /** Override to handle {@link #checkType(Object)} */
+  /** To handle {@link #checkType(Object)} */
   @Override
   protected Object getValue() {
     Object o = super.getValue();
@@ -78,25 +81,35 @@ public class SimpleField extends Field<Object> {
   }
   
   public int getInt() {
-    return (int) get();
+    return (int)get();
+  } 
+  
+  public long getLong() {
+    return (long)get();
   } 
   
   public float getFloat() {
-    return (float) get();
+    return (float)get();
+  }
+  
+  public double getDouble() {
+    return (double)get();
   }
   
   public boolean getBool() {
-    return (boolean) get();
+    return (boolean)get();
   }
   
   public String getString() {
-    return (String) get();
+    return (String)get();
   }
   
   /** Override to handle {@link #checkType(Object)} */
   @Override
   public boolean set(Object value, Logger logger) {
     checkType(value);
-    return super.set(value, logger);
+    boolean accepted = super.set(value, logger);
+    if (accepted) save(); // save directly the value
+    return accepted;
   }
 }

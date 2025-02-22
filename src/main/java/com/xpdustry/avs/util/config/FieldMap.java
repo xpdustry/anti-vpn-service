@@ -24,40 +24,25 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.config.base;
+package com.xpdustry.avs.util.config;
+
+import java.util.Objects;
 
 import com.xpdustry.avs.util.logging.Logger;
 
 import arc.struct.ObjectMap;
 
 
-public class FieldMap<K, V> extends CachedField<ObjectMap<K, V>> {
-  protected final Class<?> keyType, valueType;
-
-  public FieldMap(AbstractConfig master, String name, Class<?> keyType, Class<?> valueType, 
-                              ObjectMap<K, V> defaultValue) {
+public class FieldMap<K, V> extends Field<ObjectMap<K, V>> {
+  public FieldMap(AConfig master, String name, Class<?> keyType, Class<?> valueType, ObjectMap<K, V> defaultValue) {
     this(master, name, keyType, valueType, defaultValue, null);
   }
   
-  public FieldMap(AbstractConfig master, String name, Class<?> keyType, Class<?> valueType, 
-                              ObjectMap<K, V> defaultValue, ChangeValider<ObjectMap<K, V>> validate) {
-    super(master, name, defaultValue, validate);
-    if (keyType == null) throw new NullPointerException(name() + ": keyType cannot be null");
-    if (valueType == null) throw new NullPointerException(name() + ": valueType cannot be null");
-    
-    this.keyType = keyType;
-    this.valueType = valueType;
+  public FieldMap(AConfig master, String name, Class<?> keyType, Class<?> valueType, ObjectMap<K, V> defaultValue, 
+                  ChangeValider<ObjectMap<K, V>> validate) {
+    super(master, name, Objects.requireNonNull(valueType), Objects.requireNonNull(keyType),
+          defaultValue, validate);
   }
-  
-  @SuppressWarnings("unchecked")
-  public void load() {
-    cached = master.config.getJson(name(), ObjectMap.class, valueType, keyType, this::defaultValue);
-  }
-  
-  public void save() {
-    master.config.putJson(name(), valueType, keyType, cached);
-  }
-
 
   public V get(K key) {
     return get().get(key);
@@ -84,13 +69,8 @@ public class FieldMap<K, V> extends CachedField<ObjectMap<K, V>> {
     return accept;
   }
   
+  /** No need to validate change since the map will be clear */
   public void clear() {
-    // No need to validate change since the map will be clear
     get().clear();
-  }
-  
-  @Override
-  public String toString() {
-    return master.config.getJson().toJson(cached);
   }
 }

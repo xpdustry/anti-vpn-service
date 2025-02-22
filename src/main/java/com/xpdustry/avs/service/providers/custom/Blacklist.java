@@ -57,6 +57,19 @@ public class Blacklist extends com.xpdustry.avs.service.providers.type.EditableA
       Vars.netServer.admins.dosBlacklist.clear();
       logger.info("avs.provider.editable.blacklist.dos-list-moved");      
     }
+    
+    //TODO: move the 'subnet-ban' blacklist to this one.
+    /*
+    if (!Vars.netServer.admins.subnetBans.isEmpty()) {
+      // Copy the subnet-ban list and try to known the original address and the mask
+      Vars.netServer.admins.subnetBans.each(a -> {
+        
+      });
+      Vars.netServer.admins.subnetBans.clear();
+      logger.info("avs.provider.editable.blacklist.subnet-ban-moved");
+    }
+    */
+    
     return loaded;
   }
 }

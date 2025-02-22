@@ -31,10 +31,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import com.xpdustry.avs.Loader;
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
+import com.xpdustry.avs.misc.SettingsAutosave;
 import com.xpdustry.avs.service.providers.type.AddressProviderReply;
 import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.bundle.L10NBundlePlayer;
-import com.xpdustry.avs.util.json.DynamicSettings;
+import com.xpdustry.avs.util.json.JsonSettings;
 import com.xpdustry.avs.util.logging.Logger;
 
 import arc.Core;
@@ -50,8 +51,8 @@ import mindustry.net.Packets.KickReason;
 
 
 public class ServiceManager {
-  private static ThreadPoolExecutor threadPool = 
-      (ThreadPoolExecutor) Threads.boundedExecutor("AVS-ClientValidator", AVSConfig.connectLimit.getInt());
+  private static ThreadPoolExecutor pool = 
+      (ThreadPoolExecutor)Threads.boundedExecutor("AVS-ClientValidator", AVSConfig.connectLimit.getInt());
   private static Logger logger = new Logger();
   private static Cons2<NetConnection, Object> connectPacketServerListener;
   private static boolean ready = false;
@@ -63,7 +64,7 @@ public class ServiceManager {
     
     try { registerIpValidatorListener(); } 
     catch (RuntimeException err) {
-      Threads.await(threadPool);
+      Threads.await(pool);
       throw new SecurityException(err.getLocalizedMessage(), err);
     }
     
@@ -82,11 +83,10 @@ public class ServiceManager {
   public static boolean setPoolSize() {
     // This is intended to limit the number of connections at the same time, 
     // It gives a little protection against ddos attacks
-    try { threadPool.setMaximumPoolSize(AVSConfig.connectLimit.getInt()); }
+    try { pool.setMaximumPoolSize(AVSConfig.connectLimit.getInt()); }
     // avoid the case of the value has been manually modified in server settings
     catch (IllegalArgumentException e) { 
-      logger.err("avs.manager.invalid-pool-size", AVSConfig.connectLimit.getInt(), 
-                                                  threadPool.getCorePoolSize());
+      logger.err("avs.manager.invalid-pool-size", AVSConfig.connectLimit.getInt(), pool.getCorePoolSize());
       return false;
     }; 
     
@@ -161,7 +161,7 @@ public class ServiceManager {
       
       // And submit a new task to the thread pool, to avoid blocking the server
       try {
-        threadPool.execute(() -> {
+        pool.execute(() -> {
           try {
             Events.fire(new AVSEvents.ClientCheckEvent(con, packet));
             
@@ -266,13 +266,14 @@ public class ServiceManager {
     ready = false;
     AntiVpnService.stop();
     logger.info("avs.manager.dispose.waiting-for");
-    Threads.await(threadPool);
-    DynamicSettings.stopAutosave();
+    Threads.await(pool);
+    SettingsAutosave.stop();
     com.xpdustry.avs.misc.CloudAutoRefresher.stop();
     logger.info("avs.manager.dispose.saving");
+    AVSConfig.instance().save();
     com.xpdustry.avs.config.RestrictedModeConfig.instance().save();
     AntiVpnService.save();
-    DynamicSettings.globalAutosave();
+    SettingsAutosave.run();
     logger.info("avs.manager.dispose.completed");    
   }
   
@@ -281,27 +282,24 @@ public class ServiceManager {
     shutdownPlugin();
     logger.none();
     logger.info("avs.manager.reset.progress");
-    DynamicSettings.stopAutosave();
+    SettingsAutosave.stop();
     SettingsCleaner.deleteFiles();
-    AVSConfig.Field[] folders = {
+    AVSConfig.ConfigField[] folders = {
         AVSConfig.providersDirectory,
         AVSConfig.cacheDirectory, AVSConfig.settingsDirectory,
         AVSConfig.bundlesDirectory, AVSConfig.pluginDirectory
     };
-    for (AVSConfig.Field d : folders) AVSConfig.subDir(d.getString()).delete();
+    for (AVSConfig.ConfigField d : folders) AVSConfig.subDir(d.getString()).delete();
     logger.info("avs.manager.reset.done");
   }
   
   
-  /** Inherit from {@link DynamicSettings} to get access of {@link DynamicSettings#files} */
-  private static class SettingsCleaner extends DynamicSettings {
-    private SettingsCleaner(arc.files.Fi file) { super(file); }
-    
+  /** Inherit from {@link JsonSettings} to get access of {@link JsonSettings#all} */
+  private static class SettingsCleaner extends SettingsAutosave {
     /** Clear values and delete the file of all loaded settings files and clear it */
     private static void deleteFiles() {
-      files.each(f -> {f.clear(); f.getFile().delete();});
-      files.clear();
-      logFile.delete();
+      all.each(f -> {f.clear(); f.file().delete();});
+      all.clear();
     }
   }
 }

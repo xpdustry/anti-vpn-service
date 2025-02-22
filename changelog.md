@@ -30,8 +30,8 @@
 
 ### TODO: 
  - ~~make a rule to whitelist all ips of specific a UUID~~ (will be done in [Better-Security](https://github.com/xpdustry/Better-Security/))
- - make metrics (probably an other plugin)
+ - make metrics (probably another plugin)
  - make a provider type that load addresses ranges from a file
  - make providers creatable with a config file
  - **PRIORITY:** make a documentation
-
+ - add a feature to move the ``subnet-ban`` blacklist to the ``Blacklist`` provider.

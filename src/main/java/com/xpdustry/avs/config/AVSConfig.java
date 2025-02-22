@@ -28,12 +28,12 @@ package com.xpdustry.avs.config;
 
 import arc.files.Fi;
 
-import com.xpdustry.avs.config.base.*;
+import com.xpdustry.avs.util.config.*;
 import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.logging.Logger;
 
 
-public class AVSConfig extends AbstractConfig {
+public class AVSConfig extends AConfig {
   private static final AVSConfig INSTANCE = new AVSConfig();
   private static Fi workingDirectory;
   /** Limit to prevent a config redirection loop */
@@ -70,8 +70,8 @@ public class AVSConfig extends AbstractConfig {
   }
 
   @Override
-  protected String getFieldDescKey(IField<?> field) {
-    return "avs." + name + '.' + field.name();
+  protected String getFieldDescKey(Field<?> field) {
+    return "avs." + name + '.' + field.name;
   }
   
   @Override
@@ -96,64 +96,70 @@ public class AVSConfig extends AbstractConfig {
   }
   
   
-  public static class Field extends SimpleField {
+  public static class ConfigField extends SimpleField {
     public final boolean isDev, readOnly;
     
-    Field(String name, Object defaultValue) { this(name, defaultValue, null, false, false); }
-    Field(String name, Object defaultValue, boolean isDev) { this(name, defaultValue, null, isDev, false); }
-    Field(String name, Object defaultValue, boolean isDev, boolean readOnly) { this(name, defaultValue, null, isDev, readOnly); }
-    Field(String name, Object defaultValue, ChangeValider<Object> validate) { this(name, defaultValue, validate, false, false); }
-    Field(String name, Object defaultValue, ChangeValider<Object> validate, boolean isDev) { this(name, defaultValue, validate, isDev, false); }
-    Field(String name, Object defaultValue, ChangeValider<Object> validate, boolean isDev, boolean readOnly) {
+    ConfigField(String name, Object defaultValue) { this(name, defaultValue, null, false, false); }
+    ConfigField(String name, Object defaultValue, boolean isDev) { this(name, defaultValue, null, isDev, false); }
+    ConfigField(String name, Object defaultValue, boolean isDev, boolean readOnly) { this(name, defaultValue, null, isDev, readOnly); }
+    ConfigField(String name, Object defaultValue, ChangeValider<Object> validate) { this(name, defaultValue, validate, false, false); }
+    ConfigField(String name, Object defaultValue, ChangeValider<Object> validate, boolean isDev) { this(name, defaultValue, validate, isDev, false); }
+    ConfigField(String name, Object defaultValue, ChangeValider<Object> validate, boolean isDev, boolean readOnly) {
       super(INSTANCE, name, defaultValue, validate);
       this.isDev = isDev;
       this.readOnly = readOnly;
     }
 
     @Override
-    protected Object getValue() { return master.config().get(name(), defaultValue()); }
+    public void load() {
+      value = master.config().get(name, type, elementType, keyType, defaultValue);
+      modified = false;
+    }
+    
     /** Handle {@link #readOnly} */
     @Override
-    public boolean set(Object value, Logger logger) { return !readOnly && super.set(value, logger); }
+    public boolean set(Object value, Logger logger) { 
+      return !readOnly && super.set(value, logger); 
+    }
+    
     @Override
-    protected void putValue(Object value) {
-      if (value == defaultValue()) master.config().remove(name());
-      else super.putValue(value);
+    public void forcesave() {
+      if (value == defaultValue) master.config().remove(name);
+      else super.forcesave();
     }
   }
 
   
   /** Config variables */
-  public static final Field
-    enabled = new Field("enabled", true),
-    defaultLocale = new Field("default-locale", "en", ConfigEvents::onDefaultLocaleChanged),
-    kickMessage = new Field("kick-message", ""),
-    serverBusyMessage = new Field("busy-message", ""),
-    errorMessage = new Field("error-message", ""),
-    clientKickDuration = new Field("kick-duration", 30),
-    connectLimit = new Field("connect-limit", arc.util.OS.cores, ConfigEvents::onConnectLimitChanged),
-    startupDownload = new Field("startup-download", true),
-    autosaveSpacing = new Field("autosave-spacing", 60 * 15, ConfigEvents::onAutosaveSpacingChanged),
-    resetCommandEnabled = new Field("reset-command", false, false, true),
-    useDefaultBundle = new Field("bundle-fallback", com.xpdustry.avs.util.bundle.L10NBundle.useDefaultWhenKeyNotFound, ConfigEvents::onUseDefaultBundleChanged),
-    randomOnlineProviders = new Field("random-online", false),
-    randomTokens = new Field("random-tokens", false),
-    preventUnavailable = new Field("prevent-unavailable", true),
-    resultRequired = new Field("result-required", true),
-    cleanupRecents = new Field("cleanup-recents", 60, ConfigEvents::onCleanupRecentsChanged),
-    cloudRefreshTimeout = new Field("cloud-refresh", 360, ConfigEvents::onCloudRefreshTimeoutChanged),
+  public static final ConfigField
+    enabled = new ConfigField("enabled", true),
+    defaultLocale = new ConfigField("default-locale", "en", ConfigEvents::onDefaultLocaleChanged),
+    kickMessage = new ConfigField("kick-message", ""),
+    serverBusyMessage = new ConfigField("busy-message", ""),
+    errorMessage = new ConfigField("error-message", ""),
+    clientKickDuration = new ConfigField("kick-duration", 30),
+    connectLimit = new ConfigField("connect-limit", arc.util.OS.cores, ConfigEvents::onConnectLimitChanged),
+    startupDownload = new ConfigField("startup-download", true),
+    autosaveSpacing = new ConfigField("autosave-spacing", 60 * 15, ConfigEvents::onAutosaveSpacingChanged),
+    resetCommandEnabled = new ConfigField("reset-command", false, false, true),
+    useDefaultBundle = new ConfigField("bundle-fallback", com.xpdustry.avs.util.bundle.L10NBundle.useDefaultWhenKeyNotFound, ConfigEvents::onUseDefaultBundleChanged),
+    randomOnlineProviders = new ConfigField("random-online", false),
+    randomTokens = new ConfigField("random-tokens", false),
+    preventUnavailable = new ConfigField("prevent-unavailable", true),
+    resultRequired = new ConfigField("result-required", true),
+    cleanupRecents = new ConfigField("cleanup-recents", 60, ConfigEvents::onCleanupRecentsChanged),
+    cloudRefreshTimeout = new ConfigField("cloud-refresh", 360, ConfigEvents::onCloudRefreshTimeoutChanged),
     
     // For devs, better to keep that as default
-    forceDebug = new Field("force-debug", false, ConfigEvents::onForceDebugChanged, true),
-    pluginDirectory = new Field("plugin-dir", "", ConfigEvents::onPluginDirectoryChanged, true),
-    bundlesDirectory = new Field("bundles-dir", "bundles", ConfigEvents::onBundlesDirectoryChanged, true),
-    cacheDirectory = new Field("cache-dir", "cache", ConfigEvents::onCacheDirectoryChanged, true),
-    settingsDirectory = new Field("settings-dir", "settings", ConfigEvents::onSettingsDirectoryChanged, true),
-    providersDirectory = new Field("providers-dir", settingsDirectory.defaultValue + "/providers", ConfigEvents::onProviderDirectoryChanged, true),
-    configFile = new Field("config-file", INSTANCE.name + ".json", ConfigEvents::onConfigFileChanged, true),
-    allowUntrustedSource = new Field("allow-http203", com.xpdustry.avs.util.network.AdvancedHttp.allowUntrustedSourceHttpCode, ConfigEvents::onAllowUntrustedSourceChanged, true),
-    socketTimeout = new Field("socket-timeout", com.xpdustry.avs.util.network.AwaitHttp.readWriteTimeout, ConfigEvents::onSocketTimeoutChanged, true),
-    useBundleCache = new Field("bundle-cache", com.xpdustry.avs.util.bundle.L10NBundle.useCache, ConfigEvents::onBundleCacheChanged, true),
-    none = null
-    ;
+    forceDebug = new ConfigField("force-debug", false, ConfigEvents::onForceDebugChanged, true),
+    pluginDirectory = new ConfigField("plugin-dir", "", ConfigEvents::onPluginDirectoryChanged, true),
+    bundlesDirectory = new ConfigField("bundles-dir", "bundles", ConfigEvents::onBundlesDirectoryChanged, true),
+    cacheDirectory = new ConfigField("cache-dir", "cache", ConfigEvents::onCacheDirectoryChanged, true),
+    settingsDirectory = new ConfigField("settings-dir", "settings", ConfigEvents::onSettingsDirectoryChanged, true),
+    providersDirectory = new ConfigField("providers-dir", settingsDirectory.defaultValue + "/providers", ConfigEvents::onProviderDirectoryChanged, true),
+    configFile = new ConfigField("config-file", INSTANCE.name + ".json", ConfigEvents::onConfigFileChanged, true),
+    allowUntrustedSource = new ConfigField("allow-http203", com.xpdustry.avs.util.network.AdvancedHttp.allowUntrustedSourceHttpCode, ConfigEvents::onAllowUntrustedSourceChanged, true),
+    socketTimeout = new ConfigField("socket-timeout", com.xpdustry.avs.util.network.AwaitHttp.readWriteTimeout, ConfigEvents::onSocketTimeoutChanged, true),
+    useBundleCache = new ConfigField("bundle-cache", com.xpdustry.avs.util.bundle.L10NBundle.useCache, ConfigEvents::onBundleCacheChanged, true),
+    none = null;
 }

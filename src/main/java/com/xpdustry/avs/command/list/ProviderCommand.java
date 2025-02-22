@@ -75,7 +75,7 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
       StringBuilder builder = new StringBuilder();
       
       ProviderAction.Category.all.each(c -> {
-        builder.append(c.getDesc(logger)).append('\n');
+        builder.append(c.getDesc(logger)).append(":\n");
         addProviderActions(builder, format, ProviderAction.getAll(c), logger);
         logger.infoNormal(builder.append(' ').toString());
         builder.setLength(0);

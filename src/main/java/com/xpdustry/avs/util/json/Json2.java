@@ -265,7 +265,6 @@ public class Json2 extends Json {
   
   /** Adds default serializers */
   {
-    
     // Enum
     setInheritSerializer(Enum.class, new JsonSerializer<>() {
       @Override
@@ -567,6 +566,6 @@ public class Json2 extends Json {
           result.put(json.convertFromString(child.name, keyType), json.readValue(elementType, null, child));
         return result;
       }
-    });   
+    });
   }
 }

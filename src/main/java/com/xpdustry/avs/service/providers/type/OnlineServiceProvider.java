@@ -131,7 +131,7 @@ public abstract class OnlineServiceProvider extends AddressProvider
     }
 
     try {
-      Seq<String> tokens = getSettings().getJson("tokens", Seq.class, String.class, Seq::new);
+      Seq<String> tokens = getSettings().get("tokens", Seq.class, String.class, new Seq<>());
   
       if (tokens.isEmpty() && tokensNeeded()) logger.warn("avs.provider.online.tokens.empty-but-needed");
       else if (tokens.isEmpty()) logger.warn("avs.provider.online.tokens.empty");
@@ -159,7 +159,7 @@ public abstract class OnlineServiceProvider extends AddressProvider
     if (!canUseTokens()) return true;
     
     try {
-      getSettings().putJson("tokens", String.class, tokens.keys().toSeq());
+      getSettings().put("tokens", String.class, tokens.keys().toSeq());
       getSettings().save();
       logger.debug("avs.provider.online.tokens.saved");
       return true;

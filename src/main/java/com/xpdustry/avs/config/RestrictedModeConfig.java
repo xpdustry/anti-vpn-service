@@ -29,26 +29,26 @@ package com.xpdustry.avs.config;
 import com.xpdustry.avs.command.AVSCommandManager;
 import com.xpdustry.avs.command.Command;
 import com.xpdustry.avs.command.list.*;
-import com.xpdustry.avs.config.base.*;
 import com.xpdustry.avs.misc.ProviderActionSeq;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.service.providers.type.AddressProvider;
+import com.xpdustry.avs.util.config.*;
 
 import arc.files.Fi;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 
 
-public class RestrictedModeConfig extends AbstractConfig {
+public class RestrictedModeConfig extends AConfig {
   private static final RestrictedModeConfig INSTANCE = new RestrictedModeConfig();
   
   private RestrictedModeConfig() { super("restrict", true); }
   public static RestrictedModeConfig instance() { return INSTANCE; }
 
   @Override
-  protected String getFieldDescKey(IField<?> field) {
-    return "avs." + name + '.' + field.name();
+  protected String getFieldDescKey(Field<?> field) {
+    return "avs." + name + '.' + field.name;
   }
   
   @Override
@@ -65,7 +65,7 @@ public class RestrictedModeConfig extends AbstractConfig {
         a instanceof com.xpdustry.avs.service.providers.custom.Blacklist
     );
     
-    public static final Seq<AVSConfig.Field> settings = Seq.with(
+    public static final Seq<AVSConfig.ConfigField> settings = Seq.with(
         AVSConfig.connectLimit,
         AVSConfig.kickMessage,
         AVSConfig.serverBusyMessage,
@@ -87,8 +87,8 @@ public class RestrictedModeConfig extends AbstractConfig {
   
   public static final Field<Boolean> enabled = 
       new Field<>(INSTANCE, "enabled", Default.enabled);
-  public static final FieldList<AVSConfig.Field> settings =
-      new FieldList<>(INSTANCE, "settings", AVSConfig.Field.class, Default.settings, ConfigEvents::onSettingsChanged);
+  public static final FieldList<AVSConfig.ConfigField> settings =
+      new FieldList<>(INSTANCE, "settings", AVSConfig.ConfigField.class, Default.settings, ConfigEvents::onSettingsChanged);
   public static final FieldList<AddressProvider> providers = 
       new FieldList<>(INSTANCE, "providers", AddressProvider.class, Default.providers, ConfigEvents::onProvidersChanged);
   public static final FieldList<Command> commands =

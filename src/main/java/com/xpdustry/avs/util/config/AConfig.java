@@ -24,37 +24,37 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.config.base;
+package com.xpdustry.avs.util.config;
 
-import com.xpdustry.avs.util.json.DynamicSettings;
+import com.xpdustry.avs.util.json.JsonSettings;
 import com.xpdustry.avs.util.logging.Logger;
 
 import arc.files.Fi;
 import arc.struct.Seq;
-import arc.util.Strings;
 
 
-public abstract class AbstractConfig {
+public abstract class AConfig {
   public final String name;
   public final boolean plainJson;
-  public final Seq<IField<?>> all = new Seq<>();
+  public final Seq<Field<?>> all = new Seq<>();
   
-  protected DynamicSettings config;  
+  protected JsonSettings config;  
   protected boolean isLoading;
   protected final Logger logger;
   
-  public AbstractConfig(String name) {
+  public AConfig(String name) {
     this(name, true);
   }
   
-  public AbstractConfig(String name, boolean plainJson) {
+  public AConfig(String name, boolean plainJson) {
     this.name = name;
     this.plainJson = plainJson;
-    this.logger = new Logger(Strings.capitalize(name));
+    this.logger = new Logger(arc.util.Strings.capitalize(name));
   }
   
-  public IField<?> get(String name) {
-    return all.find(f -> f.name().equals(name));
+  @SuppressWarnings("unchecked")
+  public <T> Field<T> get(String name) {
+    return (Field<T>) all.find(f -> f.name.equals(name));
   }
   
   public void notifyValuesChanged() {
@@ -62,14 +62,14 @@ public abstract class AbstractConfig {
       try { f.validateChange(logger); }
       catch (Exception e) { // probably invalid value in config file
         // notify, remove the field and use the default value
-        logger.err("avs.aconfig.invalid-field", f.name());
+        logger.err("avs.aconfig.invalid-field", f.name);
         logger.err("avs.general-error", e.toString());
         f.setDefault(logger);
       }
     });
   }
     
-  public DynamicSettings config() {
+  public JsonSettings config() {
     return config;
   }
   
@@ -78,7 +78,7 @@ public abstract class AbstractConfig {
   }
 
   /** Used to format the key to get the field description from bundle */
-  protected abstract String getFieldDescKey(IField<?> field);
+  protected abstract String getFieldDescKey(Field<?> field);
   
   public void load() {
     isLoading = true;
@@ -88,11 +88,12 @@ public abstract class AbstractConfig {
     logger.debug("avs.aconfig.file", file.absolutePath());
     
     try {
-      config = new DynamicSettings(file, true);
+      config = new JsonSettings(file, plainJson);
+      com.xpdustry.avs.misc.SettingsAutosave.add(config);
       com.xpdustry.avs.misc.JsonSerializer.apply(config.getJson());
       config.load();
 
-      all.each(s -> s instanceof CachedField, s -> ((CachedField<?>) s).load());
+      all.each(f -> f.load());
       loadMisc();
       
     } catch (Exception e) {
@@ -104,11 +105,10 @@ public abstract class AbstractConfig {
     
     isLoading = false;
   }
-  
-  /** Only useful for saving the {@link CachedField} fields content. */
+
   public boolean save() {
     try { 
-      all.each(s -> s instanceof CachedField, s -> ((CachedField<?>) s).save());
+      all.each(f -> f.save());
       logger.info("avs.aconfig.saved");
       return true;
     

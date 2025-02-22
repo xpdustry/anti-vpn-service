@@ -33,15 +33,15 @@ import arc.util.serialization.JsonValue;
 import arc.util.serialization.JsonValue.ValueType;
 
 
-/** Build an JsonValue object */
+/** Build a JsonValue object */
 public class JsonWriterBuilder implements BaseJsonWriter {
-  private JsonValue base, current, last;
+  private JsonValue root, current, last;
   private String name;
 
   public JsonValue getJson() {
     //if (current != null && base != current) //Useless
     //  throw new IllegalStateException("Builder must be closed before getting the result");
-    return base;
+    return root;
   }
   
   @Override
@@ -65,7 +65,9 @@ public class JsonWriterBuilder implements BaseJsonWriter {
   @Override
   public BaseJsonWriter value(Object object) throws IOException {
     requireName();
-    if (current == null) throw new IllegalStateException("No current object/array.");
+    if (current != null && !current.isArray() && !current.isObject()) 
+      throw new IllegalStateException("Current item must be an object or an array.");
+    
     JsonValue jval;
     
     if (object == null) jval = new JsonValue(ValueType.nullValue);
@@ -94,7 +96,8 @@ public class JsonWriterBuilder implements BaseJsonWriter {
       }
     } else throw new IOException("Unknown object type.");
     
-    addValue(jval);
+    if (root == null) root = current = jval;
+    else addValue(jval);
     return this;
   }
   
@@ -119,7 +122,7 @@ public class JsonWriterBuilder implements BaseJsonWriter {
       while (last.next != null) last = last.next;
     
     } else {
-      if (name != null) value.name = new String(name); // idk why this works
+      if (name != null) value.name = new String(name); // idk how this works
       value.parent = current;
       last.next = value;
       last = last.next;
@@ -133,7 +136,7 @@ public class JsonWriterBuilder implements BaseJsonWriter {
     JsonValue old = current;
     
     if (current == null) current = newValue;
-    if (base == null) base = current;
+    if (root == null) root = current;
     if (old != null) {
       addValue(newValue);
       current = newValue;
@@ -167,7 +170,7 @@ public class JsonWriterBuilder implements BaseJsonWriter {
     if (name != null) 
       throw new IllegalStateException("Expected an object, array or value, since a name was set.");
     last = current;
-    if (last != null) {
+    if (last != null && (last.isArray() || last.isObject())) {
       while (last.next != null) last = last.next;
       current = current.parent;      
     }
@@ -176,8 +179,12 @@ public class JsonWriterBuilder implements BaseJsonWriter {
 
   @Override
   public void close() throws IOException {
-    while (current != null && base != current) 
+    while (current != null && root != current) 
       pop();
   }
 
+  public void clear() {
+    root = current = last = null;
+    name = null;
+  }
 }

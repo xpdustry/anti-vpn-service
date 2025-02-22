@@ -28,7 +28,7 @@ package com.xpdustry.avs.service.providers.type;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
-import com.xpdustry.avs.util.json.DynamicSettings;
+import com.xpdustry.avs.util.json.JsonSettings;
 import com.xpdustry.avs.util.logging.Logger;
 
 import arc.Events;
@@ -38,7 +38,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   protected static final String DESC_BUNDLE_KEY_PREFIX = "avs.provider.description.";
 
   /** Settings of this provider */
-  private DynamicSettings settings;
+  private JsonSettings settings;
   private boolean loaded = false;
   
   /** Set to false in the constructor if the provider is disabled by default */
@@ -115,7 +115,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   }
 
   private boolean loadSettings() {
-    DynamicSettings file = getSettings();
+    JsonSettings file = getSettings();
     
     try { 
       file.load();
@@ -127,7 +127,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
       return true;
       
     } catch (Exception e) { 
-      logger.err("avs.provider.load-failed", file.getFile().path());
+      logger.err("avs.provider.load-failed", file.file().path());
       logger.err("avs.general-error", e.toString()); 
       return false;
     }
@@ -135,7 +135,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   
   private boolean reloadSettings() {
     logger.debug("avs.provider.reload");
-    DynamicSettings file = getSettings();
+    JsonSettings file = getSettings();
     
     try { 
       file.clear();
@@ -148,14 +148,14 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
       return true;
       
     } catch (Exception e) { 
-      logger.err("avs.provider.load-failed", file.getFile().path());
+      logger.err("avs.provider.load-failed", file.file().path());
       logger.err("avs.general-error", e.toString()); 
       return false;
     }
   }
   
   private boolean saveSettings() {
-    DynamicSettings file = getSettings();
+    JsonSettings file = getSettings();
     
     try { 
       file.put("enabled", enabled);
@@ -165,7 +165,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
       return true;
       
     } catch(Exception e) {
-      logger.err("avs.provider.save-failed", file.getFile().path());
+      logger.err("avs.provider.save-failed", file.file().path());
       logger.err("avs.general-error", e.toString());
       return false;
     } 
@@ -251,10 +251,11 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   protected abstract void checkAddressImpl(AddressProviderReply reply);
 
   
-  protected DynamicSettings getSettings() {
+  protected JsonSettings getSettings() {
     if (settings == null) {
       arc.files.Fi file = AVSConfig.subDir(AVSConfig.providersDirectory.getString()).child(name + ".json");
-      settings = new DynamicSettings(file, true);
+      settings = new JsonSettings(file, true);
+      com.xpdustry.avs.misc.SettingsAutosave.add(settings);
       com.xpdustry.avs.misc.JsonSerializer.apply(settings.getJson());
     }
     

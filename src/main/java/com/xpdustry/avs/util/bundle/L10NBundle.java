@@ -28,7 +28,6 @@ package com.xpdustry.avs.util.bundle;
 
 import java.text.MessageFormat;
 import java.util.Locale;
-import java.util.ResourceBundle;
 
 import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.logging.Logger;

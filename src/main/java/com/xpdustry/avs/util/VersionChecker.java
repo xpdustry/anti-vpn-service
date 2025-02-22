@@ -34,46 +34,77 @@ public class VersionChecker {
   private static final Logger logger = new Logger("Updater");
   
   public static String keyToFind = "tag_name";
-  public static String repoLinkFormat = "https://github.com" + "/@/releases/latest";
+  public static String repoLinkFormat = "https://github.com/@/releases/latest";
   public static String repoApiLinkFormat = mindustry.Vars.ghApi + "/repos/@/releases/latest";
+  /** Whether to log update status to user */
+  public static boolean promptStatus = true;
   
-  public static void checkAndPromptToUpgrade(String githubRepo, String currentVersion) {
-    logger.info("avs.updater.checking");
+  /** 
+   * Check for update using the "version" and "repo" properties 
+   * in the mod/plugin definition (plugin.json, mod.json). <br><br>
+   * The github repo must be formatted like that "{@code <username>/<repo-name>}".<br>
+   * The version can be formatted like that "{@code 146.2}" and can starts with "{@code v}", 
+   * but must not contains letters, like "{@code beta}" or "{@code -dev}".
+   * 
+   * @return the update state
+   */
+  public static UpdateState checkAndPromptToUpgrade(mindustry.mod.Mods.ModMeta mod) {
+    if (promptStatus) logger.info("avs.updater.checking");
     
-    // Check the githubRepo and the current version
-    if (githubRepo == null || githubRepo.isBlank()) {
-      logger.warn("avs.updater.no-repo-found");
-      return;
-    } else if (currentVersion == null || currentVersion.isBlank()) {
-      logger.warn("avs.updater.no-version-found");
-      return;
+    // Check the repo and the current version
+    if (mod.repo == null || mod.repo.isEmpty()) {
+      if (promptStatus) logger.warn("avs.updater.no-repo-found");
+      return UpdateState.missing;
+    } else if (mod.version == null || mod.version.isEmpty()) {
+      if (promptStatus) logger.warn("avs.updater.no-version-found");
+      return UpdateState.missing;
     }
     
     // Make the request
-    AdvancedHttp.Reply reply = AdvancedHttp.get(Strings.format(repoApiLinkFormat, githubRepo));
+    AdvancedHttp.Reply reply = AdvancedHttp.get(Strings.format(repoApiLinkFormat, mod.repo));
     
     if (reply.isError()) {
       String message = reply.error != null ? reply.error.toString() : reply.httpStatus + ": " + reply.message;
-      logger.err("avs.updater.error", message);
-      return;
+      if (promptStatus) logger.err("avs.updater.error", message);
+      return UpdateState.error;
     } else if (reply.content.isBlank()) {
-      logger.err("avs.updater.reply.empty");
-      return;
+      if (promptStatus) logger.err("avs.updater.empty");
+      return UpdateState.error;
     }
     
     // Extract the version
     String tagName;
     try { tagName = new arc.util.serialization.JsonReader().parse(reply.content).getString(keyToFind); } 
     catch (Exception e) {
-      logger.err("avs.updater.reply.no-tagname-found");
-      logger.err("avs.general-error", e.getLocalizedMessage());
-      return;
+      if (promptStatus) {
+        logger.err("avs.updater.no-tagname-found");
+        logger.err("avs.general-error", e.getLocalizedMessage());
+      }
+      return UpdateState.error;
     }
     
     // Compare the version
-    if (Strings.isVersionAtLeast(currentVersion, tagName)) {
-        logger.info("avs.updater.version.found", tagName, currentVersion);
-        logger.info("avs.updater.version.link", Strings.format(repoLinkFormat, githubRepo));
-    } else logger.info("avs.updater.version.up-to-date");
+    if (Strings.isVersionAtLeast(mod.version, tagName)) {
+      if (promptStatus) {
+        logger.info("avs.updater.found", tagName, mod.version);
+        logger.info("avs.updater.link", Strings.format(repoLinkFormat, mod.repo));
+      }
+      return UpdateState.outdated;
+    } else {
+      if (promptStatus) logger.info("avs.updater.up-to-date");
+      return UpdateState.uptodate;
+    }
+  }
+  
+  
+  public static enum UpdateState {
+    /** "version" or/and "repo" properties are missing in the mod/plugin definition. */
+    missing,
+    /** Error while checking for updates. */
+    error, 
+    /** No new updates found, it's the latest version. */
+    uptodate,
+    /** An update was found, the mod/plugin needs to be upgraded. */
+    outdated
   }
 }

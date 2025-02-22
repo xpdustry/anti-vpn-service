@@ -58,7 +58,7 @@ public enum ProviderAction {
   ;
 
   public static final Seq<ProviderAction> all = Seq.with(values());
-  public static final String actionDescKeyFormat = "avs.provider.action.@.@",
+  public static final String actionDescKeyFormat = "avs.provider.action.@",
                              actionArgsKeyFormat = actionDescKeyFormat + ".args";
   
   public final String name;
@@ -127,12 +127,12 @@ public enum ProviderAction {
   }
   
   public String getDesc(Logger logger) {
-    return logger.getKey(Strings.format(actionDescKeyFormat, category.name, name));
+    return logger.getKey(Strings.format(actionDescKeyFormat, name));
   }
   
   public String getArgs(Logger logger) {
     if (!argRequired()) return "";
-    return logger.getKey(Strings.format(actionArgsKeyFormat, category.name, name));
+    return logger.getKey(Strings.format(actionArgsKeyFormat, name));
   }
   
   @Override

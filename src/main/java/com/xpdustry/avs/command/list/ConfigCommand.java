@@ -41,7 +41,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
       printSettings(restrictedMode ? RestrictedModeConfig.settings.get() : 
-                                     AVSConfig.instance().all.map(f -> (AVSConfig.Field) f), logger);
+                                     AVSConfig.instance().all.map(f -> (AVSConfig.ConfigField) f), logger);
       return;
     }
 
@@ -53,7 +53,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
       return;
     }
     
-    AVSConfig.Field field = (AVSConfig.Field) AVSConfig.instance().get(args[0]);
+    AVSConfig.ConfigField field = (AVSConfig.ConfigField) AVSConfig.instance().get(args[0]);
     
     if (field == null) {
       logger.err("avs.command.config.field.not-found", args[0]);
@@ -62,11 +62,11 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
       logger.err("avs.command.config.field.restricted");
       return;
     } else if (args.length == 1) {
-      logger.info("avs.command.config.field.value.is", field.name(), 
-                  Strings.objToStr(field.get()), Strings.objToStr(field.defaultValue()));
+      logger.info("avs.command.config.field.value.is", field.name, 
+                  Strings.objToStr(field.get()), Strings.objToStr(field.defaultValue));
       return;
     } else if (field.readOnly && args.length > 1) {
-      logger.err("avs.command.config.field.read-only", field.name());
+      logger.err("avs.command.config.field.read-only", field.name);
       return;
     }
     
@@ -93,22 +93,22 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
       if (value.equals("\"\"")) v = "";
       else v = value;
     } else {
-      logger.err("avs.command.config.field.unkown-type", field.name());
+      logger.err("avs.command.config.field.unkown-type", field.name);
       return;
     }
     
     if (v == null) {
-      logger.err("avs.command.config.field.value.invalid", value, field.name(), 
-                 (positive ? "Positive " : "") + field.defaultValue().getClass().getSimpleName());
+      logger.err("avs.command.config.field.value.invalid", value, field.name, 
+                 (positive ? "Positive " : "") + field.type.getSimpleName());
       return;  
       
     }
     
     if (field.set(v, logger)) 
-      logger.info("avs.command.config.field.value.set", field.name(), v);
+      logger.info("avs.command.config.field.value.set", field.name, v);
   }
   
-  private static void printSettings(Seq<AVSConfig.Field> list, Logger logger) {
+  private static void printSettings(Seq<AVSConfig.ConfigField> list, Logger logger) {
     if (list.isEmpty()) {
       logger.warn("avs.command.config.nothing");
       return;
@@ -118,13 +118,13 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
     String descF =  logger.getKey("avs.command.config.desc");
     String nextF = logger.getKey("avs.command.config.next");
     
-    Seq<AVSConfig.Field> dev = list.select(f -> f.isDev);
+    Seq<AVSConfig.ConfigField> dev = list.select(f -> f.isDev);
     list = list.select(f -> !f.isDev);
     
     StringBuilder builder = new StringBuilder();
-    arc.func.Cons<Seq<AVSConfig.Field>> printer = l -> {
+    arc.func.Cons<Seq<AVSConfig.ConfigField>> printer = l -> {
       l.each(f -> {
-        builder.append(Strings.format(valueF, f.name(), Strings.objToStr(f.get()))).append('\n');
+        builder.append(Strings.format(valueF, f.name, Strings.objToStr(f.get()))).append('\n');
         for (String line : f.desc(logger).split("\n"))
           builder.append(Strings.format(descF, line)).append('\n');
         logger.infoNormal(builder.toString() + nextF);

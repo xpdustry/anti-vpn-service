@@ -30,12 +30,12 @@ import com.xpdustry.avs.Loader;
 import com.xpdustry.avs.command.Command;
 import com.xpdustry.avs.misc.CloudAutoRefresher;
 import com.xpdustry.avs.misc.ProviderActionSeq;
+import com.xpdustry.avs.misc.SettingsAutosave;
 import com.xpdustry.avs.service.ServiceManager;
 import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.service.providers.type.AddressProvider;
 import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.bundle.L10NBundle;
-import com.xpdustry.avs.util.json.DynamicSettings;
 import com.xpdustry.avs.util.logging.Logger;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 import com.xpdustry.avs.util.network.AwaitHttp;
@@ -66,12 +66,12 @@ public class ConfigEvents {
   
   static boolean onAutosaveSpacingChanged(Object v, Logger logger) {
     int s = (int) v;
-    DynamicSettings.setAutosaveSpacing(Math.max(s, 1));
+    SettingsAutosave.spacing(Math.max(s, 1));
     
     if (!Loader.done()) return true;
     
-    if (s == 0) DynamicSettings.stopAutosave();
-    else DynamicSettings.startAutosave("AVS-Autosave");
+    if (s == 0) SettingsAutosave.stop();
+    else SettingsAutosave.start("AVS-Autosave");
     
     return true;
   }
@@ -154,8 +154,8 @@ public class ConfigEvents {
   
   //// RestrictedModeConfig part
   
-  static boolean onSettingsChanged(Seq<AVSConfig.Field> settings, Logger logger) {
-    for (AVSConfig.Field c : settings) {
+  static boolean onSettingsChanged(Seq<AVSConfig.ConfigField> settings, Logger logger) {
+    for (AVSConfig.ConfigField c : settings) {
       if (c == null) {
         logger.err("avs.restrict.settings.invalid");
         return false;

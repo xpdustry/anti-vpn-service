@@ -24,37 +24,23 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.config.base;
+package com.xpdustry.avs.util.config;
 
 import com.xpdustry.avs.util.logging.Logger;
 
 import arc.struct.Seq;
 
 
-public class FieldList<T> extends CachedField<Seq<T>> {
-  public final Class<?> elementType;
-
-  public FieldList(AbstractConfig master, String name, Class<?> elementType, Seq<T> defaultValue) {
+public class FieldList<T> extends Field<Seq<T>> {
+  public FieldList(AConfig master, String name, Class<?> elementType, Seq<T> defaultValue) {
     this(master, name, elementType, defaultValue, null);
   }
   
-  public FieldList(AbstractConfig master, String name, Class<?> elementType, Seq<T> defaultValue, 
-                           ChangeValider<Seq<T>> validate) {
-    super(master, name, defaultValue, validate);
-    if (elementType == null) throw new NullPointerException(name() + ": elementType cannot be null");
-    
-    this.elementType = elementType;
+  public FieldList(AConfig master, String name, Class<?> elementType, Seq<T> defaultValue,
+                   ChangeValider<Seq<T>> validate) {
+    super(master, name, java.util.Objects.requireNonNull(elementType), defaultValue, validate);
   }
 
-  @SuppressWarnings("unchecked")
-  public void load() {
-    cached = master.config.getJson(name(), Seq.class, elementType, this::defaultValue);
-  }
-  
-  public void save() {
-    master.config.putJson(name(), elementType, cached);
-  }
-  
   public boolean add(T value) { return add(value, master.logger); }
   public boolean add(T value, Logger logger) {
     Seq<T> v = get();
@@ -77,13 +63,8 @@ public class FieldList<T> extends CachedField<Seq<T>> {
     return accept;
   }
   
+  /** No need to validate change since the list will be clear */
   public void clear() {
-    // No need to validate change since the list will be clear
     get().clear();
-  }
-  
-  @Override
-  public String toString() {
-    return master.config.getJson().toJson(cached);
   }
 }

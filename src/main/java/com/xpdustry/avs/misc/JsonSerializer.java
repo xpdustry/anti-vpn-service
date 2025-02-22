@@ -209,25 +209,25 @@ public class JsonSerializer {
       }
     }); 
 
-    json.setSerializer(AVSConfig.Field.class, new Json2.JsonObjectSerializer<>() {
+    json.setSerializer(AVSConfig.ConfigField.class, new Json2.JsonObjectSerializer<>() {
       @Override
-      public void write(Json2 json, AVSConfig.Field object, Class knownType, Class elementType, Class keyType) {
-        json.writeValue(toKey(json, object, AVSConfig.Field.class));
+      public void write(Json2 json, AVSConfig.ConfigField object, Class knownType, Class elementType, Class keyType) {
+        json.writeValue(toKey(json, object, AVSConfig.ConfigField.class));
       }
 
       @Override
-      public AVSConfig.Field read(Json2 json, JsonValue jsonData, Class type, Class elementType, Class keyType) {
-        return fromKey(json, jsonData.asString(), AVSConfig.Field.class);
+      public AVSConfig.ConfigField read(Json2 json, JsonValue jsonData, Class type, Class elementType, Class keyType) {
+        return fromKey(json, jsonData.asString(), AVSConfig.ConfigField.class);
       }
 
       @Override
-      public String toKey(Json2 json, AVSConfig.Field object, Class knownType) {
+      public String toKey(Json2 json, AVSConfig.ConfigField object, Class knownType) {
         return object.name;
       }
 
       @Override
-      public AVSConfig.Field fromKey(Json2 json, String key, Class type) {
-        return (AVSConfig.Field) AVSConfig.instance().all.find(f -> f.name().equals(key));
+      public AVSConfig.ConfigField fromKey(Json2 json, String key, Class type) {
+        return (AVSConfig.ConfigField) AVSConfig.instance().all.find(f -> f.name.equals(key));
       }
     });
     

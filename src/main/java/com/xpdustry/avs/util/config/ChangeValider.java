@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.config.base;
+package com.xpdustry.avs.util.config;
 
 
 public interface ChangeValider<T> {

@@ -38,23 +38,21 @@ public class Logger {
   protected static final Object[] empty = {};
   
   public static String pluginTopic = "&lc[AVS]";
-  /** The formatter for logger topics. Only used when creating a new instance of {@link Logger}. */
   public static String topicFormat = "&ly[@]";
   
-  /** If {@code true} will not print the plugin and logger topic. */
+  /** If {@code true} will not print the plugin and logger topics. */
   public boolean disableTopic = false;
   public final String topic;
-  protected final String tag;
   
   /** Will use slf4j when slf4md plugin is present */
   private static boolean slf4mdPresentAndEnabled = mindustry.Vars.mods.locateMod("slf4md") != null;
   private static Object slf4jLogger;
   
-  /** Force log level to be always at debug */
+  /** Force log level, of all logger instances, to be always at debug */
   public static boolean forceDebug = false;
   
   public Logger() { 
-    this(""); 
+    this((String)null); 
   }
   
   public Logger(boolean disableTopic) {
@@ -67,8 +65,18 @@ public class Logger {
   }
   
   public Logger(String topic) {
-    this.topic = topic.trim();
-    this.tag = this.topic.isEmpty() ? "&fr" : Strings.format(topicFormat, this.topic) + "&fr ";
+    if (slf4mdPresentAndEnabled && slf4jLogger == null) 
+      slf4jLogger = org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+    
+    if (topic != null) {
+      topic = topic.trim();
+      if (!topic.isBlank()) {
+        this.topic = Strings.format(topicFormat, topic);
+        return;
+      }
+    }
+    
+    this.topic = null;
   }
 
   /** 
@@ -84,28 +92,27 @@ public class Logger {
   public void logNormal(LogLevel level, String text, Object... args) {
     if(cannotLog(level)) return;
 
-    String tag = disableTopic ? "" : pluginTopic + " " + this.tag;
+    String tag = disableTopic ? "" : Log.format(pluginTopic+" "+(topic != null ? topic+"&fr " : "&fr"), empty);
     text = Log.format(text, args);
     
-    if (!forceDebug && slf4mdPresentAndEnabled) {
-      if (slf4jLogger == null) slf4jLogger = org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-      org.slf4j.Logger l = (org.slf4j.Logger) slf4jLogger;
-      arc.func.Cons<String> printer;
-      
-      switch (level) {
-        case debug: printer = l::debug; break;
-        case info: printer = l::info; break;
-        case warn: printer = l::warn; break;
-        case err: printer = l::error; break;
-        default: return;
-      }
-      
+    if (!forceDebug && slf4mdPresentAndEnabled && slf4jLogger != null) {
       synchronized (slf4jLogger) {
+        org.slf4j.Logger l = (org.slf4j.Logger) slf4jLogger;
+        arc.func.Cons<String> printer;
+        
+        switch (level) {
+          case debug: printer = l::debug; break;
+          case info: printer = l::info; break;
+          case warn: printer = l::warn; break;
+          case err: printer = l::error; break;
+          default: return;
+        }
+
         for (String line : text.split("\n")) printer.get(tag + line);    
       }
       
     } else {
-      synchronized (Logger.class) {
+      synchronized (Log.logger) {
         for (String line : text.split("\n")) Log.logger.log(level, tag + line);   
       }
     }
