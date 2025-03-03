@@ -26,8 +26,6 @@
 
 package com.xpdustry.avs.misc.address;
 
-import java.util.Locale;
-
 
 public class AddressInfos {
   public final String ip;
@@ -35,8 +33,7 @@ public class AddressInfos {
   public String location = "n/a",
                 ISP = "n/a",
                 ASN = "n/a";
-  @SuppressWarnings("deprecation") 
-  public Locale locale = new Locale("n/a");
+  public java.util.Locale locale = com.xpdustry.avs.util.Strings.string2Locale("n/a");
   public float longitude = 0, 
                latitude = 0;
   

@@ -196,7 +196,6 @@ public class JsonSettings {
       json.writeValue(value, value == null ? null : value.getClass(), elementType, keyType);
 
       values.put(name, builder.getJson());
-      builder.clear();
       modified = true;  
         
     } catch (Throwable e) { throw new RuntimeException(e); }

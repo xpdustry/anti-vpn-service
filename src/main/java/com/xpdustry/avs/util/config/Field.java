@@ -111,8 +111,14 @@ public class Field<T> {
     if (!master.isLoaded()) 
       throw new IllegalStateException("master is not loaded");
     
-    boolean accept = validateChange(value, logger);
-    if (accept) setValue(value);
+    T old = this.value;
+    setValue(value);
+
+    boolean accept = validateChange(this.value, logger);
+    if (!accept) {
+      this.value = old;
+      modified = false;
+    }
     return accept;
   }
   
