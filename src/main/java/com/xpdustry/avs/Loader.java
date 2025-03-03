@@ -32,6 +32,7 @@ import com.xpdustry.avs.misc.AVSEvents;
 import com.xpdustry.avs.misc.SettingsAutosave;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.ServiceManager;
+import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.VersionChecker;
 import com.xpdustry.avs.util.bundle.L10NBundle;
 import com.xpdustry.avs.util.bundle.RescueBundle;
@@ -165,7 +166,8 @@ public class Loader {
     bundles.mkdirs();
     L10NBundle.appendBundles(bundles);
     L10NBundle.applyBundles();
-    logger.info("avs.loading.bundle-loaded", L10NBundle.bundles.size, L10NBundle.getDefaultLocale());
+    logger.info("avs.loading.bundle-loaded", L10NBundle.bundles.size, L10NBundle.getDefaultLocale(),
+                Strings.listToSentence(logger, L10NBundle.bundles, b -> Strings.locale2String(b.locale)));
     return L10NBundle.isLoaded();
   }
   

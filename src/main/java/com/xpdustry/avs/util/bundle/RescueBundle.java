@@ -43,7 +43,7 @@ public class RescueBundle extends Bundle {
       "avs.general-error", "Error: {0}",
       "avs.loading.started",        "Anti VPN Service (AVS) is loading...",
       "avs.loading.custom-bundles", "Loading custom bundles...",
-      "avs.loading.bundle-loaded",  "Loaded {0} locales, default is {1}.",
+      "avs.loading.bundle-loaded",  "Loaded {0} locales, default is {1}. Available: {2}.",
       "avs.loading.finished",       "Loading finished in {0} seconds.",
       "avs.loading.failed",         "An error occurred while loading the Anti VPN Service!",
       "avs.loading.security-error", "A security manager is present! Unable to take control of the 'ConnectPacket' listener.",
