@@ -26,15 +26,16 @@
 
 package com.xpdustry.avs.util.json;
 
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.Collection;
 import java.util.Map;
 
+import arc.files.Fi;
 import arc.struct.*;
 import arc.util.Reflect;
-import arc.util.serialization.Json;
-import arc.util.serialization.JsonValue;
-import arc.util.serialization.JsonWriter;
-import arc.util.serialization.SerializationException;
+
+import arc.util.serialization.*;
 import arc.util.serialization.Json.Serializer;
 
 
@@ -46,8 +47,7 @@ import arc.util.serialization.Json.Serializer;
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class Json2 extends Json {
   private String typeName = "class";
-  private final ObjectMap<Class, Serializer> inheritSerializers = new ObjectMap();
-  private final Seq<Class> inheritSerializersOrdered = new Seq();
+  private final ArrayMap<Class, Serializer> inheritSerializers = new ArrayMap();
 
   public Json2() {
   }
@@ -74,7 +74,6 @@ public class Json2 extends Json {
   /* Registers a serializer for the parent's class that will be inherited. */
   public <T> void setInheritSerializer(Class<T> type, Serializer<T> serializer) {
     inheritSerializers.put(type, serializer); //TODO: set hierarchy
-    inheritSerializersOrdered.add(type);
   }
   
   ///** Set a serializer after the {@code beforeType} type */
@@ -83,13 +82,45 @@ public class Json2 extends Json {
   //}
 
   public <T> Serializer<T> getInheritSerializer(Class<T> type) {
-    for (int i=inheritSerializersOrdered.size-1; i>=0; i--) {
-      if (inheritSerializersOrdered.get(i).isAssignableFrom(type)) 
-        return inheritSerializers.get(inheritSerializersOrdered.get(i));
+    for (int i=inheritSerializers.size-1; i>=0; i--) {
+      if (inheritSerializers.getKeyAt(i).isAssignableFrom(type)) 
+        return inheritSerializers.getValueAt(i);
     }
     return null;
   }
  
+  @Override
+  public String toJson(Object object, Class knownType, Class elementType) {
+    return toJson(object, knownType, elementType, (Class)null);
+  }
+  
+  public String toJson(Object object, Class knownType, Class elementType, Class keyType) {
+    StringWriter buffer = new StringWriter();
+    toJson(object, knownType, elementType, keyType, buffer);
+    return buffer.toString();
+  }
+  
+  @Override
+  public void toJson(Object object, Class knownType, Class elementType, Fi file) {
+    toJson(object, knownType, elementType, null, file);
+  }
+  
+  public void toJson(Object object, Class knownType, Class elementType, Class keyType, Fi file) {
+    try (Writer writer = file.writer(false)) { toJson(object, knownType, elementType, keyType, writer); } 
+    catch (Exception ex) { throw new SerializationException("Error writing file: " + file, ex); }
+  }
+  
+  @Override
+  public void toJson(Object object, Class knownType, Class elementType, Writer writer) {
+    toJson(object, knownType, elementType, null, writer);
+  }
+  
+  public void toJson(Object object, Class knownType, Class elementType, Class keyType, Writer writer) {
+    setWriter(new JsonWriter(writer));
+    try { writeValue(object, knownType, elementType, keyType); } 
+    finally { arc.util.io.Streams.close(getWriter()); }
+  }
+  
   @Override
   public void writeValue(Object value, Class knownType, Class elementType) {
     writeValue(value, knownType, elementType, null);
@@ -154,6 +185,27 @@ public class Json2 extends Json {
     }
   }
 
+  public <T> T fromJson(Class<T> type, Class elementType, Class keytype, java.io.Reader reader) {
+    return readValue(type, elementType, new JsonReader().parse(reader), keytype);
+  }
+  
+  public <T> T fromJson(Class<T> type, Class elementType, Class keytype, java.io.InputStream input) {
+    return readValue(type, elementType, new JsonReader().parse(input), keytype);
+  }
+  
+  public <T> T fromJson(Class<T> type, Class elementType, Class keytype, Fi file ){
+    try { return readValue(type, elementType, new JsonReader().parse(file), keytype); } 
+    catch (Exception ex) { throw new SerializationException("Error reading file: " + file, ex); }
+  }
+  
+  public <T> T fromJson(Class<T> type, Class elementType, Class keytype, char[] data, int offset, int length) {
+    return readValue(type, elementType, new JsonReader().parse(data, offset, length), keytype);
+  }
+  
+  public <T> T fromJson(Class<T> type, Class elementType, Class keytype, String json) {
+    return readValue(type, elementType, new JsonReader().parse(json), keytype);
+  }
+
   @Override
   public <T> T readValue(Class<T> type, Class elementType, JsonValue jsonData, Class keytype) {
     if (jsonData == null) return null;
@@ -211,7 +263,7 @@ public class Json2 extends Json {
     return super.readValue(type, elementType, jsonData, keytype);
   }
  
-  public String convertToString(Object value, Class knownType) {
+  protected String convertToString(Object value, Class knownType) {
     if (value == null) return String.valueOf(value);
 
     Class actualType = value.getClass();
@@ -226,7 +278,7 @@ public class Json2 extends Json {
     return super.convertToString(value);
   }
   
-  public <T> T convertFromString(String value, Class type) {
+  protected <T> T convertFromString(String value, Class type) {
     if (value == null) return null;
 
     if (type != null) {
@@ -238,7 +290,7 @@ public class Json2 extends Json {
     
     return (T)value;
   }
-  
+
   
   /** 
    * Patched {@link Serializer} to handle {@code elementType}, {@code keyType}. <br>

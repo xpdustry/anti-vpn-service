@@ -51,10 +51,9 @@ public abstract class AConfig {
     this.plainJson = plainJson;
     this.logger = new Logger(arc.util.Strings.capitalize(name));
   }
-  
-  @SuppressWarnings("unchecked")
-  public <T> Field<T> get(String name) {
-    return (Field<T>) all.find(f -> f.name.equals(name));
+
+  public Field<?> get(String name) {
+    return all.find(f -> f.name.equals(name));
   }
   
   public void notifyValuesChanged() {
@@ -116,6 +115,14 @@ public abstract class AConfig {
       logger.err("avs.aconfig.save-failed");
       logger.err("avs.general-error", e.toString());
       return false;
+    }
+  }
+  
+  public void reload() {
+    load();
+    if (isLoaded()) {
+      notifyValuesChanged();
+      logger.info("avs.aconfig.reloaded");
     }
   }
   

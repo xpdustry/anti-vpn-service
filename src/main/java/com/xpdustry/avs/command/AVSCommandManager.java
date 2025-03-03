@@ -55,8 +55,13 @@ public class AVSCommandManager {
     new HelpCommand()
   );
 
+  public static Command get(String name) {
+    return subCommands.find(c -> c.name.equals(name));
+  }
+  
   public static void registerServer(CommandHandler handler) {
-    handler.register("avs", "[command] [args...]", "Anti VPN Service command line manager", args -> {
+    handler.register("avs", "[command] [args...]", "Anti VPN Service command line manager. ('avs help' for usage)", 
+    args -> {
       if (!Loader.done()) {
         logger.err("avs.command.error-detected");
         return;
@@ -65,7 +70,7 @@ public class AVSCommandManager {
         return;
       }
       
-      Command command = subCommands.find(c -> c.name.equals(args[0]));
+      Command command = get(args[0]);
       
       if (command != null) {
         String[] newArgs = args.length > 1 ? args[1].strip().split("\\s+") : new String[0];
@@ -76,7 +81,8 @@ public class AVSCommandManager {
   }
   
   public static void registerClient(CommandHandler handler) {
-    handler.<Player>register("avs", "[command] [args...]", "Restricted Anti VPN Service manager for admins", (args, player) -> {
+    handler.<Player>register("avs", "[command] [args...]", "Restricted Anti VPN Service manager for admins. ('avs help' for usage)", 
+    (args, player) -> {
       PlayerLogger plogger = new PlayerLogger(player);
       
       if (!Loader.done()) {
@@ -93,7 +99,7 @@ public class AVSCommandManager {
         return;
       }
       
-      Command command = subCommands.find(c -> c.name.equals(args[0]));
+      Command command = get(args[0]);
       
       if (command == null) {
         plogger.err("avs.command.not-found", args[0]);

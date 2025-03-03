@@ -153,7 +153,7 @@ public class Loader {
     AntiVpnService.save();
     
     if (AVSConfig.autosaveSpacing.getInt() > 0)
-      SettingsAutosave.start("AVS-Autosave");
+      SettingsAutosave.start();
     SettingsAutosave.run();
     return true;
   }

@@ -29,7 +29,6 @@ package com.xpdustry.avs.config;
 import com.xpdustry.avs.Loader;
 import com.xpdustry.avs.command.Command;
 import com.xpdustry.avs.misc.CloudAutoRefresher;
-import com.xpdustry.avs.misc.ProviderActionSeq;
 import com.xpdustry.avs.misc.SettingsAutosave;
 import com.xpdustry.avs.service.ServiceManager;
 import com.xpdustry.avs.service.providers.ProviderAction;
@@ -71,7 +70,7 @@ public class ConfigEvents {
     if (!Loader.done()) return true;
     
     if (s == 0) SettingsAutosave.stop();
-    else SettingsAutosave.start("AVS-Autosave");
+    else SettingsAutosave.start();
     
     return true;
   }
@@ -193,8 +192,8 @@ public class ConfigEvents {
     return true;
   }
   
-  static boolean onActionsChanged(ObjectMap<AddressProvider, ProviderActionSeq> actions, Logger logger) {
-    for (ObjectMap.Entry<AddressProvider, ProviderActionSeq> e : actions) {
+  static boolean onActionsChanged(ObjectMap<AddressProvider, Seq<ProviderAction>> actions, Logger logger) {
+    for (ObjectMap.Entry<AddressProvider, Seq<ProviderAction>> e : actions) {
       Seq<ProviderAction> valid = ProviderAction.getAll(e.key);
       Seq<ProviderAction> a = new Seq<>();
       
@@ -210,8 +209,9 @@ public class ConfigEvents {
       }
       
       if (!a.isEmpty()) {
-        logger.err("avs.restrict.actions.not-compatible", e.key.name, 
-                   Strings.listToSentence(logger, a, pa -> pa.name));
+        if (a.size == 1) logger.err("avs.restrict.actions.not-compatible", a.get(0).name, e.key.name);
+        else logger.err("avs.restrict.actions.not-compatibles", Strings.listToSentence(logger, a, pa -> pa.name), 
+                        e.key.name);
         return false;
       }
     }

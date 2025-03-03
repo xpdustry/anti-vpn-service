@@ -29,7 +29,6 @@ package com.xpdustry.avs.config;
 import com.xpdustry.avs.command.AVSCommandManager;
 import com.xpdustry.avs.command.Command;
 import com.xpdustry.avs.command.list.*;
-import com.xpdustry.avs.misc.ProviderActionSeq;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.service.providers.type.AddressProvider;
@@ -79,9 +78,8 @@ public class RestrictedModeConfig extends AConfig {
         c instanceof HelpCommand
     );
     
-    public static final ObjectMap<AddressProvider, ProviderActionSeq> actions = providers.asMap(p -> p, 
-        p -> new ProviderActionSeq(ProviderAction.getAll(ProviderAction.Category.cached)
-                                                 .addAll(ProviderAction.add, ProviderAction.remove)));  
+    public static final ObjectMap<AddressProvider, Seq<ProviderAction>> actions = providers.asMap(p -> p, 
+        p -> ProviderAction.getAll(ProviderAction.Category.cached).add(ProviderAction.add, ProviderAction.remove));  
   }
   
   
@@ -93,6 +91,6 @@ public class RestrictedModeConfig extends AConfig {
       new FieldList<>(INSTANCE, "providers", AddressProvider.class, Default.providers, ConfigEvents::onProvidersChanged);
   public static final FieldList<Command> commands =
       new FieldList<>(INSTANCE, "commands", Command.class, Default.commands, ConfigEvents::onCommandsChanged);
-  public static final FieldMap<AddressProvider, ProviderActionSeq> actions = 
-      new FieldMap<>(INSTANCE, "actions", AddressProvider.class, ProviderActionSeq.class, Default.actions, ConfigEvents::onActionsChanged);
+  public static final FieldMapSeq<AddressProvider, ProviderAction> actions = 
+      new FieldMapSeq<>(INSTANCE, "actions", AddressProvider.class, ProviderAction.class, Default.actions, ConfigEvents::onActionsChanged);
 }

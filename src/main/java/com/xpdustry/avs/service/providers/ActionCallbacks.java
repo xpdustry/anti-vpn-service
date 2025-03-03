@@ -39,7 +39,7 @@ import static com.xpdustry.avs.service.providers.ProviderAction.*;
 /** Class to store {@link ProviderAction} callbacks. */
 class ActionCallbacks {
   private static String key(ProviderAction action, String key) {
-    return Strings.format(actionDescKeyFormat + ".@", action.category.name, action.name, key);
+    return Strings.format(actionDescKeyFormat + ".@", action.name, key);
   }
   
   

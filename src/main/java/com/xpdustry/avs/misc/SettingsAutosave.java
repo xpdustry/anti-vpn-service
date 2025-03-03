@@ -36,46 +36,42 @@ public class SettingsAutosave {
   protected final static Seq<JsonSettings> all = new Seq<>();
   protected final static Logger logger = new Logger("Autosave");
   
-  protected static int spacing = 360; // in seconds
+  protected static long spacing = 360 * 1000; // in ms
   protected static Thread thread;
-  protected static String threadName = "Autosave";
 
   public static void add(JsonSettings settings) {
     all.add(settings);
   }
   
-  public synchronized static boolean runNeeded() {
+  public static boolean runNeeded() {
     return all.contains(JsonSettings::modified);
   }
   
-  public synchronized static void run() {
+  public static void run() {
     // Only save if changes are made
     if (runNeeded()) {
-      logger.info("avs.autosave.started");
-      for (JsonSettings s : all) {
-        try { s.save(); } 
-        catch (RuntimeException e) {
-          logger.err("avs.autosave.failed", s.file());
-          logger.err("avs.general-error", e);
-          return;
+      synchronized (all) {
+        logger.info("avs.autosave.started");
+        for (JsonSettings s : all) {
+          try { s.save(); } 
+          catch (RuntimeException e) {
+            logger.err("avs.autosave.failed", s.file());
+            logger.err("avs.general-error", e);
+            return;
+          }
         }
+        logger.info("avs.autosave.finished");         
       }
-      logger.info("avs.autosave.finished");      
     }
   }
-  
-  public static boolean start() { return start(null); }
-  public static boolean start(String threadName) {
+
+  public static boolean start() {
     if (thread == null) {
-      if (threadName == null || threadName.isBlank())
-           threadName = SettingsAutosave.threadName;
-      else SettingsAutosave.threadName = threadName;
-        
-      thread = arc.util.Threads.daemon(threadName, () -> {
+      thread = arc.util.Threads.daemon("AVS-Autosave", () -> {
         logger.info("avs.autosave.thread.started");
         
         while (true) {
-          try { Thread.sleep(spacing * 1000); } 
+          try { Thread.sleep(spacing); } 
           catch (InterruptedException e) { 
             logger.info("avs.autosave.thread.stopped");
             return; 
@@ -106,11 +102,11 @@ public class SettingsAutosave {
   }
   
   public static int spacing() {
-    return spacing;
+    return (int)(spacing / 1000);
   }
   
   public static void spacing(int spacing) {
     if (spacing < 1) throw new IllegalArgumentException("spacing must be greater than 1 second");
-    SettingsAutosave.spacing = spacing;
+    SettingsAutosave.spacing = spacing * 1000;
   }
 }

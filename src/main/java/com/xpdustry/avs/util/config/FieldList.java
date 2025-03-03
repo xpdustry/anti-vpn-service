@@ -41,8 +41,13 @@ public class FieldList<T> extends Field<Seq<T>> {
     super(master, name, java.util.Objects.requireNonNull(elementType), defaultValue, validate);
   }
 
+  @Override
+  public Seq<T> defaultValue() {
+    return defaultValue.copy();
+  }
+  
   public boolean add(T value) { return add(value, master.logger); }
-  public boolean add(T value, Logger logger) {
+  public synchronized boolean add(T value, Logger logger) {
     Seq<T> v = get();
     if (!v.addUnique(value)) return false;
     
@@ -52,7 +57,7 @@ public class FieldList<T> extends Field<Seq<T>> {
   }
   
   public boolean remove(T value) { return remove(value, master.logger); }
-  public boolean remove(T value, Logger logger) {
+  public synchronized boolean remove(T value, Logger logger) {
     Seq<T> v = get();
     int index = v.indexOf(value);
     if (index == -1) return false;
@@ -61,6 +66,14 @@ public class FieldList<T> extends Field<Seq<T>> {
     boolean accept = validateChange(v, logger);  
     if (!accept) v.insert(index, value);
     return accept;
+  }
+  
+  public boolean contains(T value) {
+    return get().contains(value);
+  }
+  
+  public boolean contains(arc.func.Boolf<T> predicate) {
+    return get().contains(predicate);
   }
   
   /** No need to validate change since the list will be clear */

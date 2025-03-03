@@ -83,7 +83,7 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
       return;
     }
     
-    AddressProvider provider = AntiVpnService.allProviders.find(c -> c.name.equals(args[0]));
+    AddressProvider provider = AntiVpnService.get(args[0]);
     
     if (provider == null) {
       logger.err("avs.command.provider.not-found", args[0]);
@@ -125,12 +125,8 @@ public class ProviderCommand extends com.xpdustry.avs.command.Command {
         logger.err("avs.command.provider.action.arg-required");
         return;
       }
-      
-      String[] rest = new String[args.length-2];
-      System.arraycopy(args, 2, rest, 0, rest.length);
-      String value = String.join(" ", rest);
-      
-      action.run(provider, value, logger);
+
+      action.run(provider, Strings.join(" ", args, 2, args.length), logger);
     } else action.run(provider, logger);
   }
   

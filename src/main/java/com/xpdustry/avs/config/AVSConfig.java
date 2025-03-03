@@ -78,9 +78,9 @@ public class AVSConfig extends AConfig {
   public void loadMisc() {
     // If plugin or settings folders or config file name, are different from the default values, 
     // reload the configuration with values in these keys.
-    if (!configFile.getString().equals(configFile.defaultValue) ||
-        !pluginDirectory.getString().equals(pluginDirectory.defaultValue) ||
-        !settingsDirectory.getString().equals(settingsDirectory.defaultValue)) {
+    if (!configFile.getString().equals(configFile.defaultValue()) ||
+        !pluginDirectory.getString().equals(pluginDirectory.defaultValue()) ||
+        !settingsDirectory.getString().equals(settingsDirectory.defaultValue())) {
       if (configRedirectLimit-- <= 0) {
         config = null;
         throw new IllegalStateException("too many config file redirection");
@@ -156,7 +156,7 @@ public class AVSConfig extends AConfig {
     bundlesDirectory = new ConfigField("bundles-dir", "bundles", ConfigEvents::onBundlesDirectoryChanged, true),
     cacheDirectory = new ConfigField("cache-dir", "cache", ConfigEvents::onCacheDirectoryChanged, true),
     settingsDirectory = new ConfigField("settings-dir", "settings", ConfigEvents::onSettingsDirectoryChanged, true),
-    providersDirectory = new ConfigField("providers-dir", settingsDirectory.defaultValue + "/providers", ConfigEvents::onProviderDirectoryChanged, true),
+    providersDirectory = new ConfigField("providers-dir", settingsDirectory.defaultValue() + "/providers", ConfigEvents::onProviderDirectoryChanged, true),
     configFile = new ConfigField("config-file", INSTANCE.name + ".json", ConfigEvents::onConfigFileChanged, true),
     allowUntrustedSource = new ConfigField("allow-http203", com.xpdustry.avs.util.network.AdvancedHttp.allowUntrustedSourceHttpCode, ConfigEvents::onAllowUntrustedSourceChanged, true),
     socketTimeout = new ConfigField("socket-timeout", com.xpdustry.avs.util.network.AwaitHttp.readWriteTimeout, ConfigEvents::onSocketTimeoutChanged, true),

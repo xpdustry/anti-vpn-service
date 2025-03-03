@@ -151,7 +151,7 @@ public class JsonSettings {
   }
 
   /** Clears all preference values. */
-  public synchronized void clear(){
+  public synchronized void clear() {
       values.clear();
       modified = true;
   }
@@ -181,7 +181,7 @@ public class JsonSettings {
     put(name, elementType, null, value);
   }
   
-  public synchronized <K, E> void put(String name, Class<E> elementType, Class<K> keyType, Object value){
+  public synchronized <K, E> void put(String name, Class<E> elementType, Class<K> keyType, Object value) {
     // Value is already a json object, no need to serialize it
     if (value instanceof JsonValue) {
       values.put(name, (JsonValue)value);
@@ -196,11 +196,12 @@ public class JsonSettings {
       json.writeValue(value, value == null ? null : value.getClass(), elementType, keyType);
 
       values.put(name, builder.getJson());
+      builder.clear();
       modified = true;  
         
     } catch (Throwable e) { throw new RuntimeException(e); }
   } 
-  
+
   public <T> T get(String name, Class<T> type, T def) {
     return get(name, type, null, def);
   }
@@ -209,7 +210,7 @@ public class JsonSettings {
     return get(name, type, elementType, null, def);
   }
     
-  public synchronized <T, K, E> T get(String name, Class<T> type, Class<E> elementType, Class<K> keyType, T def){
+  public synchronized <T, K, E> T get(String name, Class<T> type, Class<E> elementType, Class<K> keyType, T def) {
     if (!has(name)) return def;
     
     try {
@@ -228,7 +229,7 @@ public class JsonSettings {
   public <T, E> T getOrPut(String name, Class<T> type, Class<E> elementType, T def) {
     return getOrPut(name, type, elementType, null, def);
   }
-  
+
   /** Put and return {@code def} if the {@code name} key is not found */
   public synchronized <T, K, E> T getOrPut(String name, Class<T> type, Class<E> elementType, Class<K> keyType, T def) {
     if (!has(name)) {
@@ -237,7 +238,7 @@ public class JsonSettings {
     }
     return get(name, type, elementType, keyType, def);
   }
-
+  
   public float getFloat(String name, float def) {
     return getOrPut(name, Float.class, def);
   }

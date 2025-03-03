@@ -41,19 +41,16 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
   public void run(String[] args, Logger logger, boolean restrictedMode) {
     if (args.length == 0) {
       printSettings(restrictedMode ? RestrictedModeConfig.settings.get() : 
-                                     AVSConfig.instance().all.map(f -> (AVSConfig.ConfigField) f), logger);
+                                     AVSConfig.instance().all.map(f -> (AVSConfig.ConfigField)f), logger);
       return;
     }
 
     if (args[0].equals("reload")) {
-      AVSConfig.instance().load();
-      AVSConfig.instance().notifyValuesChanged();
-      logger.none();
-      logger.info("avs.command.config.reloaded");
+      AVSConfig.instance().reload();
       return;
     }
     
-    AVSConfig.ConfigField field = (AVSConfig.ConfigField) AVSConfig.instance().get(args[0]);
+    AVSConfig.ConfigField field = (AVSConfig.ConfigField)AVSConfig.instance().get(args[0]);
     
     if (field == null) {
       logger.err("avs.command.config.field.not-found", args[0]);
@@ -63,7 +60,7 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
       return;
     } else if (args.length == 1) {
       logger.info("avs.command.config.field.value.is", field.name, 
-                  Strings.objToStr(field.get()), Strings.objToStr(field.defaultValue));
+                  Strings.objToStr(field.get()), Strings.objToStr(field.defaultValue()));
       return;
     } else if (field.readOnly && args.length > 1) {
       logger.err("avs.command.config.field.read-only", field.name);
@@ -101,11 +98,9 @@ public class ConfigCommand extends com.xpdustry.avs.command.Command {
       logger.err("avs.command.config.field.value.invalid", value, field.name, 
                  (positive ? "Positive " : "") + field.type.getSimpleName());
       return;  
-      
     }
     
-    if (field.set(v, logger)) 
-      logger.info("avs.command.config.field.value.set", field.name, v);
+    if (field.set(v, logger)) logger.info("avs.command.config.field.value.set", field.name, v);
   }
   
   private static void printSettings(Seq<AVSConfig.ConfigField> list, Logger logger) {

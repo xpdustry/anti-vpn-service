@@ -28,17 +28,19 @@ package com.xpdustry.avs.util.config;
 
 import java.util.Objects;
 
+import com.xpdustry.avs.util.Strings;
+import com.xpdustry.avs.util.json.JsonWriterBuilder;
 import com.xpdustry.avs.util.logging.Logger;
 
 
 public class Field<T> {
   public final AConfig master;
   public final String name;
-  public final T defaultValue;
   public final Class<T> type;
   public final Class<?> elementType, keyType;
   
   protected final ChangeValider<T> validate;
+  protected final T defaultValue;
   protected boolean modified, loaded;
   protected T value;
   
@@ -85,10 +87,7 @@ public class Field<T> {
   
   /** Can be overrides if a different way is used to get the value */
   protected T getValue() {
-    if (!loaded) {
-      load();
-      loaded = true;
-    }
+    if (!loaded) load();
     return value;  
   }
   
@@ -98,17 +97,17 @@ public class Field<T> {
     modified = loaded = true;
   }
   
-  public T get() {
+  public synchronized T get() {
     // Allows getting values ​​while configuration is loading.
     if (!master.isLoading && !master.isLoaded()) 
       throw new IllegalStateException("master is not loaded");
     
-    if (master.config == null) return defaultValue;
+    if (master.config == null) return defaultValue();
     return getValue();
   }
   
   public boolean set(T value) { return set(value, master.logger); }
-  public boolean set(T value, Logger logger) {
+  public synchronized boolean set(T value, Logger logger) {
     if (!master.isLoaded()) 
       throw new IllegalStateException("master is not loaded");
     
@@ -116,27 +115,37 @@ public class Field<T> {
     if (accept) setValue(value);
     return accept;
   }
+  
+  public T defaultValue() {
+    return defaultValue;
+  }
 
-  public void load() {
-    value = master.config.getOrPut(name, type, elementType, keyType, defaultValue);
+  public synchronized void load() {
+    if (master.config.has(name)) value = master.config.get(name, type, elementType, keyType, defaultValue);
+    else {
+      value = defaultValue();
+      master.config.put(name, elementType, keyType, defaultValue);
+    }
     modified = false;
+    loaded = true;
   }
   
-  public void save() {
+  public synchronized void save() {
     if (modified) forcesave();
   }
   
-  public void forcesave() {
+  public synchronized void forcesave() {
     master.config.put(name, elementType, keyType, loaded ? value : defaultValue);
     modified = false;
   }
 
-  public void setDefault(Logger logger) {
-    setValue(defaultValue);
-    validateChange(defaultValue, logger);
+  public synchronized boolean setDefault(Logger logger) {
+    T v = defaultValue();
+    setValue(v);
+    return validateChange(v, logger);
   }
 
-  public boolean validateChange(Logger logger) {
+  public synchronized boolean validateChange(Logger logger) {
     return validateChange(get(), logger);
   }
   
@@ -156,6 +165,29 @@ public class Field<T> {
   /** Return the value converted to string */
   @Override
   public String toString() {
-    return String.valueOf(master.config.getJson().toJson(get()));
+    return toString(false);
+  }
+  
+  public String toString(boolean formatted) {
+    return toString(get(), formatted);
+  }
+  
+  public String defaultToString() {
+    return defaultToString(false);
+  }
+  
+  public String defaultToString(boolean formatted) {
+    return toString(defaultValue, formatted);
+  }
+  
+  protected String toString(Object obj, boolean formatted) {
+    if (formatted) {
+      JsonWriterBuilder builder = new JsonWriterBuilder();
+      master.config.getJson().setWriter(builder);
+      master.config.getJson().writeValue(obj, type, elementType, keyType);
+      return Strings.jsonPrettyPrint(builder.getJson(), arc.util.serialization.JsonWriter.OutputType.minimal);
+    }
+    
+    return String.valueOf(master.config.getJson().toJson(obj, type, elementType, keyType));
   }
 }

@@ -44,22 +44,31 @@ public class FieldMap<K, V> extends Field<ObjectMap<K, V>> {
           defaultValue, validate);
   }
 
-  public V get(K key) {
+  @Override
+  public ObjectMap<K, V> defaultValue() {
+    return defaultValue.copy();
+  }
+  
+  public synchronized V get(K key) {
     return get().get(key);
   }
   
   public boolean put(K key, V value) { return put(key, value, master.logger); }
-  public boolean put(K key, V value, Logger logger) {
+  public synchronized boolean put(K key, V value, Logger logger) {
     ObjectMap<K, V> v = get();
+    boolean exists = v.containsKey(key);
     V old = v.put(key, value);
 
     boolean accept = validateChange(v, logger);
-    if (!accept) v.put(key, old);
+    if (!accept) {
+      if (exists) v.put(key, old);
+      else v.remove(key);
+    }
     return accept;
   }
   
   public boolean remove(K key) { return remove(key, master.logger); }
-  public boolean remove(K key, Logger logger) {
+  public synchronized boolean remove(K key, Logger logger) {
     ObjectMap<K, V> v = get();
     if (!v.containsKey(key)) return false;
     V old = v.remove(key);
@@ -69,6 +78,17 @@ public class FieldMap<K, V> extends Field<ObjectMap<K, V>> {
     return accept;
   }
   
+  public boolean contains(K key) {
+    return get().containsKey(key);
+  }
+  
+  public boolean contains(arc.func.Boolf2<K, V> predicate) {
+    for (ObjectMap.Entry<K, V> e : get()) {
+      if (predicate.get(e.key, e.value)) return true;
+    }
+    return false;
+  }
+
   /** No need to validate change since the map will be clear */
   public void clear() {
     get().clear();

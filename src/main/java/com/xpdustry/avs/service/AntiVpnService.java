@@ -90,6 +90,10 @@ public class AntiVpnService {
   private static boolean operational = false, loaded = false;
 
   
+  public static AddressProvider get(String name) {
+    return allProviders.find(p -> p.name.equals(name));
+  }
+  
   public static AddressProviderReply checkAddress(String address) {
     if (!isOperational()) return null;
     

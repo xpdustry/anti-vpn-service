@@ -497,4 +497,13 @@ public class Strings extends arc.util.Strings {
     
     return builder.toString();
   }
+  
+  public static String join(CharSequence delimiter, CharSequence[] elements, int start, int end) {
+    if (elements == null || delimiter == null) return null;
+    if (start < 0 || end > elements.length || start >= end) return "";
+
+    CharSequence[] array = new CharSequence[end-start];
+    System.arraycopy(elements, start, array, 0, end-start);
+    return String.join(delimiter, array);
+  }
 }

@@ -33,6 +33,7 @@ import com.xpdustry.avs.misc.address.*;
 import com.xpdustry.avs.service.AntiVpnService;
 import com.xpdustry.avs.service.providers.ProviderAction;
 import com.xpdustry.avs.service.providers.type.AddressProvider;
+import com.xpdustry.avs.util.Strings;
 import com.xpdustry.avs.util.json.Json2;
 import com.xpdustry.avs.util.network.Subnet;
 
@@ -44,6 +45,32 @@ import arc.util.serialization.SerializationException;
 @SuppressWarnings("rawtypes")
 public class JsonSerializer {
   public static void apply(Json2 json) {
+    // ¯\_(ツ)_/¯ can be useful
+    json.setSerializer(Boolean.class, new Json2.JsonObjectSerializer<>() {
+      @Override
+      public void write(Json2 json, Boolean object, Class knownType, Class elementType, Class keyType) {
+        try { json.getWriter().value(object); } 
+        catch (java.io.IOException e) { throw new SerializationException(e); }
+      }
+
+      @Override
+      public Boolean read(Json2 json, JsonValue jsonData, Class type, Class elementType, Class keyType) {
+        return jsonData.isNull() ? false : fromKey(json, jsonData.asString(), Boolean.class);
+      }
+
+      @Override
+      public String toKey(Json2 json, Boolean object, Class knownType) {
+        return object.toString();
+      }
+
+      @Override
+      public Boolean fromKey(Json2 json, String key, Class type) {
+        if (Strings.isTrue(key)) return true;
+        else if (Strings.isFalse(key)) return false;
+        throw new SerializationException("unreconized boolean value");
+      }
+    });
+    
     json.setSerializer(Subnet.class, new Json2.JsonObjectSerializer<>() {
       @Override
       public void write(Json2 json, Subnet object, Class knownType, Class elementType, Class keyType) {
@@ -158,9 +185,6 @@ public class JsonSerializer {
     
     
     //// Used by RestrictedModeConfig
-    
-    json.setSerializer(ProviderActionSeq.class, new ProviderActionSeq());
-    
     json.setSerializer(ProviderAction.class, new Json2.JsonObjectSerializer<>() {
       @Override
       public void write(Json2 json, ProviderAction object, Class knownType, Class elementType, Class keyType) {
@@ -203,7 +227,7 @@ public class JsonSerializer {
 
       @Override
       public AddressProvider fromKey(Json2 json, String key, Class type) {
-        AddressProvider provider = AntiVpnService.allProviders.find(p -> p.name.equals(key));
+        AddressProvider provider = AntiVpnService.get(key);
         if (provider == null) throw new SerializationException("no address provider named '"+key+"' found.");
         return provider;
       }
@@ -227,7 +251,7 @@ public class JsonSerializer {
 
       @Override
       public AVSConfig.ConfigField fromKey(Json2 json, String key, Class type) {
-        return (AVSConfig.ConfigField) AVSConfig.instance().all.find(f -> f.name.equals(key));
+        return (AVSConfig.ConfigField) AVSConfig.instance().get(key);
       }
     });
     
@@ -249,8 +273,10 @@ public class JsonSerializer {
 
       @Override
       public Command fromKey(Json2 json, String key, Class type) {
-        return AVSCommandManager.subCommands.find(c -> c.name.equals(key));
+        return AVSCommandManager.get(key);
       }
     }); 
+    
+    ///
   }
 }

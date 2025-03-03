@@ -237,10 +237,7 @@ public class ServiceManager {
   
   /** Register an listener when server is existing, to save settings and cache */
   protected static void registerServerExitListener() {
-    Core.app.addListener(new arc.ApplicationListener() {
-      @Override
-      public void dispose() { shutdownPlugin(); }
-    });    
+    Core.app.addListener(new arc.ApplicationListener() { public void dispose() { shutdownPlugin(); } });    
   }
   
   protected static void registerResetEvent() {
@@ -252,10 +249,7 @@ public class ServiceManager {
       }
       
       // Register an app listener to delete plugin files after saving
-      Core.app.addListener(new arc.ApplicationListener() {
-        @Override
-        public void dispose() { resetPlugin(); }
-      });
+      Core.app.addListener(new arc.ApplicationListener() { public void dispose() { resetPlugin(); } });
       Vars.net.dispose();
       Core.app.exit();
     });

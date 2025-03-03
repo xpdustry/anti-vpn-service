@@ -68,7 +68,7 @@ public class RescueBundle extends Bundle {
       "avs.bundle.warn.empty",                "The bundle for locale '{0}' is empty.",
       "avs.bundle.not-found",                 "Unable to find a bundle for locale {0}. Using default...",
       "avs.bundle.default-not-found",         "Unable to a find bundle for the default locale '{0}'. Using host locale...",
-      "avs.command.error-detected", "An error was detected during the Anti VPN service startup. Commands have been disabled."
+      "avs.command.error-detected", "An error was detected during the Anti VPN service startup. Commands have been disabled to prevent potential damages."
     ));
   }
   

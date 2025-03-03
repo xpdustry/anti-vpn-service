@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -59,16 +59,11 @@ public class HelpCommand extends com.xpdustry.avs.command.Command {
       return;
     }
     
-    Command command = AVSCommandManager.subCommands.find(c -> c.name.equals(args[0]));
+    Command command = AVSCommandManager.get(args[0]);
     
-    if (command == null) {
-      logger.err("avs.command.not-found", args[0]);
-      return;
-    } else if (restrictedMode && !RestrictedModeConfig.commands.get().contains(command)) {
+    if (command == null) logger.err("avs.command.not-found", args[0]);
+    else if (restrictedMode && !RestrictedModeConfig.commands.get().contains(command))
       logger.err("avs.command.restricted");
-      return;
-    }
-    
-    logger.infoNormal(command.getHelp(logger));
+    else logger.infoNormal(command.getHelp(logger));
   }
 }
