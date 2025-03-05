@@ -173,7 +173,6 @@ public class ServiceManager {
             if (reply != null && reply.resultFound()) {
               if (reply.type != AddressProviderReply.ReplyType.ALLOWED && 
                   reply.validity.type.isNotValid()) {
-                reply.validity.stats.kickNumber++;
                 Events.fire(new AVSEvents.ClientRejectedEvent(con, packet, false, reply));
                 logger.info("avs.validator.ip.blacklisted", con.address, con.uuid);
                 // Kick the client without duration to avoid creating an empty account, but still register an kick duration

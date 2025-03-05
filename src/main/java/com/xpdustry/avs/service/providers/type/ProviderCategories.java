@@ -82,12 +82,9 @@ public class ProviderCategories {
     public int cacheSize();
   }
   
-  public static interface Cloudable extends Basic {
+  public static interface Refreshable extends Basic {
     /** Clear the cache and download again the list */
     public boolean refresh();
-    
-    /** The type of address ranges that correspond the downloaded list */
-    public ProviderType providerType();
   }
 
   public static interface Editable extends Basic {

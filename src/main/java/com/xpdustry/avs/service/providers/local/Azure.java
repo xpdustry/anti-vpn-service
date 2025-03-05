@@ -29,7 +29,6 @@ package com.xpdustry.avs.service.providers.local;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
-import com.xpdustry.avs.service.providers.type.ProviderType;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 import com.xpdustry.avs.util.network.Subnet;
 

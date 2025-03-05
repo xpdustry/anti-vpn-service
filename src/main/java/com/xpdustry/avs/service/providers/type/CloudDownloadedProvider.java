@@ -28,7 +28,6 @@ package com.xpdustry.avs.service.providers.type;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
-import com.xpdustry.avs.misc.address.AddressType;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.util.network.AdvancedHttp;
 import com.xpdustry.avs.util.network.Subnet;
@@ -41,7 +40,7 @@ import arc.util.serialization.JsonValue;
 
 
 public abstract class CloudDownloadedProvider extends CachedAddressProvider
-                                              implements ProviderCategories.Cloudable {
+                                              implements ProviderCategories.Refreshable {
   public String url;
   /** Define the type of provider, used for statistics. Default is VPN */
   protected ProviderType providerType = ProviderType.vpn;
@@ -103,7 +102,14 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
       cache.clear();
       list.each(s -> {
         AddressValidity valid = new AddressValidity(s);
-        valid.type = AddressType.fromBinary(providerType().val);
+        switch (providerType()) {
+          case other:      valid.type.other = true; break;
+          case vpn:        valid.type.vpn = true; break;
+          case proxy:      valid.type.proxy = true; break;
+          case tor:        valid.type.tor = true; break;
+          case relay:      valid.type.relay = true; break;
+          case dataCenter: valid.type.dataCenter = true; break;
+        }
         cache.add(valid);
       });
       list.clear();      
@@ -136,7 +142,6 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
     return b;
   }
 
-  @Override
   public ProviderType providerType() {
     return providerType;
   }
@@ -168,4 +173,14 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
   
   /** Extract wanted addresses from server reply */
   protected abstract Seq<Subnet> extractAddressRanges(JsonValue downloaded);
+  
+  
+  public static enum ProviderType {
+    other,
+    vpn,
+    proxy,
+    tor,
+    relay,
+    dataCenter,
+  }
 }

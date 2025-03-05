@@ -158,7 +158,7 @@ public enum ProviderAction {
   public static enum Category {
     common(ProviderCategories.Basic.class),
     cached(ProviderCategories.Cacheable.class),
-    cloud(ProviderCategories.Cloudable.class),
+    cloud(ProviderCategories.Refreshable.class),
     editable(ProviderCategories.Editable.class),
     online(ProviderCategories.Onlinable.class);
     

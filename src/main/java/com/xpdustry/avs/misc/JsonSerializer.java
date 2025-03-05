@@ -123,34 +123,29 @@ public class JsonSerializer {
       }
       
     });
-    
-    json.setSerializer(AddressStats.class, new Json2.Serializer<>() {
-      @Override
-      public void write(Json json, AddressStats object, Class knownType) {
-        json.writeObjectStart();
-        json.writeValue("kickNumber", object.kickNumber);
-        json.writeObjectEnd();
-      }
 
-      @Override
-      public AddressStats read(Json json, JsonValue jsonData, Class type) {
-        AddressStats stats = new AddressStats();
-        
-        stats.kickNumber = jsonData.getInt("kickNumber");
-        
-        return stats;
-      }
-    });
-    
     json.setSerializer(AddressType.class, new Json2.Serializer<>() {
       @Override
       public void write(Json json, AddressType object, Class knownType) {
-        json.writeValue(object.toBinary());
+        json.writeValue(Strings.bits2int(object.other, object.vpn, object.proxy, 
+                                         object.tor, object.relay, object.dataCenter));
       }
 
       @Override
       public AddressType read(Json json, JsonValue jsonData, Class type) {
-        return AddressType.fromBinary(jsonData.asLong());
+        boolean[] values = Strings.int2bits(jsonData.asLong(), AddressType.numberOfTypes);
+        AddressType address = new AddressType();
+        
+        try {
+          address.other = values[0]; 
+          address.vpn = values[1];
+          address.proxy = values[2];
+          address.tor = values[3];
+          address.relay = values[4];
+          address.dataCenter = values[5];          
+        } catch (IndexOutOfBoundsException ignored) {}
+        
+        return address;
       }
     });
     
@@ -159,9 +154,7 @@ public class JsonSerializer {
       public void write(Json json, AddressValidity object, Class knownType) {
         json.writeObjectStart();
         json.writeValue("address", object.subnet);
-        if (object.infos != null)
-          json.writeValue("infos", object.infos, AddressInfos.class);
-        json.writeValue("stats", object.stats);
+        if (object.infos != null) json.writeValue("infos", object.infos);
         json.writeValue("type", object.type);
         json.writeObjectEnd();
       }
@@ -174,11 +167,15 @@ public class JsonSerializer {
 
         AddressInfos infos = json.readValue("infos", AddressInfos.class, jsonData);
         AddressValidity valid = new AddressValidity(subnet, infos);
-        AddressStats stats = json.readValue("stats", AddressStats.class, jsonData);
-        AddressType type = json.readValue("type", AddressType.class, jsonData);
 
-        if (stats != null) valid.stats = stats;
-        if (type != null) valid.type = type;
+        boolean[] values = Strings.int2bits(jsonData.asLong(), AddressType.numberOfTypes);
+        valid.type.other = values[0]; 
+        valid.type.vpn = values[1];
+        valid.type.proxy = values[2];
+        valid.type.tor = values[3];
+        valid.type.relay = values[4];
+        valid.type.dataCenter = values[5];   
+
         return valid;
       }
     });

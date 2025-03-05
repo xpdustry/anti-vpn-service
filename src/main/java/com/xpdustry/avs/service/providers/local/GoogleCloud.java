@@ -26,7 +26,6 @@
 
 package com.xpdustry.avs.service.providers.local;
 
-import com.xpdustry.avs.service.providers.type.ProviderType;
 import com.xpdustry.avs.util.network.Subnet;
 
 import arc.struct.Seq;

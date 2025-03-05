@@ -143,7 +143,7 @@ class ActionCallbacks {
   
   static void refresh(ProviderCategories.Basic provider, Logger logger) {
     logger.info(key(refresh, "wait"));
-    ((ProviderCategories.Cloudable) provider).refresh();
+    ((ProviderCategories.Refreshable) provider).refresh();
   }
   
   static void add(ProviderCategories.Basic provider, String arg, Logger logger) {

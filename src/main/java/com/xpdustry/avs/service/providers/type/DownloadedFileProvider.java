@@ -30,34 +30,19 @@ import arc.struct.StringMap;
 
 
 /** Like {@link LocalFileProvider} but it's downloading the file before using it. */
-public abstract class DownloadedFileProvider extends LocalFileProvider implements ProviderCategories.Cloudable {
+public abstract class DownloadedFileProvider extends LocalFileProvider implements ProviderCategories.Refreshable {
   /** The url to download the file */
   public String url;
-  /** Define the type of provider, used for statistics. Default is VPN */
-  protected ProviderType providerType = ProviderType.vpn;
   /** The headers to use to fetch the list. */
   protected final StringMap headers = new StringMap();
   
-  public DownloadedFileProvider(String name) {
-    super(name);
-    // TODO Auto-generated constructor stub
-  }
-
-  public DownloadedFileProvider(String name, String displayName) {
-    super(name, displayName);
-    // TODO Auto-generated constructor stub
-  }
+  public DownloadedFileProvider(String name) { super(name); }
+  public DownloadedFileProvider(String name, String displayName) { super(name, displayName); }
 
   @Override
   public boolean refresh() {
     // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public ProviderType providerType() {
-    // TODO Auto-generated method stub
-    return null;
+    return true;
   }
 
 }

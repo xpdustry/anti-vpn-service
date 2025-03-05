@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Xpdustry
+ * Copyright (c) 2024-2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,8 +25,6 @@
  */
 
 package com.xpdustry.avs.misc.address;
-
-import com.xpdustry.avs.util.Strings;
 
 
 public class AddressType {
@@ -51,27 +49,5 @@ public class AddressType {
     return vpn == type.vpn &&  proxy == type.proxy &&
            tor == type.tor && relay == type.relay &&
            dataCenter == type.dataCenter && other == type.other;
-  }
-  
-  
-  public long toBinary() {
-    return Strings.bits2int(other, vpn, proxy, tor, relay, dataCenter);
-  }
-  
-  public static AddressType fromBinary(long data) {
-    boolean[] values = Strings.int2bits(data, numberOfTypes);
-    AddressType address = new AddressType();
-    
-    try {
-      address.other = values[0]; 
-      address.vpn = values[1];
-      address.proxy = values[2];
-      address.tor = values[3];
-      address.relay = values[4];
-      address.dataCenter = values[5];
-      
-    } catch (IndexOutOfBoundsException ignored) {}
-
-    return address;
   }
 }

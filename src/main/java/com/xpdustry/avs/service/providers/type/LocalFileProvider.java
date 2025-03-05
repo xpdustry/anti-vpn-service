@@ -74,19 +74,19 @@ public abstract class LocalFileProvider extends AddressProvider implements Provi
   @Override
   protected boolean loadMiscSettings() {
     // TODO Auto-generated method stub
-    return false;
+    return true;
   }
 
   @Override
   protected boolean reloadMiscSettings() {
     // TODO Auto-generated method stub
-    return false;
+    return true;
   }
 
   @Override
   protected boolean saveMiscSettings() {
     // TODO Auto-generated method stub
-    return false;
+    return true;
   }
 
   @Override

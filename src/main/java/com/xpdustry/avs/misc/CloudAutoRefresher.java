@@ -52,8 +52,8 @@ public class CloudAutoRefresher {
     boolean error = false;
     
     for (int i=0; i<AntiVpnService.allProviders.size; i++) {
-      if (AntiVpnService.allProviders.get(i) instanceof ProviderCategories.Cloudable) {
-        ProviderCategories.Cloudable p = (ProviderCategories.Cloudable) AntiVpnService.allProviders.get(i);
+      if (AntiVpnService.allProviders.get(i) instanceof ProviderCategories.Refreshable) {
+        ProviderCategories.Refreshable p = (ProviderCategories.Refreshable) AntiVpnService.allProviders.get(i);
         
         if (!p.isEnabled()) 
           logger.warn("avs.refresher.provider.disabled", p.name(), p.displayName());
