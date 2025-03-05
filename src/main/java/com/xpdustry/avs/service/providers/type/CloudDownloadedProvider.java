@@ -146,26 +146,19 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
       throw new IllegalArgumentException("no url provided");
     
     AdvancedHttp.Reply reply = AdvancedHttp.get(url, headers);
-    JsonValue result;
-    
+
     if (reply.isError()) {
-      // try to get a "message" key, else ignore and just print the content
-      try { reply.setMessage(new JsonReader().parse(reply.message).getString("message")); }
-      catch (Exception ignore) {}
-      
       logger.err("avs.provider.cloud.fetch.url-failed", url);
       logger.err("avs.http-status", reply.httpStatus, reply.message);
       return null;
     }
     
-    try { result = new JsonReader().parse(reply.content); } 
+    try { return new JsonReader().parse(reply.content); } 
     catch (Exception e) {
       logger.err("avs.provider.cloud.fetch.json-failed", url);
       logger.err("avs.general-error", e.getLocalizedMessage());
       return null;
     }
-    
-    return result;
   }
   
   /** Can be overrides if the provider have a custom way to get addresses */
@@ -175,27 +168,4 @@ public abstract class CloudDownloadedProvider extends CachedAddressProvider
   
   /** Extract wanted addresses from server reply */
   protected abstract Seq<Subnet> extractAddressRanges(JsonValue downloaded);
-  
-  
-  public static enum ProviderType {
-    other,
-    vpn,
-    proxy,
-    tor,
-    relay,
-    dataCenter;
-    
-    public final int val;
-    
-    ProviderType() {
-      this.val = 1 << (AddressType.numberOfTypes - ordinal() - 1);
-    }
-    
-    public boolean isOther() { return this == other; }
-    public boolean isVPN() { return this == vpn; }
-    public boolean isProxy() { return this == proxy; }
-    public boolean isTOR() { return this == tor; }
-    public boolean isRelay() { return this == relay; }
-    public boolean isDataCenter() { return this == dataCenter; }
-  }
 }

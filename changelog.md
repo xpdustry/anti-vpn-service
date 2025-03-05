@@ -5,12 +5,12 @@
  - improved address validator
  - optimized http classes
  - optimized cloud downloaded providers
- - added a move of the mindsutry DOS list to the plugin blacklist
- - fixed bug with settings files 
+ - added a move of the mindsutry DOS list to the custom blacklist
+ - remade settings system 
  - improved online service providers
  - added configurations
  - added commands
- - added events to track every plugin's actions
+ - added events to track every plugin verification steps
  - made the plugin api usable for other plugins
  - improved plugin loading
  - added an auto refresh
@@ -19,7 +19,7 @@
  - fixed others minor bugs
  - added more providers
  - changed waiting list for a cooldown system using cron expressions
- - added a verification of provider's properties on loading
+ - added a verification of provider properties on loading
  - added a description for each providers
  - added option to force debug log level only for avs
 
@@ -30,7 +30,7 @@
 
 ### TODO: 
  - ~~make a rule to whitelist all ips of specific a UUID~~ (will be done in [Better-Security](https://github.com/xpdustry/Better-Security/))
- - make metrics (probably another plugin)
+ - make metrics *(probably another plugin)*
  - make a provider type that load addresses ranges from a file
  - make providers creatable with a config file
  - **PRIORITY:** make a documentation

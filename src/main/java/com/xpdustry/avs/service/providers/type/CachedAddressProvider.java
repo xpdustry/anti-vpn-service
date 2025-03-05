@@ -26,8 +26,6 @@
 
 package com.xpdustry.avs.service.providers.type;
 
-import java.net.InetAddress;
-
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.util.json.JsonSettings;
@@ -71,6 +69,11 @@ public class CachedAddressProvider extends AddressProvider implements ProviderCa
   public Seq<Subnet> list() {
     return cache.map(a -> a.subnet);
   }
+
+  @Override
+  public int cacheSize() {
+    return cache.size;
+  } 
   
   /** Load the cache */
   @SuppressWarnings("unchecked")
@@ -127,20 +130,8 @@ public class CachedAddressProvider extends AddressProvider implements ProviderCa
   }
 
   @Override
-  public int cacheSize() {
-    return cache.size;
-  }
-
-  @Override
-  public void checkAddressImpl(AddressProviderReply reply){
-    // Normally, never throw an error
-    try { 
-      InetAddress inet = InetAddress.getByName(reply.address); 
-      reply.setResult(cache.find(v -> v.subnet.isInNet(inet)));
-
-    } catch (Exception e) { 
-      reply.type = AddressProviderReply.ReplyType.ERROR;
-    } 
+  public void checkAddressImpl(AddressProviderReply reply) {
+    reply.setResult(cache.find(v -> v.subnet.isInNet(reply.address)));
   }
   
   

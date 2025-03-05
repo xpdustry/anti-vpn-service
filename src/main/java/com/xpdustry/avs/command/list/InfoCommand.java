@@ -102,7 +102,8 @@ public class InfoCommand extends com.xpdustry.avs.command.Command {
     
     
     if (!queries.isEmpty()) {
-      queries.each(h -> h.reply = AntiVpnService.checkAddressOnline(h.address));
+      queries.each(h -> h.reply = AntiVpnService.checkAddressOnline(
+                   com.xpdustry.avs.util.network.Subnet.createInstance(h.address)));
       logger.none();
       for (int i=0; i<queries.size; i++) 
         logger.infoNormal("[" + i + "] " + queries.get(i).toString(logger, !restrictedMode));

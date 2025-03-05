@@ -28,12 +28,12 @@ package com.xpdustry.avs.service;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
-import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.service.providers.custom.*;
 import com.xpdustry.avs.service.providers.local.*;
 import com.xpdustry.avs.service.providers.online.*;
 import com.xpdustry.avs.service.providers.type.*;
 import com.xpdustry.avs.util.logging.Logger;
+import com.xpdustry.avs.util.network.Subnet;
 
 import arc.Events;
 import arc.struct.Seq;
@@ -94,10 +94,9 @@ public class AntiVpnService {
     return allProviders.find(p -> p.name.equals(name));
   }
   
-  public static AddressProviderReply checkAddress(String address) {
+  public static AddressProviderReply checkAddress(Subnet address) {
     if (!isOperational()) return null;
     
-    AddressValidity.checkAddress(address);
     AddressProviderReply result;
     Events.fire(new AVSEvents.AddressCheckStartedEvent(address));
     
@@ -121,9 +120,8 @@ public class AntiVpnService {
     return result;
   }
   
-  public static AddressProviderReply checkAddressOnline(String address) {
+  public static AddressProviderReply checkAddressOnline(Subnet address) {
     if (!isOperational()) return null;
-    AddressValidity.checkAddress(address);
     AddressProviderReply result = null, r = null;
 
     Seq<OnlineServiceProvider> onlines = onlineProviders;
@@ -152,7 +150,7 @@ public class AntiVpnService {
     return result == null ? r : result;
   }
   
-  protected static AddressProviderReply checkAddressImpl(String address, Seq<? extends AddressProvider> providers) {
+  protected static AddressProviderReply checkAddressImpl(Subnet address, Seq<? extends AddressProvider> providers) {
     AddressProviderReply result = null, r = null;
     
     for (AddressProvider p : providers) {

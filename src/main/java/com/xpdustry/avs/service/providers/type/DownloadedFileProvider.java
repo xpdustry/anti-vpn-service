@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024-2025 Xpdustry
+ * Copyright (c) 2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,40 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.service.providers.local;
+package com.xpdustry.avs.service.providers.type;
 
-import com.xpdustry.avs.service.providers.type.ProviderType;
-import com.xpdustry.avs.util.network.Subnet;
-
-import arc.struct.Seq;
-import arc.util.serialization.JsonValue;
+import arc.struct.StringMap;
 
 
-/** Oracle's public data-centers list. */
-public class OracleCloud extends com.xpdustry.avs.service.providers.type.CloudDownloadedProvider {
-  public OracleCloud() {
-    super("oracle", "Oracle Cloud");
-    url = "https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json";
-    providerType = ProviderType.dataCenter;
+/** Like {@link LocalFileProvider} but it's downloading the file before using it. */
+public abstract class DownloadedFileProvider extends LocalFileProvider implements ProviderCategories.Cloudable {
+  /** The url to download the file */
+  public String url;
+  /** Define the type of provider, used for statistics. Default is VPN */
+  protected ProviderType providerType = ProviderType.vpn;
+  /** The headers to use to fetch the list. */
+  protected final StringMap headers = new StringMap();
+  
+  public DownloadedFileProvider(String name) {
+    super(name);
+    // TODO Auto-generated constructor stub
+  }
+
+  public DownloadedFileProvider(String name, String displayName) {
+    super(name, displayName);
+    // TODO Auto-generated constructor stub
   }
 
   @Override
-  protected Seq<Subnet> extractAddressRanges(JsonValue downloaded) {
-    Seq<Subnet> list = new Seq<>();
-    
-    for (JsonValue values=downloaded.get("regions").child; values!=null; values=values.next) {
-      for (JsonValue entry=values.get("cidrs").child; entry!=null; entry=entry.next) {
-        list.add(Subnet.createInstance(entry.getString("cidr")));
-      }
-    }
-    
-    return list;
+  public boolean refresh() {
+    // TODO Auto-generated method stub
+    return false;
   }
+
+  @Override
+  public ProviderType providerType() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
 }

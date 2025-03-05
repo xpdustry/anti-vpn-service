@@ -37,6 +37,11 @@ import arc.struct.StringMap;
 public class AdvancedHttp {
   /** Control whether the content should be accepted, if the server indicates a 203 status */
   public static boolean allowUntrustedSourceHttpCode = true;
+  /** 
+   * Will try to get a reason in case of an error, 
+   * by parsing the result as json and finding a 'message' or 'error' key.
+   */
+  public static boolean searchErrorReason = true;
 
   public static Reply get(String url) { return get(url, null); }
   public static Reply get(String url, StringMap headers) {
@@ -85,8 +90,19 @@ public class AdvancedHttp {
       toProvide.headers = status.response.getHeaders();
       
       String message = status.response.getResultAsString().strip();
-      if (!message.isBlank() && message.length() < 512)
-           toProvide.setMessage(message);
+      if (searchErrorReason) {
+        // Try to find a reason by searching a 'message' or 'error' json key
+        try {
+          arc.util.serialization.JsonValue soup = new arc.util.serialization.JsonReader().parse(message);
+          if (soup.child != null) {
+            toProvide.setMessage(soup.getString("message", null));
+            if (toProvide.message == null) toProvide.setMessage(soup.getString("error", null));
+            if (toProvide.message != null) return;
+          }
+        } catch (Exception ignored) {}
+      }
+
+      if (!message.isBlank() && message.length() < 512) toProvide.setMessage(message);
       else toProvide.setMessage(status.response);
       
     } else {

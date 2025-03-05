@@ -28,8 +28,10 @@ package com.xpdustry.avs.service.providers.type;
 
 import com.xpdustry.avs.config.AVSConfig;
 import com.xpdustry.avs.misc.AVSEvents;
+import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.util.json.JsonSettings;
 import com.xpdustry.avs.util.logging.Logger;
+import com.xpdustry.avs.util.network.Subnet;
 
 import arc.Events;
 
@@ -186,8 +188,8 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   public void enable() {
     if (enabled) return;
     logger.info("avs.provider.enabled");
-    Events.fire(new AVSEvents.ProviderEnabledEvent(this));
     enabled = true;
+    Events.fire(new AVSEvents.ProviderEnabledEvent(this));
     saveSettings();
   }
   
@@ -195,8 +197,8 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   public void disable() {
     if (!enabled) return;
     logger.info("avs.provider.disabled");
-    Events.fire(new AVSEvents.ProviderDisabledEvent(this));
     enabled = false;
+    Events.fire(new AVSEvents.ProviderDisabledEvent(this));
     saveSettings();
   }
   
@@ -220,8 +222,13 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
     return true;
   }
   
-  @Override
   public AddressProviderReply checkAddress(String address) {
+    AddressValidity.checkAddress(address);
+    return checkAddress(Subnet.createInstance(address));
+  }
+  
+  @Override
+  public AddressProviderReply checkAddress(Subnet address) {
     AddressProviderReply reply = new AddressProviderReply(address);
     
     if (!isAvailable()) {
@@ -233,7 +240,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
       Events.fire(new AVSEvents.ProviderCheckingAddressEvent(this, address));
       logger.debug("avs.provider.checking", address);
       checkAddressImpl(reply);
-      Events.fire(new AVSEvents.ProviderCheckedAddressEvent(this, address, reply));
+      Events.fire(new AVSEvents.ProviderCheckingAddressSuccessEvent(this, address, reply));
       
       if (reply.validity != null) 
         logger.debug("avs.provider.check." + (reply.validity.type.isNotValid() ? "invalid" : "valid"));

@@ -60,12 +60,8 @@ public class ProviderCategories {
     /** Disable the provider */
     public void disable();
     
-    /**
-     * Try to find informations about the address
-     * 
-     * @apiNote the address format (IPv4/IPv6) should be validated before
-     * @return the provider reply (nerver {@code null})
-     */
+    /** Try to find informations about the address. */
+    public AddressProviderReply checkAddress(Subnet address);
     public AddressProviderReply checkAddress(String address);
   }
   
@@ -91,7 +87,7 @@ public class ProviderCategories {
     public boolean refresh();
     
     /** The type of address ranges that correspond the downloaded list */
-    public CloudDownloadedProvider.ProviderType providerType();
+    public ProviderType providerType();
   }
 
   public static interface Editable extends Basic {

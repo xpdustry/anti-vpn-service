@@ -166,7 +166,9 @@ public class ServiceManager {
             Events.fire(new AVSEvents.ClientCheckEvent(con, packet));
             
             // Check the IP
-            AddressProviderReply reply = AntiVpnService.checkAddress(con.address);
+            com.xpdustry.avs.misc.address.AddressValidity.checkAddress(con.address);
+            AddressProviderReply reply = AntiVpnService.checkAddress(
+                com.xpdustry.avs.util.network.Subnet.createInstance(con.address));
       
             if (reply != null && reply.resultFound()) {
               if (reply.type != AddressProviderReply.ReplyType.ALLOWED && 

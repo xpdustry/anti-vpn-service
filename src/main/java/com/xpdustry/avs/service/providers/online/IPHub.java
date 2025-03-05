@@ -88,9 +88,5 @@ public class IPHub extends com.xpdustry.avs.service.providers.type.OnlineService
     if (//reply.httpStatus == 403/*FORBIDDEN*/ ||
         reply.httpStatus == 429/*TO_MANY_REQUESTS*/)
       reply.status = AdvancedHttp.Status.QUOTA_LIMIT;
-    
-    // Try to get the error message
-    JsonValue soup = new arc.util.serialization.JsonReader().parse(reply.content);
-    if (soup.child != null)  reply.setMessage(soup.getString("error", null));
   }
 }

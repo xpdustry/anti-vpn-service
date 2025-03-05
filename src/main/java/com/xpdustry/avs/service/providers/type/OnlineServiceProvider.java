@@ -360,7 +360,7 @@ public abstract class OnlineServiceProvider extends AddressProvider
     }
     
     if (!tokensNeeded()) {
-      ServiceResult result = request(reply.address, null);
+      ServiceResult result = request(reply.address.address, null);
       
       if (result == null || result.isError()) 
         reply.type = AddressProviderReply.ReplyType.ERROR;
@@ -381,7 +381,7 @@ public abstract class OnlineServiceProvider extends AddressProvider
       return true;
     }
     
-    ServiceResult result = request(reply.address, token);
+    ServiceResult result = request(reply.address.address, token);
     
     if (result == null || result.isError()) {
       reply.type = AddressProviderReply.ReplyType.ERROR;

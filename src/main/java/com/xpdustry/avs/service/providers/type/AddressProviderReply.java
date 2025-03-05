@@ -27,14 +27,15 @@
 package com.xpdustry.avs.service.providers.type;
 
 import com.xpdustry.avs.misc.address.AddressValidity;
+import com.xpdustry.avs.util.network.Subnet;
 
 
 public class AddressProviderReply {
-  public final String address;
+  public final Subnet address;
   public @arc.util.Nullable AddressValidity validity;
   public ReplyType type = ReplyType.NOT_FOUND;
   
-  public AddressProviderReply(String address) {
+  public AddressProviderReply(Subnet address) {
     this.address = address;
   }
   

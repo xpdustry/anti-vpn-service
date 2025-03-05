@@ -3,7 +3,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024-2025 Xpdustry
+ * Copyright (c) 2025 Xpdustry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,27 @@
  * SOFTWARE.
  */
 
-package com.xpdustry.avs.service.providers.local;
-
-import com.xpdustry.avs.service.providers.type.ProviderType;
-import com.xpdustry.avs.util.network.Subnet;
-
-import arc.struct.Seq;
-import arc.util.serialization.JsonValue;
+package com.xpdustry.avs.service.providers.type;
 
 
-/** Oracle's public data-centers list. */
-public class OracleCloud extends com.xpdustry.avs.service.providers.type.CloudDownloadedProvider {
-  public OracleCloud() {
-    super("oracle", "Oracle Cloud");
-    url = "https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json";
-    providerType = ProviderType.dataCenter;
+public enum ProviderType {
+  other,
+  vpn,
+  proxy,
+  tor,
+  relay,
+  dataCenter;
+  
+  public final int val;
+  
+  ProviderType() {
+    this.val = 1 << (com.xpdustry.avs.misc.address.AddressType.numberOfTypes - ordinal() - 1);
   }
-
-  @Override
-  protected Seq<Subnet> extractAddressRanges(JsonValue downloaded) {
-    Seq<Subnet> list = new Seq<>();
-    
-    for (JsonValue values=downloaded.get("regions").child; values!=null; values=values.next) {
-      for (JsonValue entry=values.get("cidrs").child; entry!=null; entry=entry.next) {
-        list.add(Subnet.createInstance(entry.getString("cidr")));
-      }
-    }
-    
-    return list;
-  }
+  
+  public boolean isOther() { return this == other; }
+  public boolean isVPN() { return this == vpn; }
+  public boolean isProxy() { return this == proxy; }
+  public boolean isTOR() { return this == tor; }
+  public boolean isRelay() { return this == relay; }
+  public boolean isDataCenter() { return this == dataCenter; }
 }

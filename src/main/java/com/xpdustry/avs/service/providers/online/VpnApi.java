@@ -103,9 +103,5 @@ public class VpnApi extends com.xpdustry.avs.service.providers.type.OnlineServic
   public void handleError(AdvancedHttp.Reply reply) {
 //    if (reply.httpStatus == 403/*FORBIDDEN*/) 
 //      reply.status = AdvancedHttp.Status.QUOTA_LIMIT;
-    
-    // Try to get the error message
-    JsonValue soup = new arc.util.serialization.JsonReader().parse(reply.content);
-    if (soup.child != null) reply.setMessage(soup.getString("message", null));
   }
 }

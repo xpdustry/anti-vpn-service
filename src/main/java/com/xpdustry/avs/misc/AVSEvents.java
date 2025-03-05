@@ -31,6 +31,7 @@ import java.time.Duration;
 import com.xpdustry.avs.misc.address.AddressValidity;
 import com.xpdustry.avs.service.providers.type.*;
 import com.xpdustry.avs.util.network.AdvancedHttp;
+import com.xpdustry.avs.util.network.Subnet;
 
 import mindustry.net.NetConnection;
 import mindustry.net.Packets.ConnectPacket;
@@ -208,17 +209,17 @@ public class AVSEvents {
   }
   
   public static class AddressCheckStartedEvent {
-    public final String address;
+    public final Subnet address;
     
-    public AddressCheckStartedEvent(String address) {
+    public AddressCheckStartedEvent(Subnet address) {
       this.address = address;
     }
   }
   public static class AddressCheckFinishedEvent {
-    public final String address;
+    public final Subnet address;
     public final AddressProviderReply reply;
     
-    public AddressCheckFinishedEvent(String address, AddressProviderReply reply) {
+    public AddressCheckFinishedEvent(Subnet address, AddressProviderReply reply) {
       this.address = address;
       this.reply = reply;
     }
@@ -226,19 +227,19 @@ public class AVSEvents {
   
   public static class ProviderCheckingAddressEvent {
     public final AddressProvider provider;
-    public final String address;
+    public final Subnet address;
     
-    public ProviderCheckingAddressEvent(AddressProvider provider, String address) {
+    public ProviderCheckingAddressEvent(AddressProvider provider, Subnet address) {
       this.provider = provider;
       this.address = address;
     }
   }
-  public static class ProviderCheckedAddressEvent {
+  public static class ProviderCheckingAddressSuccessEvent {
     public final AddressProvider provider;
-    public final String address;
+    public final Subnet address;
     public final AddressProviderReply reply;
     
-    public ProviderCheckedAddressEvent(AddressProvider provider, String address, 
+    public ProviderCheckingAddressSuccessEvent(AddressProvider provider, Subnet address, 
                                              AddressProviderReply reply) {
       this.provider = provider;
       this.address = address;
@@ -247,10 +248,10 @@ public class AVSEvents {
   }
   public static class ProviderCheckingAddressFailedEvent {
     public final AddressProvider provider;
-    public final String address;
+    public final Subnet address;
     public final Throwable error;
     
-    public ProviderCheckingAddressFailedEvent(AddressProvider provider, String address, Throwable error) {
+    public ProviderCheckingAddressFailedEvent(AddressProvider provider, Subnet address, Throwable error) {
       this.provider = provider;
       this.address = address;
       this.error = error;
