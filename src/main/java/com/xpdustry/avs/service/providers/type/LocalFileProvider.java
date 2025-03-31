@@ -33,6 +33,7 @@ import arc.files.Fi;
 import arc.struct.Seq;
 
 
+/** @implNote work in progress, don't use it. */
 public abstract class LocalFileProvider extends AddressProvider implements ProviderCategories.Cacheable {
   protected Seq<AddressValidity> cache = new Seq<>(false);
   /** The file containing address ranges. */

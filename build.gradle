@@ -2,8 +2,8 @@ import com.xpdustry.toxopid.spec.ModMetadata
 import com.xpdustry.toxopid.spec.ModPlatform
 
 plugins {
-    id "java"
-    id "com.xpdustry.toxopid" version "4.1.0"
+  id "java"
+  id "com.xpdustry.toxopid" version "4.1.2"
 }
 
 def metadata = ModMetadata.fromJson(file("src/main/resources/plugin.hjson"))
@@ -12,36 +12,36 @@ version = metadata.version
 description = metadata.description
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_12
-    targetCompatibility = JavaVersion.VERSION_12
+  sourceCompatibility = JavaVersion.VERSION_12
+  targetCompatibility = JavaVersion.VERSION_12
 }
 
 repositories {
-    mavenCentral()
-    maven { url "https://maven.xpdustry.com/mindustry" }
-    maven { url "https://www.jitpack.io" }
+  mavenCentral()
+  maven { url "https://maven.xpdustry.com/mindustry" }
+  maven { url "https://www.jitpack.io" }
 }
 
 toxopid {
-    compileVersion = "v${metadata.minGameVersion}"
-    platforms = [ModPlatform.SERVER]
+  compileVersion = "v${metadata.minGameVersion}"
+  platforms = [ModPlatform.SERVER]
 }
 
 dependencies {
-    compileOnly toxopid.dependencies.arcCore
-    compileOnly toxopid.dependencies.mindustryCore
-    // For SLF4MD compatibility
-    compileOnly "org.slf4j:slf4j-api:2.0.16"
+  compileOnly toxopid.dependencies.arcCore
+  compileOnly toxopid.dependencies.mindustryCore
+  // For SLF4MD compatibility
+  compileOnly "org.slf4j:slf4j-api:2.0.16"
 }
 
 jar {
-    archiveFileName = "${metadata.name}.jar"
+  archiveFileName = "${metadata.name}.jar"
     
-    //copy the builded jar to the working directory
-    doLast {
-		copy {
-			from jar
-			into "."
-		}
+  //copy the builded jar to the working directory
+  doLast {
+    copy {
+      from jar
+      into rootDir
+    }
 	}
 }

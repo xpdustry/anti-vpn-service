@@ -187,7 +187,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   @Override
   public void enable() {
     if (enabled) return;
-    logger.info("avs.provider.enabled");
+    logger.info("avs.provider.enable");
     enabled = true;
     Events.fire(new AVSEvents.ProviderEnabledEvent(this));
     saveSettings();
@@ -196,7 +196,7 @@ public abstract class AddressProvider implements ProviderCategories.Basic {
   @Override
   public void disable() {
     if (!enabled) return;
-    logger.info("avs.provider.disabled");
+    logger.info("avs.provider.disable");
     enabled = false;
     Events.fire(new AVSEvents.ProviderDisabledEvent(this));
     saveSettings();

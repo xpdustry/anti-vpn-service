@@ -21,6 +21,8 @@ And there are many settings, to configure the plugin to your needs.
 
 
 ### Documentation
+*TODO*
+
 Documentation can be [found here](https://github.com/xpdustry/Anti-VPN-Service/tree/master/docs).
 
 
@@ -33,8 +35,7 @@ Free to you to [open an issue](https://github.com/xpdustry/Anti-VPN-Service/issu
 
 
 ### Building a Jar
-
-Just run the command: `./gradlew build clean`, and the plugin will compile and export automatically.
+Just run the command: `./gradlew build`, and the plugin will compile and export automatically.
 
 
 ### Installing

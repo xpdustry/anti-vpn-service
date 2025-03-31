@@ -29,7 +29,11 @@ package com.xpdustry.avs.service.providers.type;
 import arc.struct.StringMap;
 
 
-/** Like {@link LocalFileProvider} but it's downloading the file before using it. */
+/** 
+ * Like {@link LocalFileProvider} but it's downloading the file before using it.
+ * 
+ * @implNote work in progress, don't use it.
+ */
 public abstract class DownloadedFileProvider extends LocalFileProvider implements ProviderCategories.Refreshable {
   /** The url to download the file */
   public String url;
