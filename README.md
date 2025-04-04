@@ -32,7 +32,7 @@ Prebuild releases can be [found here](https://github.com/Xpdustry/anti-vpn-servi
 ### Feedback
 Free to you to [open an issue](https://github.com/xpdustry/Anti-VPN-Service/issues/new) and write a suggestion, a bug report, or just a question.
 
-We use [Webplate](https://weblate.org) for translations, you can contribute to this project by helping us translate this plugin on [the project page](https://hosted.weblate.org/projects/anti-vpn-service/avs/).
+We use [Weblate](https://weblate.org) for translations, you can contribute to this project by helping us translate this plugin on [the project page](https://hosted.weblate.org/projects/anti-vpn-service/avs/).
 
 
 ### Building a Jar
